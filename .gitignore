@@ -1,0 +1,15 @@
+.env
+data/
+__pycache__/
+venv/
+ARHITEKTURA.md
+PROMPT.md
+
+.venv/
+*.pyc
+assets/reference/
+assets/stock/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
