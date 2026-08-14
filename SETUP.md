@@ -116,9 +116,9 @@ Verification, wait two minutes, and refresh.
 
 **2. Create a project** (a drawer holding your key and quotas)
 - Top bar, project dropdown left of the search box → **"NEW PROJECT"**
-- **Project name:** `prospect-kit`, organization left as `No organization`
+- **Project name:** `lead-finder-site-builder`, organization left as `No organization`
 - **"CREATE"**, wait 10–20 seconds
-- Reopen the dropdown and **select `prospect-kit`**. Confirm its name shows in
+- Reopen the dropdown and **select `lead-finder-site-builder`**. Confirm its name shows in
   the top bar before continuing.
 
 **3. Link a card**
@@ -147,7 +147,7 @@ appear, sign out of every other Google account in the browser and retry.
 - Copy it into `.env` right away, then click **"Edit API key"**
 
 **6. Restrict the key**
-- **Name:** `prospect-kit-key`
+- **Name:** `lead-finder-key`
 - **Application restrictions:** leave **"None"**. *IP addresses* looks safer but
   a home IP changes and the script would break every other day.
 - **API restrictions:** **"Restrict key"** → tick **only "Places API (New)"**,
@@ -176,7 +176,7 @@ a bill if code loops and fires 50,000 calls.
 
 **9. Budget alert**
 - ☰ → **"Billing"** → **"Budgets & alerts"** → **"CREATE BUDGET"**
-- Name `prospect-kit-alarm`, project `prospect-kit`
+- Name `lead-finder-alarm`, project `lead-finder-site-builder`
 - **Budget type:** *Specified amount*, **Target amount:** `1`
 - Thresholds 50/90/100%, email to your account, **"FINISH"**
 
@@ -279,7 +279,7 @@ are created locally and travel up with the first push.
 
 - [ ] `.env` exists with `PEXELS_API_KEY` filled in
 - [ ] `GOOGLE_MAPS_API_KEY` filled in
-- [ ] Places API **(New)** enabled on project `prospect-kit`
+- [ ] Places API **(New)** enabled on project `lead-finder-site-builder`
 - [ ] Key restricted to Places API (New) only
 - [ ] **Daily quota set to 50**
 - [ ] Budget alert at 1 unit of currency

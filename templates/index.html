@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lead-finder-site-builder</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>lead-finder-site-builder</h1>
+    <p>Local businesses ranked by how much they need a website</p>
+  </div>
+  <div class="usage" id="usage"></div>
+</header>
+
+<section class="panel">
+  <form id="search-form">
+    <input type="text" id="query" placeholder="pizzeria Novi Sad" autocomplete="off" spellcheck="false">
+    <input type="number" id="limit" placeholder="60" min="1" max="200">
+    <button type="submit" id="search-button">Search</button>
+  </form>
+  <div class="status-line" id="search-status"></div>
+</section>
+
+<section class="panel controls">
+  <label class="control">
+    <span>Saved searches</span>
+    <select id="file-select"></select>
+  </label>
+  <label class="control checkbox">
+    <input type="checkbox" id="only-no-website">
+    <span>Without a website only</span>
+  </label>
+  <label class="control">
+    <span>Min rating</span>
+    <input type="number" id="min-rating" step="0.1" min="0" max="5" placeholder="any">
+  </label>
+  <label class="control">
+    <span>Min reviews</span>
+    <input type="number" id="min-reviews" min="0" placeholder="any">
+  </label>
+  <button type="button" id="export-button" class="secondary">Export CSV</button>
+</section>
+
+<section class="panel results">
+  <div class="results-head">
+    <span id="result-count"></span>
+  </div>
+  <div class="table-scroll">
+    <table id="leads">
+      <thead>
+        <tr>
+          <th data-sort="score" class="sortable numeric">Score</th>
+          <th data-sort="name" class="sortable">Name</th>
+          <th data-sort="address" class="sortable">Address</th>
+          <th data-sort="rating" class="sortable numeric">Rating</th>
+          <th data-sort="review_count" class="sortable numeric">Reviews</th>
+          <th data-sort="website" class="sortable">Website</th>
+          <th data-sort="phone" class="sortable">Phone</th>
+          <th>Links</th>
+          <th data-sort="status" class="sortable">Status</th>
+          <th>Brief</th>
+        </tr>
+      </thead>
+      <tbody id="leads-body"></tbody>
+    </table>
+  </div>
+  <p class="empty" id="empty-message">No search loaded yet.</p>
+</section>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="spinner"></div>
+  <p>Searching. Free OpenStreetMap servers can take up to a minute.</p>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -9,7 +9,7 @@ OVERPASS_SERVERS = [
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.private.coffee/api/interpreter",
 ]
-USER_AGENT = "prospect-kit/0.1 (https://github.com/andrijaivankovic/lead-finder-site-builder)"
+USER_AGENT = "lead-finder-site-builder/0.1 (https://github.com/andrijaivankovic/lead-finder-site-builder)"
 ELEMENT_TYPES = ("node", "way", "relation")
 BUSINESS_KEYS = ("amenity", "shop", "office", "craft", "tourism", "leisure", "healthcare")
 
