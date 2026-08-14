@@ -1,0 +1,138 @@
+pretraga:
+  podrazumevani_limit: 60
+  google_max_po_pretrazi: 60
+  google_po_strani: 20
+
+zastita:
+  mesecni_limit_poziva: 900
+
+bodovi:
+  nema_sajt: 50
+  los_sajt: 30
+  dobra_ocena: 20
+  mnogo_recenzija: 20
+  srednje_recenzija: 10
+  ima_telefon: 10
+  malo_recenzija: -30
+
+pragovi:
+  dobra_ocena: 4.3
+  mnogo_recenzija: 50
+  srednje_recenzija: 20
+  malo_recenzija: 10
+
+kontakt_pretraga_sablon: "https://www.google.com/search?q=site%3Acompanywall.rs+{naziv}"
+
+osm_delatnosti:
+  picerija:
+    - {amenity: fast_food, cuisine: pizza}
+    - {amenity: restaurant, cuisine: pizza}
+  pizzeria:
+    - {amenity: fast_food, cuisine: pizza}
+    - {amenity: restaurant, cuisine: pizza}
+  restoran:
+    - {amenity: restaurant}
+  restaurant:
+    - {amenity: restaurant}
+  kafic:
+    - {amenity: cafe}
+  kafić:
+    - {amenity: cafe}
+  cafe:
+    - {amenity: cafe}
+  kafana:
+    - {amenity: pub}
+  bar:
+    - {amenity: bar}
+  brza hrana:
+    - {amenity: fast_food}
+  pekara:
+    - {shop: bakery}
+  bakery:
+    - {shop: bakery}
+  poslasticarnica:
+    - {shop: confectionery}
+    - {amenity: ice_cream}
+  poslastičarnica:
+    - {shop: confectionery}
+    - {amenity: ice_cream}
+  frizer:
+    - {shop: hairdresser}
+  frizerski salon:
+    - {shop: hairdresser}
+  hairdresser:
+    - {shop: hairdresser}
+  kozmeticki salon:
+    - {shop: beauty}
+  kozmetički salon:
+    - {shop: beauty}
+  salon lepote:
+    - {shop: beauty}
+  teretana:
+    - {leisure: fitness_centre}
+  gym:
+    - {leisure: fitness_centre}
+  stomatolog:
+    - {amenity: dentist}
+  zubar:
+    - {amenity: dentist}
+  dentist:
+    - {amenity: dentist}
+  lekar:
+    - {amenity: doctors}
+  ordinacija:
+    - {amenity: doctors}
+  apoteka:
+    - {amenity: pharmacy}
+  veterinar:
+    - {amenity: veterinary}
+  auto servis:
+    - {shop: car_repair}
+  autoservis:
+    - {shop: car_repair}
+  autoperionica:
+    - {amenity: car_wash}
+  auto skola:
+    - {amenity: driving_school}
+  cvecara:
+    - {shop: florist}
+  cvećara:
+    - {shop: florist}
+  advokat:
+    - {office: lawyer}
+  knjigovodja:
+    - {office: accountant}
+  knjigovođa:
+    - {office: accountant}
+  agencija za nekretnine:
+    - {office: estate_agent}
+  hotel:
+    - {tourism: hotel}
+  apartman:
+    - {tourism: apartment}
+  hostel:
+    - {tourism: hostel}
+  prodavnica:
+    - {shop: convenience}
+  butik:
+    - {shop: clothes}
+  prodavnica odece:
+    - {shop: clothes}
+  optika:
+    - {shop: optician}
+  nakit:
+    - {shop: jewelry}
+  tetovaza:
+    - {shop: tattoo}
+  hemijsko ciscenje:
+    - {shop: laundry}
+  obucar:
+    - {craft: shoemaker}
+  stolar:
+    - {craft: carpenter}
+  vodoinstalater:
+    - {craft: plumber}
+  elektricar:
+    - {craft: electrician}
+  moler:
+    - {craft: painter}
