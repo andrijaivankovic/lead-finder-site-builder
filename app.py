@@ -93,7 +93,12 @@ def status():
     if new_status not in lead_store.STATUSES:
         return jsonify({"error": "Unknown status."}), 400
 
-    if not lead_store.update_status(path, place_id, new_status):
+    try:
+        saved = lead_store.update_status(path, place_id, new_status)
+    except lead_store.FileLocked as error:
+        return jsonify({"error": str(error)}), 409
+
+    if not saved:
         return jsonify({"error": "Business not found in this file."}), 404
 
     return jsonify({"saved": True})

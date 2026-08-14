@@ -101,7 +101,10 @@ def run_search(query, limit=None, source="auto", on_event=None):
 
     previous = lead_store.find_previous(ROOT, query)
     rows = lead_store.merge(leads, lead_store.load(previous))
-    path = lead_store.save(lead_store.output_path(ROOT, query), rows)
+    try:
+        path = lead_store.save(lead_store.output_path(ROOT, query), rows)
+    except lead_store.FileLocked as error:
+        raise SearchError(str(error))
 
     result.update(
         {

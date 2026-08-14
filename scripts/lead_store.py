@@ -22,6 +22,10 @@ COLUMNS = [
 STATUSES = ["", "contacted", "declined", "accepted"]
 
 
+class FileLocked(Exception):
+    pass
+
+
 def to_slug(text):
     normalized = unicodedata.normalize("NFKD", text)
     normalized = normalized.replace("đ", "dj").replace("Đ", "Dj")
@@ -105,10 +109,15 @@ def merge(new_leads, existing_rows):
 def save(path, rows):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", newline="", encoding="utf-8-sig") as handle:
-        writer = csv.DictWriter(handle, fieldnames=COLUMNS)
-        writer.writeheader()
-        writer.writerows(rows)
+    try:
+        with open(path, "w", newline="", encoding="utf-8-sig") as handle:
+            writer = csv.DictWriter(handle, fieldnames=COLUMNS)
+            writer.writeheader()
+            writer.writerows(rows)
+    except PermissionError:
+        raise FileLocked(
+            "{} is open in another program, most likely Excel. Close it and try again.".format(path.name)
+        )
     return path
 
 
