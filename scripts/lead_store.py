@@ -1,0 +1,122 @@
+import csv
+import re
+import unicodedata
+from datetime import date
+from pathlib import Path
+
+COLUMNS = [
+    "score",
+    "name",
+    "address",
+    "rating",
+    "review_count",
+    "website",
+    "phone",
+    "google_maps_link",
+    "contact_search",
+    "place_id",
+    "status",
+]
+
+STATUSES = ["", "contacted", "declined", "accepted"]
+
+
+def to_slug(text):
+    normalized = unicodedata.normalize("NFKD", text)
+    normalized = normalized.replace("đ", "dj").replace("Đ", "Dj")
+    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", normalized).strip("-").lower()
+    return slug or "search"
+
+
+def data_dir(root):
+    return Path(root) / "data"
+
+
+def output_path(root, query):
+    filename = "leads_{}_{}.csv".format(to_slug(query), date.today().isoformat())
+    return data_dir(root) / filename
+
+
+def find_previous(root, query):
+    folder = data_dir(root)
+    if not folder.exists():
+        return None
+    matches = sorted(folder.glob("leads_{}_*.csv".format(to_slug(query))))
+    return matches[-1] if matches else None
+
+
+def list_files(root):
+    folder = data_dir(root)
+    if not folder.exists():
+        return []
+    files = sorted(folder.glob("leads_*.csv"), key=lambda path: path.stat().st_mtime, reverse=True)
+    return [path.name for path in files]
+
+
+def load(path):
+    if not path or not Path(path).exists():
+        return {}
+    with open(path, newline="", encoding="utf-8-sig") as handle:
+        return {row["place_id"]: row for row in csv.DictReader(handle) if row.get("place_id")}
+
+
+def load_rows(path):
+    if not path or not Path(path).exists():
+        return []
+    with open(path, newline="", encoding="utf-8-sig") as handle:
+        return [row for row in csv.DictReader(handle) if row.get("place_id")]
+
+
+def merge(new_leads, existing_rows):
+    merged = {}
+
+    for place_id, row in existing_rows.items():
+        merged[place_id] = {column: row.get(column, "") for column in COLUMNS}
+
+    for lead in new_leads:
+        place_id = lead["place_id"]
+        row = merged.get(place_id, {column: "" for column in COLUMNS})
+        previous_status = row.get("status", "")
+        row.update(
+            {
+                "score": lead["score"],
+                "name": lead.get("name", ""),
+                "address": lead.get("address", ""),
+                "rating": "" if lead.get("rating") is None else lead["rating"],
+                "review_count": "" if lead.get("review_count") is None else lead["review_count"],
+                "website": lead.get("website", ""),
+                "phone": lead.get("phone", ""),
+                "google_maps_link": lead.get("google_maps_link", ""),
+                "contact_search": lead.get("contact_search", ""),
+                "place_id": place_id,
+                "status": previous_status,
+            }
+        )
+        merged[place_id] = row
+
+    rows = list(merged.values())
+    rows.sort(key=lambda row: int(row["score"] or 0), reverse=True)
+    return rows
+
+
+def save(path, rows):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
+def update_status(path, place_id, status):
+    rows = load_rows(path)
+    changed = False
+    for row in rows:
+        if row["place_id"] == place_id:
+            row["status"] = status
+            changed = True
+    if changed:
+        save(path, rows)
+    return changed

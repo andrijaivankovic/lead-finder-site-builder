@@ -4,7 +4,7 @@ import requests
 
 ENDPOINT = "https://places.googleapis.com/v1/places:searchText"
 
-POLJA = ",".join(
+FIELD_MASK = ",".join(
     [
         "places.id",
         "places.displayName",
@@ -22,94 +22,94 @@ POLJA = ",".join(
 )
 
 
-class GreskaIzvora(Exception):
+class SourceError(Exception):
     pass
 
 
-class LimitDostignut(Exception):
+class LimitReached(Exception):
     pass
 
 
-def _lokal_iz_odgovora(mesto):
-    naziv = (mesto.get("displayName") or {}).get("text", "").strip()
-    telefon = mesto.get("nationalPhoneNumber") or mesto.get("internationalPhoneNumber") or ""
+def _lead_from_place(place):
+    name = (place.get("displayName") or {}).get("text", "").strip()
+    phone = place.get("nationalPhoneNumber") or place.get("internationalPhoneNumber") or ""
 
     return {
-        "place_id": mesto.get("id", ""),
-        "naziv": naziv,
-        "adresa": mesto.get("formattedAddress", ""),
-        "ocena": mesto.get("rating"),
-        "br_recenzija": mesto.get("userRatingCount"),
-        "sajt": (mesto.get("websiteUri") or "").strip(),
-        "telefon": telefon.strip(),
-        "google_maps_link": mesto.get("googleMapsUri", ""),
-        "vrsta": mesto.get("primaryType", ""),
-        "status_poslovanja": mesto.get("businessStatus", ""),
+        "place_id": place.get("id", ""),
+        "name": name,
+        "address": place.get("formattedAddress", ""),
+        "rating": place.get("rating"),
+        "review_count": place.get("userRatingCount"),
+        "website": (place.get("websiteUri") or "").strip(),
+        "phone": phone.strip(),
+        "google_maps_link": place.get("googleMapsUri", ""),
+        "category": place.get("primaryType", ""),
+        "business_status": place.get("businessStatus", ""),
     }
 
 
-def pretrazi(upit, limit, podesavanja, api_kljuc, pre_poziva):
-    po_strani = podesavanja["pretraga"]["google_po_strani"]
-    najvise = min(limit, podesavanja["pretraga"]["google_max_po_pretrazi"])
+def search(query, limit, settings, api_key, before_call):
+    page_size = settings["search"]["google_page_size"]
+    maximum = min(limit, settings["search"]["google_max_per_search"])
 
-    zaglavlja = {
+    headers = {
         "Content-Type": "application/json",
-        "X-Goog-Api-Key": api_kljuc,
-        "X-Goog-FieldMask": POLJA,
+        "X-Goog-Api-Key": api_key,
+        "X-Goog-FieldMask": FIELD_MASK,
     }
 
-    lokali = []
-    izbaceno_zatvorenih = 0
-    poziva = 0
+    leads = []
+    closed_dropped = 0
+    calls = 0
     token = None
-    prekinuto_zbog_limita = False
+    stopped_at_limit = False
 
-    while len(lokali) < najvise:
+    while len(leads) < maximum:
         try:
-            pre_poziva()
-        except LimitDostignut:
-            if not lokali:
+            before_call()
+        except LimitReached:
+            if not leads:
                 raise
-            prekinuto_zbog_limita = True
+            stopped_at_limit = True
             break
 
-        telo = {"textQuery": upit, "pageSize": min(po_strani, najvise - len(lokali))}
+        body = {"textQuery": query, "pageSize": min(page_size, maximum - len(leads))}
         if token:
-            telo["pageToken"] = token
+            body["pageToken"] = token
 
         try:
-            odgovor = requests.post(ENDPOINT, headers=zaglavlja, json=telo, timeout=60)
-            poziva += 1
-            if odgovor.status_code == 403:
-                raise GreskaIzvora(
-                    "Google je odbio ključ (403). Proveri da je Places API (New) uključen "
-                    "i da ključ nije ograničen na drugi API."
+            response = requests.post(ENDPOINT, headers=headers, json=body, timeout=60)
+            calls += 1
+            if response.status_code == 403:
+                raise SourceError(
+                    "Google rejected the key (403). Check that Places API (New) is enabled "
+                    "and that the key is not restricted to a different API."
                 )
-            if odgovor.status_code == 429:
-                raise GreskaIzvora("Google javlja da je kvota potrošena (429). Sačekaj ili podigni dnevnu kvotu.")
-            odgovor.raise_for_status()
-            podaci = odgovor.json()
-        except requests.RequestException as greska:
-            raise GreskaIzvora("Google Places API nije odgovorio: {}".format(greska))
+            if response.status_code == 429:
+                raise SourceError("Google reports the quota is used up (429). Wait, or raise the daily quota.")
+            response.raise_for_status()
+            data = response.json()
+        except requests.RequestException as error:
+            raise SourceError("Google Places API did not respond: {}".format(error))
 
-        for mesto in podaci.get("places", []):
-            lokal = _lokal_iz_odgovora(mesto)
-            if not lokal["naziv"]:
+        for place in data.get("places", []):
+            lead = _lead_from_place(place)
+            if not lead["name"]:
                 continue
-            if lokal["status_poslovanja"] and lokal["status_poslovanja"] != "OPERATIONAL":
-                izbaceno_zatvorenih += 1
+            if lead["business_status"] and lead["business_status"] != "OPERATIONAL":
+                closed_dropped += 1
                 continue
-            lokali.append(lokal)
+            leads.append(lead)
 
-        token = podaci.get("nextPageToken")
+        token = data.get("nextPageToken")
         if not token:
             break
         time.sleep(1)
 
     return {
-        "lokali": lokali[:najvise],
-        "ukupno_nadjeno": len(lokali),
-        "izbaceno_zatvorenih": izbaceno_zatvorenih,
-        "poziva": poziva,
-        "prekinuto_zbog_limita": prekinuto_zbog_limita,
+        "leads": leads[:maximum],
+        "total_found": len(leads),
+        "closed_dropped": closed_dropped,
+        "calls": calls,
+        "stopped_at_limit": stopped_at_limit,
     }

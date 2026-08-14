@@ -4,187 +4,184 @@ import time
 import requests
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-OVERPASS_SERVERI = [
+OVERPASS_SERVERS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.private.coffee/api/interpreter",
-    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ]
-KORISNICKI_AGENT = "prospect-kit/0.1 (https://github.com/topics/lead-generation)"
-TIPOVI_ELEMENATA = ("node", "way", "relation")
-POSLOVNI_KLJUCEVI = ("amenity", "shop", "office", "craft", "tourism", "leisure", "healthcare")
+USER_AGENT = "prospect-kit/0.1 (https://github.com/andrijaivankovic/lead-finder-site-builder)"
+ELEMENT_TYPES = ("node", "way", "relation")
+BUSINESS_KEYS = ("amenity", "shop", "office", "craft", "tourism", "leisure", "healthcare")
 
 
-class GreskaIzvora(Exception):
+class SourceError(Exception):
     pass
 
 
-def _geokodiraj(mesto):
+def _geocode(place):
     try:
-        odgovor = requests.get(
+        response = requests.get(
             NOMINATIM_URL,
-            params={"q": mesto, "format": "json", "limit": 1},
-            headers={"User-Agent": KORISNICKI_AGENT},
+            params={"q": place, "format": "json", "limit": 1},
+            headers={"User-Agent": USER_AGENT},
             timeout=30,
         )
-        odgovor.raise_for_status()
-        rezultati = odgovor.json()
-    except requests.RequestException as greska:
-        raise GreskaIzvora("Nije uspelo povezivanje sa OpenStreetMap pretragom mesta: {}".format(greska))
+        response.raise_for_status()
+        results = response.json()
+    except requests.RequestException as error:
+        raise SourceError("Could not reach the OpenStreetMap place lookup: {}".format(error))
 
-    if not rezultati:
+    if not results:
         return None
 
-    prvi = rezultati[0]
-    osm_id = int(prvi["osm_id"])
-    if prvi["osm_type"] == "relation":
-        return {"area_id": 3600000000 + osm_id, "ime": prvi["display_name"]}
-    if prvi["osm_type"] == "way":
-        return {"area_id": 2400000000 + osm_id, "ime": prvi["display_name"]}
+    first = results[0]
+    osm_id = int(first["osm_id"])
+    if first["osm_type"] == "relation":
+        return {"area_id": 3600000000 + osm_id, "name": first["display_name"]}
+    if first["osm_type"] == "way":
+        return {"area_id": 2400000000 + osm_id, "name": first["display_name"]}
     return None
 
 
-def razdvoji_pojam_i_mesto(upit):
-    reci = upit.split()
-    if len(reci) < 2:
+def split_term_and_place(query):
+    words = query.split()
+    if len(words) < 2:
         return None, None, None
 
-    for broj_reci in range(min(3, len(reci) - 1), 0, -1):
-        mesto = " ".join(reci[-broj_reci:])
-        pojam = " ".join(reci[:-broj_reci])
-        oblast = _geokodiraj(mesto)
+    for word_count in range(min(3, len(words) - 1), 0, -1):
+        place = " ".join(words[-word_count:])
+        term = " ".join(words[:-word_count])
+        area = _geocode(place)
         time.sleep(1)
-        if oblast:
-            return pojam, mesto, oblast
+        if area:
+            return term, place, area
 
     return None, None, None
 
 
-def _uslovi_po_oznakama(filteri):
-    delovi = []
-    for filter_oznaka in filteri:
-        oznake = "".join('["{}"="{}"]'.format(kljuc, vrednost) for kljuc, vrednost in filter_oznaka.items())
-        for tip in TIPOVI_ELEMENATA:
-            delovi.append("  {}{}(area.oblast);".format(tip, oznake))
-    return "\n".join(delovi)
+def _tag_conditions(filters):
+    parts = []
+    for tag_filter in filters:
+        tags = "".join('["{}"="{}"]'.format(key, value) for key, value in tag_filter.items())
+        for element_type in ELEMENT_TYPES:
+            parts.append("  {}{}(area.searchArea);".format(element_type, tags))
+    return "\n".join(parts)
 
 
-def _uslovi_po_imenu(pojam):
-    obrazac = re.escape(pojam).replace("/", "\\/").replace('"', '\\"')
-    delovi = []
-    for kljuc in POSLOVNI_KLJUCEVI:
-        for tip in TIPOVI_ELEMENATA:
-            delovi.append('  {}["{}"]["name"~"{}",i](area.oblast);'.format(tip, kljuc, obrazac))
-    return "\n".join(delovi)
+def _name_conditions(term):
+    pattern = re.escape(term).replace("/", "\\/").replace('"', '\\"')
+    parts = []
+    for key in BUSINESS_KEYS:
+        for element_type in ELEMENT_TYPES:
+            parts.append('  {}["{}"]["name"~"{}",i](area.searchArea);'.format(element_type, key, pattern))
+    return "\n".join(parts)
 
 
-def _upit_za_overpass(area_id, uslovi):
-    return "[out:json][timeout:90];\narea(id:{})->.oblast;\n(\n{}\n);\nout center tags;".format(area_id, uslovi)
+def _build_query(area_id, conditions):
+    return "[out:json][timeout:90];\narea(id:{})->.searchArea;\n(\n{}\n);\nout center tags;".format(
+        area_id, conditions
+    )
 
 
-def _posalji_upit(upit_teksta):
-    poslednja_greska = None
+def _send_query(query_text, on_server_failure=None):
+    last_error = None
 
-    for server in OVERPASS_SERVERI:
+    for server in OVERPASS_SERVERS:
         try:
-            odgovor = requests.post(
+            response = requests.post(
                 server,
-                data={"data": upit_teksta},
-                headers={"User-Agent": KORISNICKI_AGENT},
+                data={"data": query_text},
+                headers={"User-Agent": USER_AGENT},
                 timeout=120,
             )
-            odgovor.raise_for_status()
-            return odgovor.json()
-        except (requests.RequestException, ValueError) as greska:
-            poslednja_greska = greska
-            print("  server {} nije odgovorio, prelazim na sledeći".format(server.split("/")[2]))
+            response.raise_for_status()
+            return response.json()
+        except (requests.RequestException, ValueError) as error:
+            last_error = error
+            if on_server_failure:
+                on_server_failure(server.split("/")[2])
             time.sleep(2)
 
-    raise GreskaIzvora(
-        "Nijedan OpenStreetMap server nije odgovorio. Poslednja greška: {}. "
-        "Ovi serveri su besplatni i povremeno preopterećeni - pokušaj ponovo za par minuta.".format(poslednja_greska)
+    raise SourceError(
+        "No OpenStreetMap server responded. Last error: {}. These servers are free and "
+        "frequently overloaded, so try again in a few minutes.".format(last_error)
     )
 
 
-def _adresa_iz_oznaka(oznake):
-    ulica = oznake.get("addr:street", "")
-    broj = oznake.get("addr:housenumber", "")
-    grad = oznake.get("addr:city", "")
-    prvi_deo = " ".join(deo for deo in (ulica, broj) if deo).strip()
-    return ", ".join(deo for deo in (prvi_deo, grad) if deo)
+def _address_from_tags(tags):
+    street = tags.get("addr:street", "")
+    number = tags.get("addr:housenumber", "")
+    city = tags.get("addr:city", "")
+    street_line = " ".join(part for part in (street, number) if part).strip()
+    return ", ".join(part for part in (street_line, city) if part)
 
 
-def _lokal_iz_elementa(element):
-    oznake = element.get("tags", {})
-    naziv = (oznake.get("name") or "").strip()
-    if not naziv:
+def _lead_from_element(element):
+    tags = element.get("tags", {})
+    name = (tags.get("name") or "").strip()
+    if not name:
         return None
 
-    centar = element.get("center", {})
-    sirina = element.get("lat", centar.get("lat"))
-    duzina = element.get("lon", centar.get("lon"))
+    center = element.get("center", {})
+    latitude = element.get("lat", center.get("lat"))
+    longitude = element.get("lon", center.get("lon"))
 
-    if sirina is not None and duzina is not None:
-        maps_link = "https://www.google.com/maps/search/?api=1&query={},{}".format(sirina, duzina)
+    if latitude is not None and longitude is not None:
+        maps_link = "https://www.google.com/maps/search/?api=1&query={},{}".format(latitude, longitude)
     else:
-        maps_link = "https://www.google.com/maps/search/?api=1&query={}".format(requests.utils.quote(naziv))
+        maps_link = "https://www.google.com/maps/search/?api=1&query={}".format(requests.utils.quote(name))
 
-    sajt = oznake.get("website") or oznake.get("contact:website") or oznake.get("url") or ""
-    telefon = (
-        oznake.get("phone")
-        or oznake.get("contact:phone")
-        or oznake.get("contact:mobile")
-        or ""
-    )
+    website = tags.get("website") or tags.get("contact:website") or tags.get("url") or ""
+    phone = tags.get("phone") or tags.get("contact:phone") or tags.get("contact:mobile") or ""
 
     return {
         "place_id": "osm:{}/{}".format(element["type"], element["id"]),
-        "naziv": naziv,
-        "adresa": _adresa_iz_oznaka(oznake),
-        "ocena": None,
-        "br_recenzija": None,
-        "sajt": sajt.strip(),
-        "telefon": telefon.strip(),
+        "name": name,
+        "address": _address_from_tags(tags),
+        "rating": None,
+        "review_count": None,
+        "website": website.strip(),
+        "phone": phone.strip(),
         "google_maps_link": maps_link,
-        "vrsta": oznake.get("amenity") or oznake.get("shop") or oznake.get("craft") or oznake.get("office") or "",
+        "category": tags.get("amenity") or tags.get("shop") or tags.get("craft") or tags.get("office") or "",
     }
 
 
-def pretrazi(upit, limit, podesavanja):
-    pojam, mesto, oblast = razdvoji_pojam_i_mesto(upit)
-    if not oblast:
-        raise GreskaIzvora(
-            "Nisam prepoznao grad u pretrazi '{}'. Napiši je u obliku: delatnost pa mesto, "
-            "na primer \"picerija Novi Sad\".".format(upit)
+def search(query, limit, settings, on_server_failure=None):
+    term, place, area = split_term_and_place(query)
+    if not area:
+        raise SourceError(
+            "Could not recognise a place in '{}'. Write the search as a category followed by "
+            "a place, for example \"pizzeria Novi Sad\".".format(query)
         )
 
-    delatnosti = podesavanja.get("osm_delatnosti", {})
-    filteri = delatnosti.get(pojam.lower())
+    categories = settings.get("osm_categories", {})
+    filters = categories.get(term.lower())
 
-    if filteri:
-        uslovi = _uslovi_po_oznakama(filteri)
-        nacin = "po vrsti delatnosti"
+    if filters:
+        conditions = _tag_conditions(filters)
+        method = "category"
     else:
-        uslovi = _uslovi_po_imenu(pojam)
-        nacin = "po imenu firme"
+        conditions = _name_conditions(term)
+        method = "name"
 
-    podaci = _posalji_upit(_upit_za_overpass(oblast["area_id"], uslovi))
+    data = _send_query(_build_query(area["area_id"], conditions), on_server_failure)
 
-    lokali = []
-    videni = set()
-    for element in podaci.get("elements", []):
-        lokal = _lokal_iz_elementa(element)
-        if not lokal or lokal["place_id"] in videni:
+    leads = []
+    seen = set()
+    for element in data.get("elements", []):
+        lead = _lead_from_element(element)
+        if not lead or lead["place_id"] in seen:
             continue
-        videni.add(lokal["place_id"])
-        lokali.append(lokal)
+        seen.add(lead["place_id"])
+        leads.append(lead)
 
     return {
-        "lokali": lokali[:limit],
-        "ukupno_nadjeno": len(lokali),
-        "pojam": pojam,
-        "mesto": mesto,
-        "oblast": oblast["ime"],
-        "nacin": nacin,
-        "poziva": 0,
+        "leads": leads[:limit],
+        "total_found": len(leads),
+        "term": term,
+        "place": place,
+        "area": area["name"],
+        "method": method,
+        "calls": 0,
     }

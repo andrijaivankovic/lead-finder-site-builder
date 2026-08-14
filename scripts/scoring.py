@@ -1,34 +1,34 @@
-def izracunaj_bodove(lokal, podesavanja):
-    bodovi = podesavanja["bodovi"]
-    pragovi = podesavanja["pragovi"]
-    zbir = 0
+def calculate_score(lead, settings):
+    points = settings["scoring"]
+    thresholds = settings["thresholds"]
+    total = 0
 
-    sajt = (lokal.get("sajt") or "").strip()
-    if not sajt:
-        zbir += bodovi["nema_sajt"]
-    elif lokal.get("sajt_je_los"):
-        zbir += bodovi["los_sajt"]
+    website = (lead.get("website") or "").strip()
+    if not website:
+        total += points["no_website"]
+    elif lead.get("website_is_poor"):
+        total += points["poor_website"]
 
-    ocena = lokal.get("ocena")
-    if ocena is not None and ocena >= pragovi["dobra_ocena"]:
-        zbir += bodovi["dobra_ocena"]
+    rating = lead.get("rating")
+    if rating is not None and rating >= thresholds["good_rating"]:
+        total += points["good_rating"]
 
-    recenzija = lokal.get("br_recenzija")
-    if recenzija is not None:
-        if recenzija >= pragovi["mnogo_recenzija"]:
-            zbir += bodovi["mnogo_recenzija"]
-        elif recenzija >= pragovi["srednje_recenzija"]:
-            zbir += bodovi["srednje_recenzija"]
-        elif recenzija < pragovi["malo_recenzija"]:
-            zbir += bodovi["malo_recenzija"]
+    reviews = lead.get("review_count")
+    if reviews is not None:
+        if reviews >= thresholds["many_reviews"]:
+            total += points["many_reviews"]
+        elif reviews >= thresholds["some_reviews"]:
+            total += points["some_reviews"]
+        elif reviews < thresholds["few_reviews"]:
+            total += points["few_reviews"]
 
-    if (lokal.get("telefon") or "").strip():
-        zbir += bodovi["ima_telefon"]
+    if (lead.get("phone") or "").strip():
+        total += points["has_phone"]
 
-    return zbir
+    return total
 
 
-def dodaj_bodove(lokali, podesavanja):
-    for lokal in lokali:
-        lokal["score"] = izracunaj_bodove(lokal, podesavanja)
-    return sorted(lokali, key=lambda lokal: lokal["score"], reverse=True)
+def add_scores(leads, settings):
+    for lead in leads:
+        lead["score"] = calculate_score(lead, settings)
+    return sorted(leads, key=lambda lead: lead["score"], reverse=True)

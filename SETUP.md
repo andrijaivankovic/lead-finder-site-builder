@@ -1,412 +1,303 @@
-# SETUP — nalozi i ključevi
+# SETUP — accounts and API keys
 
-Ovo uputstvo prolazi kroz sve što moraš sam da napraviš pre nego što alat
-proradi. Pisano je za nekoga ko prvi put otvara Google Cloud Console.
+This guide walks through everything you need before the tool works. It is
+written for someone opening the Google Cloud Console for the first time.
 
-Ništa od ovoga ne lepiš u chat. Ključevi idu isključivo u fajl `.env` koji
-nikad ne odlazi na GitHub.
+Keys go into a `.env` file and nowhere else. That file never reaches GitHub.
 
-Redosled: **1) Pexels → 2) Google Cloud → 3) GitHub**. Pexels je najlakši i
-gotov je za dva minuta, pa da odmah imaš osećaj kako izgleda kad je gotovo.
+Order: **1) Pexels → 2) Google Cloud → 3) GitHub**. Pexels takes two minutes.
 
 ---
 
-## Rečnik pojmova koji se ponavljaju
+## Terms used throughout
 
-- **API** — vrata kroz koja jedan program pita drugi program za podatke. Naša
-  skripta kroz Google-ov API pita "daj mi picerije u Novom Sadu".
-- **API ključ (key)** — dugačak niz slova i brojeva koji dokazuje da si to ti.
-  Ponaša se kao lozinka: ko ga ima, troši u tvoje ime.
-- **`.env` fajl** — običan tekstualni fajl u kome stoje ključevi. Program ga
-  čita, a `.gitignore` sprečava da ode na internet.
-- **Kvota (quota)** — gornja granica koliko puta dnevno smeš da pozoveš API.
-  Kad se dostigne, Google odbija dalje pozive umesto da ti naplati.
-- **Billing account** — nalog za naplatu, tj. tvoja kartica zakačena za Google.
-- **Repo (repository)** — folder projekta na GitHub-u, sa istorijom izmena.
+- **API** — the door one program knocks on to ask another program for data.
+  This tool asks Google for "pizzerias in Novi Sad" through an API.
+- **API key** — a long string that proves the request is yours. Treat it like a
+  password: whoever holds it spends on your account.
+- **`.env` file** — a plain text file holding your keys. The program reads it,
+  and `.gitignore` keeps it off GitHub.
+- **Quota** — a ceiling on how many calls per day you are allowed. Once hit,
+  Google rejects further calls instead of billing you.
+- **Billing account** — your card, linked to Google.
 
 ---
 
-## 1. Pexels — slike za sajtove
+## 1. Pexels — photos for the generated sites
 
-### Čemu služi
+### What it does
 
-Pexels je sajt sa besplatnim fotografijama. Njegova licenca dozvoljava
-komercijalnu upotrebu bez obaveznog potpisivanja autora, što znači da te slike
-smeju da idu direktno na sajt koji praviš klijentu.
+Pexels hosts free photographs under a licence that allows commercial use
+without mandatory attribution, so those images can go straight onto a client
+demo site.
 
-**Šta bi bilo bez njega:** demo sajtovi bi ostali bez slika ili bi ti ručno
-tražio i skidao slike za svaki lokal. Google-ove fotografije lokala se NE smeju
-staviti na sajt — one su vlasništvo mušterija i vlasnika, koristimo ih samo kao
-stilsku referencu da znamo kako lokal izgleda.
+**Without it:** demo sites have no images, or you hunt for them by hand for
+every business. Google Place Photos cannot be used on the site — they belong to
+the owners and customers who took them, and are only a style reference.
 
-### Da li je besplatan
+### Cost
 
-Da, potpuno. Ne traži karticu. Ograničenja su 200 poziva na sat i 20.000 poziva
-mesečno, što je ogromno za našu upotrebu — jedan lokal potroši 5 do 8 poziva.
-Nema šanse da budeš naplaćen jer ne postoji plaćena verzija koju bi mogao
-slučajno da uključiš.
+Free, no card anywhere. Limits are 200 calls per hour and 20,000 per month;
+one business consumes five to eight. No paid tier exists, so accidental
+charges are not possible.
 
-### Korak po korak
+### Steps
 
-1. Otvori **https://www.pexels.com/join/**
-2. Registruj se (mejlom ili preko Google dugmeta — svejedno je).
-3. Otvori **https://www.pexels.com/api/**
-4. Klikni dugme **"Get Started"**.
-5. Pojaviće se kratak formular. Popuni ovako:
-   - **What are you building?** (ili slično pitanje o tipu projekta) — izaberi
-     opciju u smislu *Personal project* / *Website*.
-   - **Description / What will you use the API for?** — upiši nešto poput:
+1. Open **https://www.pexels.com/join/** and register.
+2. Open **https://www.pexels.com/api/** and click **"Get Started"**.
+3. Fill the short form:
+   - **Project Category** → *Personal Use / Just for Fun*
+   - **Explain briefly how and where you want to integrate our photos** →
      `Personal tool that finds stock photos for small business website mockups.`
-     Ne moraš da se trudiš, ovo niko ne odbija.
-   - **URL** — ako traži adresu sajta, upiši adresu svog GitHub profila ili
-     bilo koji svoj sajt.
-6. Klikni **"Generate API Key"** / **"Request API Key"**.
-7. Ključ se odmah pojavi na ekranu — dugačak niz slova i brojeva. Ostaje uvek
-   dostupan na **https://www.pexels.com/api/key/**, ne moraš da ga pamtiš.
+   - **URL** → optional, leave it empty if you have no site yet
+4. Tick the terms checkbox and click **"Generate API Key"**.
+5. The key appears immediately and stays available at
+   **https://www.pexels.com/api/key/**.
 
-### Gde da ga zalepiš
+### Where it goes
 
-U fajl `.env` u folderu projekta, u red:
-
-```
-PEXELS_API_KEY=ovde_ide_tvoj_kljuc
-```
-
-Bez navodnika, bez razmaka oko znaka `=`.
+In `.env`, on the line `PEXELS_API_KEY=`
 
 ---
 
 ## 2. Google Cloud — Places API (New)
 
-Ovo je najduži deo i jedini gde postoji rizik od troška. Pročitaj do kraja pre
-nego što kreneš da klikćeš.
+The longest part, and the only one that carries any cost risk. Read it through
+before clicking.
 
-### Čemu služi
+### What it does
 
-Google Places API je izvor podataka o firmama: ime, adresa, ocena, broj
-recenzija, telefon i — najvažnije za nas — **da li firma ima sajt**. Cela Faza 1
-se oslanja na to.
+Places API is the source of business data: name, address, rating, review count,
+phone, and most importantly **whether the business has a website**. The whole
+ranking depends on it.
 
-**Šta bi bilo bez njega:** alat i dalje radi, ali preko rezervnog izvora
-OpenStreetMap (besplatan, bez ključa). Problem je što OpenStreetMap nema ocene
-ni broj recenzija, a to su nam dva od pet kriterijuma za rangiranje. Bez njih ne
-možeš da razlikuješ picerija sa 300 recenzija i ocenom 4.7 (idealan klijent) od
-picerije sa 4 recenzije (verovatno mrtva). Zato je Google jako poželjan.
+**Without it:** the tool falls back to OpenStreetMap, which is free and needs
+no key, but has no ratings and no review counts. Two of the five scoring rules
+stop working, so you cannot tell a bakery with 300 reviews and a 4.7 rating
+(an ideal client) from one with 4 reviews (probably dead).
 
-### Da li je besplatan
+### Cost
 
-**Delimično, i tu treba biti pažljiv.**
+**Partly free, and this needs care.**
 
-Google zahteva da zakačiš karticu (billing account) pre nego što uopšte dozvoli
-korišćenje Maps Platform API-ja. Nema načina da se to zaobiđe. Ali:
+Google requires a linked card before it allows any Maps Platform call. There is
+no way around that. However:
 
-- Postoji besplatna mesečna količina poziva koja se resetuje svakog prvog u
-  mesecu.
-- Google naplaćuje po **najskupljem polju koje zatražiš** u jednom pozivu. Naša
-  skripta traži telefon, ocenu i broj recenzija, a to su "skupa" polja, pa naš
-  poziv pada u najskuplju kategoriju Text Search-a. Ta kategorija ima najmanju
-  besplatnu količinu — **oko 1.000 poziva mesečno**.
-- Zato je limit u našoj skripti postavljen na **900 poziva mesečno**, namerno
-  ispod besplatne granice. Kad se dostigne 900, skripta se sama zaustavi.
+- A free monthly allowance resets on the first of each month.
+- Google bills by **the most expensive field you request**. This tool asks for
+  phone, rating and review count, which are Enterprise-tier fields, so each
+  Text Search call lands in the tier with the smallest free allowance —
+  **1,000 calls per month**.
+- The limit inside the tool is therefore **900 calls**, deliberately below it.
 
-Koliko je to u praksi: jedan poziv vraća do 20 firmi. Pretraga sa `--limit 100`
-potroši 5 poziva. 900 poziva mesečno je otprilike 180 takvih pretraga — daleko
-više nego što ćeš stvarno raditi.
+In practice: one call returns up to 20 businesses, and Google caps a single
+query at three pages, so one fully paginated search costs 3 calls and returns
+up to 60 businesses. 900 calls is roughly 300 such searches per month.
 
-> Iznose i besplatne granice Google povremeno menja. Aktuelne brojeve uvek
-> proveri na **https://mapsplatform.google.com/pricing/** pre nego što se
-> osloniš na njih.
+> Google changes these numbers from time to time. Check the current figures at
+> **https://mapsplatform.google.com/pricing/**
 
-### Kako da budeš siguran da nećeš biti naplaćen
+### Three independent brakes
 
-Tri odvojene brane, i svaku od njih ćeš postaviti:
+1. **A quota in the Cloud Console** (steps 7 and 8) — Google physically refuses
+   calls past the ceiling. This is the only brake that actually stops spending.
+2. **The counter in this tool** — tracked in `data/usage.json`, stops at 900.
+3. **A budget alert** (step 9) — ⚠️ **emails you, stops nothing.** Never rely
+   on it alone.
 
-1. **Kvota u Google Cloud Console** (koraci 7 i 8 ispod) — Google fizički odbija
-   pozive preko granice. Ovo je jedina zaštita koja stvarno zaustavlja trošak.
-2. **Brojač u skripti** — skripta broji sopstvene pozive u `data/usage.json` i
-   staje na 900 u tekućem mesecu.
-3. **Budžetski alarm** (korak 9) — mejl kad potrošnja pređe iznos.
-   ⚠️ Alarm **samo šalje mejl, ne zaustavlja ništa.** Nikad se ne oslanjaj samo
-   na njega.
+### Steps
 
-### Korak po korak
+**1. Open the console** — **https://console.cloud.google.com/**, sign in, and
+accept the Terms of Service with **"AGREE AND CONTINUE"**.
 
-**Korak 1 — Otvori konzolu**
+If you are blocked with *Google Cloud access blocked*, Google now requires
+2-step verification on the account. Click **"Enable MFA"**, turn on 2-Step
+Verification, wait two minutes, and refresh.
 
-Idi na **https://console.cloud.google.com/** i uloguj se svojim Google nalogom
-(običan Gmail je sasvim dovoljno). Ako je prvi put, prihvati uslove korišćenja
-(*Terms of Service*) čekiranjem kvadratića i klikom na **"AGREE AND CONTINUE"**.
+**2. Create a project** (a drawer holding your key and quotas)
+- Top bar, project dropdown left of the search box → **"NEW PROJECT"**
+- **Project name:** `prospect-kit`, organization left as `No organization`
+- **"CREATE"**, wait 10–20 seconds
+- Reopen the dropdown and **select `prospect-kit`**. Confirm its name shows in
+  the top bar before continuing.
 
-**Korak 2 — Napravi projekat**
+**3. Link a card**
+- ☰ **Navigation menu** → **"Billing"** → **"LINK A BILLING ACCOUNT"** →
+  **"CREATE BILLING ACCOUNT"**
+- Country, then **Account type: Individual**
+- Name, address, card. Google places a verification hold of about one unit of
+  currency and releases it within days. It is not a charge.
+- **"START MY FREE TRIAL"** / **"SUBMIT AND ENABLE BILLING"**
 
-"Projekat" je samo fioka u kojoj stoje tvoj ključ i tvoje kvote.
+If you see *Cannot create another individual profile for the same country*, you
+already have a personal Google payments profile from Play, YouTube or similar.
+Do not fill in the Organization form. Cancel, refresh, and pick the existing
+profile from the dropdown above *Contact information*. If the dropdown does not
+appear, sign out of every other Google account in the browser and retry.
 
-1. U gornjoj traci, levo pored search polja, stoji padajući meni sa imenom
-   projekta (piše **"Select a project"** ako još nemaš nijedan). Klikni ga.
-2. U prozoru koji se otvori, gore desno klikni **"NEW PROJECT"**.
-3. **Project name:** upiši `prospect-kit`.
-4. **Location / Organization:** ostavi kako jeste (`No organization`).
-5. Klikni **"CREATE"**. Sačekaj 10-20 sekundi.
-6. Vrati se na isti padajući meni i izaberi `prospect-kit` da bude aktivan
-   projekat. **Proveri da u gornjoj traci piše `prospect-kit`** — sve dalje
-   mora da se dešava unutar tog projekta.
+**4. Enable the API** — ⚠️ two similar names exist
+- ☰ → **"APIs & Services"** → **"Library"** → search `Places API`
+- Open the card reading exactly **"Places API (New)"**, not the older
+  **"Places API"**
+- Click **"ENABLE"**
 
-**Korak 3 — Zakači karticu (billing)**
+**5. Create the key**
+- ☰ → **"APIs & Services"** → **"Credentials"**
+- **"+ CREATE CREDENTIALS"** → **"API key"**
+- Copy it into `.env` right away, then click **"Edit API key"**
 
-1. Klikni meni sa tri crte gore levo (☰, zove se *Navigation menu*).
-2. Izaberi **"Billing"**.
-3. Ako nemaš nijedan nalog za naplatu, piše nešto kao *This project has no
-   billing account*. Klikni **"LINK A BILLING ACCOUNT"**, pa **"CREATE BILLING
-   ACCOUNT"**.
-4. **Country:** Serbia. Prihvati uslove, klikni **"CONTINUE"**.
-5. **Account type:** *Individual*.
-6. Unesi ime, adresu i podatke kartice. Google napravi probnu rezervaciju od
-   oko 1 evra/dolara samo da proveri karticu i ona se poništi za par dana.
-   Nije naplata.
-7. Klikni **"START MY FREE TRIAL"** ili **"SUBMIT AND ENABLE BILLING"**.
+**6. Restrict the key**
+- **Name:** `prospect-kit-key`
+- **Application restrictions:** leave **"None"**. *IP addresses* looks safer but
+  a home IP changes and the script would break every other day.
+- **API restrictions:** **"Restrict key"** → tick **only "Places API (New)"**,
+  so a leaked key cannot reach any other Google service
+- **"SAVE"**
 
-Ako ti Google ponudi *free trial* sa kreditom — slobodno uzmi, ne škodi.
-Bitno je da Google **ne prebacuje automatski na plaćeni nalog** kad kredit
-istekne; tada te pita eksplicitno.
+**7. Set the quota — the most important step here**
 
-**Korak 4 — Uključi Places API (New)**
+Everything else is convenience. This is the only thing standing between you and
+a bill if code loops and fires 50,000 calls.
 
-⚠️ Postoje dva slična imena. Treba nam ono sa **"(New)"**.
+- ☰ → **"Google Maps Platform"** → **"Quotas"**
+  (direct link: **https://console.cloud.google.com/google/maps-apis/quotas**)
+- **API** dropdown → **"Places API (New)"**
+- **"Quotas"** tab → find a row containing **"per day"**, preferring one that
+  mentions **Text Search**
+- Tick it, click the **pencil**, enter **`50`**, **"SAVE"**
 
-1. ☰ **Navigation menu** → **"APIs & Services"** → **"Library"**.
-2. U search polje ukucaj `Places API`.
-3. Iz rezultata izaberi karticu na kojoj piše tačno **"Places API (New)"**.
-   Nemoj kliknuti na staru **"Places API"** bez zagrade.
-4. Klikni plavo dugme **"ENABLE"**.
-5. Sačekaj da se stranica prebaci na ekran sa statistikom tog API-ja.
+50 per day still allows 16 fully paginated searches daily and cannot overrun
+900 in a month.
 
-**Korak 5 — Napravi API ključ**
+**8. If that screen will not let you edit**
+- ☰ → **"APIs & Services"** → **"Enabled APIs & services"** →
+  **"Places API (New)"** → **"Quotas & System Limits"**
+- Filter for `per day`, tick the row, pencil, `50`, **SAVE**
 
-1. ☰ **Navigation menu** → **"APIs & Services"** → **"Credentials"**.
-2. Gore klikni **"+ CREATE CREDENTIALS"** → iz menija izaberi **"API key"**.
-3. Iskoči prozor sa ključem. Klikni ikonicu za kopiranje i **odmah ga zalepi u
-   `.env`** (vidi dole "Gde da ga zalepiš") — posle je vidljiv i u listi, ali
-   nema razloga da rizikuješ.
-4. U istom prozoru klikni **"Edit API key"** (ako si zatvorio prozor: u listi
-   *API Keys* klikni ikonicu olovke pored ključa).
+**9. Budget alert**
+- ☰ → **"Billing"** → **"Budgets & alerts"** → **"CREATE BUDGET"**
+- Name `prospect-kit-alarm`, project `prospect-kit`
+- **Budget type:** *Specified amount*, **Target amount:** `1`
+- Thresholds 50/90/100%, email to your account, **"FINISH"**
 
-**Korak 6 — Ograniči ključ (važno za sigurnost)**
+### Where it goes
 
-Na stranici za izmenu ključa:
+In `.env`, on the line `GOOGLE_MAPS_API_KEY=`
 
-1. **Name:** upiši `prospect-kit-key` da znaš čemu služi.
-2. **Application restrictions:** ostavi **"None"**. (Opcija *IP addresses*
-   izgleda sigurnije, ali kućna IP adresa se menja i skripta bi ti pucala
-   svaki drugi dan.)
-3. **API restrictions:** izaberi **"Restrict key"**, pa u padajućem spisku
-   čekiraj **samo "Places API (New)"**.
-   Ovo znači: i da ključ nekome procuri, ne može njime da koristi nijedan drugi
-   Google servis.
-4. Klikni **"SAVE"**.
+### Creating the `.env` file
 
-**Korak 7 — POSTAVI KVOTU. Ovo je najvažniji korak u celom uputstvu.**
-
-Sve ostalo je udobnost. Ovo je jedino što stoji između tebe i računa ako nešto
-u kodu krene u petlju i pozove API 50.000 puta. Nemoj ga preskočiti i nemoj ga
-ostaviti "za kasnije".
-
-1. ☰ **Navigation menu** → skroluj do **"Google Maps Platform"** → klikni
-   **"Quotas"**.
-   (Ako ne nalaziš stavku u meniju, otvori direktno:
-   **https://console.cloud.google.com/google/maps-apis/quotas**)
-2. Gore stoji padajući meni **"API"** — izaberi **"Places API (New)"**.
-3. Otvori karticu **"Quotas"** i u listi nađi red koji u imenu ima **"per day"**
-   — na primer *Text Search (New) requests per day* ili *Requests per day*.
-   Ako ima više takvih, zanima te onaj koji pominje **Text Search**.
-4. Čekiraj kvadratić u tom redu i klikni ikonicu **olovke** (Edit).
-5. Upiši **`50`** i klikni **"SAVE"** / **"SUBMIT"**.
-   50 poziva dnevno je i dalje 10 pretraga sa `--limit 100` na dan, a
-   matematički ne može da probije mesečnih 900 u kratkom roku.
-
-**Korak 8 — Ako se kvota ne da menjati na tom mestu**
-
-Kod nekih naloga Maps Platform ekran ne dozvoljava izmenu. Onda idi drugim putem:
-
-1. ☰ **"APIs & Services"** → **"Enabled APIs & services"** → klikni
-   **"Places API (New)"**.
-2. Kartica **"Quotas & System Limits"**.
-3. U polje za filtriranje ukucaj `per day`.
-4. Nađi red sa dnevnim limitom, čekiraj ga, klikni olovku, upiši `50`, **SAVE**.
-
-Ako ni tu ne postoji dnevni limit koji se može menjati (Google to povremeno
-menja), javi mi i pojačaćemo zaštitu u samoj skripti — ali onda **obavezno**
-uradi i korak 9.
-
-**Korak 9 — Budžetski alarm**
-
-1. ☰ **"Billing"** → u levom meniju **"Budgets & alerts"**.
-2. Klikni **"CREATE BUDGET"**.
-3. **Name:** `prospect-kit-alarm`.
-4. **Projects:** izaberi samo `prospect-kit`.
-5. **Budget type:** *Specified amount*. **Target amount:** upiši `1`.
-6. **Set alert threshold rules:** ostavi 50%, 90%, 100%.
-7. Čekiraj da se šalje mejl na tvoj nalog. **"FINISH"**.
-
-Sad ti Google javi mejlom čim potrošnja pređe pola evra. Ponavljam: ovo
-**ne zaustavlja** trošak, samo te obaveštava.
-
-### Gde da ga zalepiš
-
-U `.env`, u red:
-
-```
-GOOGLE_MAPS_API_KEY=ovde_ide_tvoj_kljuc
-```
-
-### Kako da napraviš `.env` fajl
-
-U folderu `lead-finder-site-builder` već postoji `.env.example` — to je prazan
-šablon. Otvori PowerShell u tom folderu i pokreni:
+From the project folder:
 
 ```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-Zalepi ključeve iza znakova `=`, sačuvaj (Ctrl+S) i zatvori Notepad.
-
-Gotov `.env` izgleda ovako:
+Paste the keys after the `=` signs, no quotes and no spaces:
 
 ```
 GOOGLE_MAPS_API_KEY=AIzaSyC3xK9...
 PEXELS_API_KEY=563492ad6f91...
 ```
 
-`.env` je već u `.gitignore`, tako da nikad neće otići na GitHub.
+`.env` is already in `.gitignore`.
 
 ---
 
 ## 3. GitHub
 
-### Čemu služi
+### What it does
 
-Dve stvari odjednom: rezervna kopija koda (ako se laptop pokvari, projekat je
-i dalje tu) i javna vitrina — otvoren repo koji možeš da staviš u biografiju
-i pošalješ klijentima kao dokaz da znaš da radiš.
+A backup of the code, and a public shopfront — an open repository you can put
+in a CV or send to a client as proof of work.
 
-**Šta bi bilo bez njega:** kod postoji samo na tvom Desktopu i istorija izmena
-je lokalna. Ako nešto pokvarimo, i dalje bismo mogli da se vratimo unazad, ali
-kvar diska bi značio gubitak svega.
+**Without it:** the project exists only on your desktop, and a disk failure
+takes everything with it.
 
-### Da li je besplatan
+### Cost
 
-Da. Javni repozitorijumi su neograničeni i besplatni zauvek. `gh` alat je
-besplatan i open-source. Nema mesta gde se unosi kartica.
+Free. Public repositories are unlimited, `gh` is free and open source, and no
+card is involved.
 
-### Korak po korak
+### Steps
 
-**Korak 1 — Nalog**
+**1. Account** — **https://github.com/signup**. Choose the username carefully;
+it appears in the address of every project you publish.
 
-Ako nemaš nalog: **https://github.com/signup**, unesi mejl, lozinku i korisničko
-ime, potvrdi mejl. Korisničko ime biraj pažljivo — biće u adresi svakog tvog
-projekta i klijenti ga vide.
-
-**Korak 2 — Instaliraj `gh` (GitHub CLI)**
-
-`gh` je Github-ov program za terminal. Trebaće nam da se ulogujemo i da
-podesimo repo bez ručnog kopiranja tokena.
-
-Otvori **PowerShell** i pokreni:
+**2. Install `gh` (GitHub CLI)**
 
 ```powershell
 winget install --id GitHub.cli
 ```
 
-Kad se završi, **zatvori PowerShell i otvori novi prozor** (bez toga sistem još
-ne zna za novu komandu). Proveri:
+Then **close PowerShell and open a new window** — until you do, the system
+still holds the old list of commands. Verify:
 
 ```powershell
 gh --version
 ```
 
-Ako ispiše broj verzije, gotovo je. Ako piše da komanda nije pronađena, restartuj
-računar i probaj opet.
-
-**Korak 3 — Uloguj se**
+**3. Sign in**
 
 ```powershell
 gh auth login
 ```
 
-Program postavlja pitanja u terminalu, biraš strelicama gore/dole i potvrđuješ
-Enterom:
+Answer with arrow keys and Enter:
 
 1. *What account do you want to log into?* → **GitHub.com**
 2. *What is your preferred protocol for Git operations?* → **HTTPS**
 3. *Authenticate Git with your GitHub credentials?* → **Yes**
 4. *How would you like to authenticate?* → **Login with a web browser**
-5. Ispisaće ti kod u formatu `XXXX-XXXX`. **Zapamti ga**, pritisni Enter —
-   otvara se browser. Zalepi kod, klikni **"Continue"**, pa **"Authorize
-   github"**.
-6. Vrati se u terminal, treba da piše `✓ Logged in as tvojekorisnickoime`.
+5. Note the `XXXX-XXXX` code, press Enter, paste it in the browser, then
+   **"Authorize github"**
 
-Ja tvoj token nikad ne vidim ni ne kucam — `gh` ga čuva sam u Windows
-Credential Manager-u.
+`gh` stores the token in Windows Credential Manager. If you picked SSH by
+mistake, switch afterwards with `gh config set git_protocol https` followed by
+`gh auth setup-git`.
 
-**Korak 4 — Napravi PRAZAN repo kroz sajt**
+**4. Create an empty repository** — ⚠️ this is where it goes wrong
 
-⚠️ Ovaj korak ima jednu zamku, pročitaj objašnjenje.
+- **https://github.com/new**
+- **Repository name:** `lead-finder-site-builder`
+- **Description:**
+  `Automatically find local businesses without a website, then generate a ready-to-deploy site and outreach message for each one.`
+- **Public**
+- **Tick none of these:** ☐ *Add a README file* ☐ *Add .gitignore*
+  ☐ *Choose a license*
+- **"Create repository"**
 
-1. Otvori **https://github.com/new**
-2. **Repository name:** `lead-finder-site-builder`
-3. **Description:** zalepi ovo:
-   ```
-   Automatically find local businesses without a website, then generate a ready-to-deploy site and outreach message for each one.
-   ```
-4. Izaberi **Public**.
-5. **NE ČEKIRAJ NIJEDNU OD OVE TRI STVARI:**
-   - ☐ *Add a README file*
-   - ☐ *Add .gitignore*
-   - ☐ *Choose a license*
-6. Klikni **"Create repository"**.
-7. Kopiraj adresu koja se pojavi (izgleda kao
-   `https://github.com/tvojeime/lead-finder-site-builder.git`) i pošalji mi je
-   u chat.
-
-**Zašto se ništa ne čekira:** svaka od te tri opcije napravi prvi commit na
-GitHub-u. Na tvom kompjuteru već postoji prvi commit sa istim fajlovima. To bi
-bile dve nezavisne istorije istog projekta i Git bi odbio da ih spoji — dobio
-bi grešku `refused to merge unrelated histories` i morali bismo da je rešavamo
-ručno. README, licencu i `.gitignore` pravimo lokalno i oni odu na GitHub sa
-prvim `push`-om.
-
-### Gde da zalepiš
-
-Ništa. Adresu repoa mi samo pošalji u chat, a `gh` sam čuva pristup.
+**Why nothing is ticked:** each of those options creates a first commit on
+GitHub. Your machine already has its own first commit. Git would see two
+unrelated histories of the same project and refuse to merge them
+(`refused to merge unrelated histories`). The README, licence and `.gitignore`
+are created locally and travel up with the first push.
 
 ---
 
-## Kontrolna lista
+## Checklist
 
-Pre nego što nastavimo, treba da imaš:
+- [ ] `.env` exists with `PEXELS_API_KEY` filled in
+- [ ] `GOOGLE_MAPS_API_KEY` filled in
+- [ ] Places API **(New)** enabled on project `prospect-kit`
+- [ ] Key restricted to Places API (New) only
+- [ ] **Daily quota set to 50**
+- [ ] Budget alert at 1 unit of currency
+- [ ] `gh --version` works and `gh auth login` succeeded
+- [ ] Empty public repository created
 
-- [ ] `.env` fajl u folderu `lead-finder-site-builder`
-- [ ] `PEXELS_API_KEY` popunjen
-- [ ] `GOOGLE_MAPS_API_KEY` popunjen
-- [ ] Places API **(New)** uključen u projektu `prospect-kit`
-- [ ] Ključ ograničen samo na Places API (New)
-- [ ] **Dnevna kvota postavljena na 50**
-- [ ] Budžetski alarm na 1 evro
-- [ ] `gh --version` ispisuje verziju
-- [ ] `gh auth login` prošao
-- [ ] Prazan javni repo napravljen, bez README/licence/.gitignore
-
-Google ključ nije obavezan da bismo krenuli — bez njega skripta radi preko
-OpenStreetMap-a. Ali za pravu upotrebu ga hoćeš.
+The Google key is not required to start — without it the tool runs on
+OpenStreetMap.
 
 ---
 
-## Ako nešto zapne
+## Troubleshooting
 
-| Problem | Šta znači | Rešenje |
+| Message | Meaning | Fix |
 |---|---|---|
-| `REQUEST_DENIED` ili `403` | ključ nije aktivan ili API nije uključen | proveri Korak 4 i Korak 6 |
-| `This API project is not authorized to use this API` | uključio si staru "Places API" umesto "(New)" | vrati se na Korak 4 |
-| `You must enable Billing` | kartica nije zakačena | Korak 3 |
-| `gh: command not found` | terminal još ne zna za `gh` | zatvori i otvori nov PowerShell |
-| `RESOURCE_EXHAUSTED` / `429` | probio si dnevnu kvotu | to je zaštita, radi kako treba — sačekaj sutra |
+| `REQUEST_DENIED` or `403` | key inactive, or API not enabled | steps 4 and 6 |
+| `This API project is not authorized to use this API` | the old "Places API" was enabled instead of "(New)" | step 4 |
+| `You must enable Billing` | no card linked | step 3 |
+| `gh: command not found` | terminal still holds the old PATH | open a new PowerShell |
+| `RESOURCE_EXHAUSTED` / `429` | daily quota hit | the brake is working — wait for tomorrow |
+| `504 Gateway Timeout` from Overpass | free OpenStreetMap servers are overloaded | try again in a few minutes |

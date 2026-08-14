@@ -1,29 +1,29 @@
-pretraga:
-  podrazumevani_limit: 60
-  google_max_po_pretrazi: 60
-  google_po_strani: 20
+search:
+  default_limit: 60
+  google_max_per_search: 60
+  google_page_size: 20
 
-zastita:
-  mesecni_limit_poziva: 900
+protection:
+  monthly_call_limit: 900
 
-bodovi:
-  nema_sajt: 50
-  los_sajt: 30
-  dobra_ocena: 20
-  mnogo_recenzija: 20
-  srednje_recenzija: 10
-  ima_telefon: 10
-  malo_recenzija: -30
+scoring:
+  no_website: 50
+  poor_website: 30
+  good_rating: 20
+  many_reviews: 20
+  some_reviews: 10
+  has_phone: 10
+  few_reviews: -30
 
-pragovi:
-  dobra_ocena: 4.3
-  mnogo_recenzija: 50
-  srednje_recenzija: 20
-  malo_recenzija: 10
+thresholds:
+  good_rating: 4.3
+  many_reviews: 50
+  some_reviews: 20
+  few_reviews: 10
 
-kontakt_pretraga_sablon: "https://www.google.com/search?q=site%3Acompanywall.rs+{naziv}"
+contact_search_template: "https://www.google.com/search?q=site%3Acompanywall.rs+{name}"
 
-osm_delatnosti:
+osm_categories:
   picerija:
     - {amenity: fast_food, cuisine: pizza}
     - {amenity: restaurant, cuisine: pizza}
@@ -42,9 +42,13 @@ osm_delatnosti:
     - {amenity: cafe}
   kafana:
     - {amenity: pub}
+  pub:
+    - {amenity: pub}
   bar:
     - {amenity: bar}
   brza hrana:
+    - {amenity: fast_food}
+  fast food:
     - {amenity: fast_food}
   pekara:
     - {shop: bakery}
@@ -62,11 +66,15 @@ osm_delatnosti:
     - {shop: hairdresser}
   hairdresser:
     - {shop: hairdresser}
+  barber:
+    - {shop: hairdresser}
   kozmeticki salon:
     - {shop: beauty}
   kozmetički salon:
     - {shop: beauty}
   salon lepote:
+    - {shop: beauty}
+  beauty salon:
     - {shop: beauty}
   teretana:
     - {leisure: fitness_centre}
@@ -82,29 +90,49 @@ osm_delatnosti:
     - {amenity: doctors}
   ordinacija:
     - {amenity: doctors}
+  doctor:
+    - {amenity: doctors}
   apoteka:
     - {amenity: pharmacy}
+  pharmacy:
+    - {amenity: pharmacy}
   veterinar:
+    - {amenity: veterinary}
+  vet:
     - {amenity: veterinary}
   auto servis:
     - {shop: car_repair}
   autoservis:
     - {shop: car_repair}
+  car repair:
+    - {shop: car_repair}
   autoperionica:
     - {amenity: car_wash}
+  car wash:
+    - {amenity: car_wash}
   auto skola:
+    - {amenity: driving_school}
+  driving school:
     - {amenity: driving_school}
   cvecara:
     - {shop: florist}
   cvećara:
     - {shop: florist}
+  florist:
+    - {shop: florist}
   advokat:
+    - {office: lawyer}
+  lawyer:
     - {office: lawyer}
   knjigovodja:
     - {office: accountant}
   knjigovođa:
     - {office: accountant}
+  accountant:
+    - {office: accountant}
   agencija za nekretnine:
+    - {office: estate_agent}
+  real estate:
     - {office: estate_agent}
   hotel:
     - {tourism: hotel}
@@ -118,21 +146,39 @@ osm_delatnosti:
     - {shop: clothes}
   prodavnica odece:
     - {shop: clothes}
+  clothing store:
+    - {shop: clothes}
   optika:
+    - {shop: optician}
+  optician:
     - {shop: optician}
   nakit:
     - {shop: jewelry}
+  jewelry:
+    - {shop: jewelry}
   tetovaza:
     - {shop: tattoo}
+  tattoo:
+    - {shop: tattoo}
   hemijsko ciscenje:
+    - {shop: laundry}
+  laundry:
     - {shop: laundry}
   obucar:
     - {craft: shoemaker}
   stolar:
     - {craft: carpenter}
+  carpenter:
+    - {craft: carpenter}
   vodoinstalater:
+    - {craft: plumber}
+  plumber:
     - {craft: plumber}
   elektricar:
     - {craft: electrician}
+  electrician:
+    - {craft: electrician}
   moler:
+    - {craft: painter}
+  painter:
     - {craft: painter}

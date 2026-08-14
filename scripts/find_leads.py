@@ -1,187 +1,105 @@
 import argparse
-import os
 import sys
 from pathlib import Path
-from urllib.parse import quote_plus
-
-import yaml
-from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import leads_csv
-import scoring
-import usage
-from sources import google_places, overpass
-
-KOREN = Path(__file__).resolve().parent.parent
+import lead_search
 
 
-def _ucitaj_podesavanja():
-    putanja = KOREN / "config.yaml"
-    if not putanja.exists():
-        _zaustavi("Nema fajla config.yaml u folderu projekta.")
-    return yaml.safe_load(putanja.read_text(encoding="utf-8"))
+def _truncate(text, width):
+    text = str(text or "")
+    if len(text) <= width:
+        return text
+    return text[: width - 1] + "…"
 
 
-def _zaustavi(poruka):
-    print("\nGRESKA: {}\n".format(poruka))
-    raise SystemExit(1)
+def _print_table(rows, count):
+    headers = ["#", "score", "name", "rating", "reviews", "website", "phone"]
+    widths = [3, 5, 34, 6, 7, 7, 16]
 
+    divider = "+".join("-" * (width + 2) for width in widths)
+    print(divider)
+    print("|".join(" {} ".format(header.ljust(width)) for header, width in zip(headers, widths)))
+    print(divider)
 
-def _skrati(tekst, sirina):
-    tekst = str(tekst or "")
-    if len(tekst) <= sirina:
-        return tekst
-    return tekst[: sirina - 1] + "…"
-
-
-def _ispisi_tabelu(redovi, koliko):
-    zaglavlja = ["#", "bodovi", "naziv", "ocena", "recenzija", "sajt", "telefon"]
-    sirine = [3, 6, 34, 5, 9, 6, 16]
-
-    linija = "+".join("-" * (sirina + 2) for sirina in sirine)
-    print(linija)
-    print(
-        "|".join(
-            " {} ".format(zaglavlje.ljust(sirina)) for zaglavlje, sirina in zip(zaglavlja, sirine)
-        )
-    )
-    print(linija)
-
-    for mesto, red in enumerate(redovi[:koliko], start=1):
-        ima_sajt = "NEMA" if not (red.get("sajt") or "").strip() else "ima"
-        celije = [
-            str(mesto),
-            str(red.get("score", "")),
-            _skrati(red.get("naziv"), sirine[2]),
-            str(red.get("ocena") or "-"),
-            str(red.get("br_recenzija") or "-"),
-            ima_sajt,
-            _skrati(red.get("telefon") or "-", sirine[6]),
+    for position, row in enumerate(rows[:count], start=1):
+        has_website = "none" if not (row.get("website") or "").strip() else "yes"
+        cells = [
+            str(position),
+            str(row.get("score", "")),
+            _truncate(row.get("name"), widths[2]),
+            str(row.get("rating") or "-"),
+            str(row.get("review_count") or "-"),
+            has_website,
+            _truncate(row.get("phone") or "-", widths[6]),
         ]
-        print("|".join(" {} ".format(celija.ljust(sirina)) for celija, sirina in zip(celije, sirine)))
+        print("|".join(" {} ".format(cell.ljust(width)) for cell, width in zip(cells, widths)))
 
-    print(linija)
-
-
-def _dodaj_kontakt_pretragu(lokali, sablon):
-    for lokal in lokali:
-        if (lokal.get("telefon") or "").strip():
-            lokal["kontakt_pretraga"] = ""
-        else:
-            lokal["kontakt_pretraga"] = sablon.format(naziv=quote_plus(lokal.get("naziv", "")))
-    return lokali
+    print(divider)
 
 
-def _napravi_kocnicu(mesecni_limit):
-    def pre_poziva():
-        potroseno = usage.procitaj(KOREN)["poziva"]
-        if potroseno >= mesecni_limit:
-            raise google_places.LimitDostignut(
-                "Dostignut mesecni limit od {} poziva. Brojac je u data/usage.json.".format(mesecni_limit)
-            )
-        usage.zabelezi_poziv(KOREN)
-
-    return pre_poziva
-
-
-def _pretrazi_google(upit, limit, podesavanja, api_kljuc):
-    mesecni_limit = podesavanja["zastita"]["mesecni_limit_poziva"]
-    preostalo = usage.preostalo(KOREN, mesecni_limit)
-
-    print("Izvor: Google Places API (New)")
-    print("Poziva iskorišćeno ovog meseca: {} od {}\n".format(mesecni_limit - preostalo, mesecni_limit))
-
-    if preostalo == 0:
-        _zaustavi(
-            "Potrošio si svih {} poziva za ovaj mesec. Brojač se resetuje prvog u mesecu, "
-            "ili ga promeni u config.yaml pod zastita.mesecni_limit_poziva.".format(mesecni_limit)
-        )
-
-    try:
-        return google_places.pretrazi(upit, limit, podesavanja, api_kljuc, _napravi_kocnicu(mesecni_limit))
-    except google_places.LimitDostignut as greska:
-        _zaustavi(str(greska))
-    except google_places.GreskaIzvora as greska:
-        _zaustavi(str(greska))
-
-
-def _pretrazi_osm(upit, limit, podesavanja):
-    print("Izvor: OpenStreetMap (besplatan, bez ključa)")
-    print("Upozorenje: OpenStreetMap nema ocene ni broj recenzija.")
-    print("Zato od pet kriterijuma rade samo dva - 'nema sajt' i 'ima telefon'.")
-    print("Rangiranje je zato grublje nego sa Google ključem.\n")
-
-    try:
-        return overpass.pretrazi(upit, limit, podesavanja)
-    except overpass.GreskaIzvora as greska:
-        _zaustavi(str(greska))
+def _report_server_failure(host):
+    print("  {} did not respond, trying the next server".format(host))
 
 
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    parser = argparse.ArgumentParser(description="Pronalazi lokalne firme i rangira ih kao kandidate za sajt.")
-    parser.add_argument("upit", help='Na primer: "picerija Novi Sad"')
-    parser.add_argument("--limit", type=int, default=None, help="Najviše koliko rezultata")
-    parser.add_argument("--izvor", choices=["auto", "google", "osm"], default="auto")
-    argumenti = parser.parse_args()
+    parser = argparse.ArgumentParser(description="Finds local businesses and ranks them as website candidates.")
+    parser.add_argument("query", help='For example: "pizzeria Novi Sad"')
+    parser.add_argument("--limit", type=int, default=None, help="Maximum number of results")
+    parser.add_argument("--source", choices=["auto", "google", "osm"], default="auto")
+    arguments = parser.parse_args()
 
-    load_dotenv(KOREN / ".env")
-    podesavanja = _ucitaj_podesavanja()
-    limit = argumenti.limit or podesavanja["pretraga"]["podrazumevani_limit"]
-    api_kljuc = (os.getenv("GOOGLE_MAPS_API_KEY") or "").strip()
+    print('\nSearch: "{}"'.format(arguments.query))
 
-    if argumenti.izvor == "google" and not api_kljuc:
-        _zaustavi("Tražio si Google, a GOOGLE_MAPS_API_KEY je prazan u .env fajlu.")
+    try:
+        summary = lead_search.usage_summary()
+        if arguments.source != "osm" and lead_search.google_key():
+            print("Source: Google Places API (New)")
+            print("Calls used this month: {} of {}\n".format(summary["used"], summary["limit"]))
+        else:
+            print("Source: OpenStreetMap (free, no key)")
+            print("Warning: OpenStreetMap has no ratings and no review counts.")
+            print("Only two of the five scoring rules apply, so ranking is coarse.\n")
 
-    koristi_google = argumenti.izvor == "google" or (argumenti.izvor == "auto" and api_kljuc)
+        result = lead_search.run_search(
+            arguments.query,
+            limit=arguments.limit,
+            source=arguments.source,
+            on_event=_report_server_failure,
+        )
+    except lead_search.SearchError as error:
+        print("\nERROR: {}\n".format(error))
+        raise SystemExit(1)
 
-    print('\nPretraga: "{}"'.format(argumenti.upit))
-    print("Limit: {}\n".format(limit))
-
-    if koristi_google:
-        rezultat = _pretrazi_google(argumenti.upit, limit, podesavanja, api_kljuc)
-    else:
-        rezultat = _pretrazi_osm(argumenti.upit, limit, podesavanja)
-        print("Prepoznato: delatnost '{}' u mestu '{}' ({})".format(
-            rezultat["pojam"], rezultat["mesto"], rezultat["nacin"]
-        ))
-        print("Oblast: {}\n".format(rezultat["oblast"]))
-
-    lokali = rezultat["lokali"]
-    if not lokali:
-        print("Nijedan rezultat. Probaj drugačiji pojam ili proveri kako se mesto zove na mapi.\n")
+    if not result["leads"]:
+        print("No results. Try a different term, or check how the place is named on the map.\n")
         return
 
-    lokali = _dodaj_kontakt_pretragu(lokali, podesavanja["kontakt_pretraga_sablon"])
-    lokali = scoring.dodaj_bodove(lokali, podesavanja)
+    if result["source"] == "openstreetmap":
+        print("Recognised: '{}' in '{}' (matched by {})".format(result["term"], result["place"], result["method"]))
+        print("Area: {}\n".format(result["area"]))
 
-    prethodni = leads_csv.pronadji_prethodni(KOREN, argumenti.upit)
-    stari_redovi = leads_csv.ucitaj(prethodni)
-    redovi = leads_csv.spoji(lokali, stari_redovi)
-    putanja = leads_csv.sacuvaj(leads_csv.putanja_izlaza(KOREN, argumenti.upit), redovi)
+    print("Found: {} businesses, {} of them without a website.".format(
+        len(result["leads"]), result["without_website"]
+    ))
+    if result.get("closed_dropped"):
+        print("Dropped as closed: {}".format(result["closed_dropped"]))
+    if result.get("previous"):
+        print("Merged with: {} (your statuses were kept)".format(result["previous"]))
+    if result.get("stopped_at_limit"):
+        print("Search stopped early because the monthly call limit was reached.")
+    print("Saved to: {}\n".format(result["path"]))
 
-    bez_sajta = sum(1 for lokal in lokali if not (lokal.get("sajt") or "").strip())
+    _print_table(result["rows"], 15)
 
-    print("Nađeno: {} firmi, od toga {} bez sajta.".format(len(lokali), bez_sajta))
-    if rezultat.get("izbaceno_zatvorenih"):
-        print("Izbačeno kao zatvoreno: {}".format(rezultat["izbaceno_zatvorenih"]))
-    if prethodni:
-        print("Spojeno sa: {} (tvoji statusi su sačuvani)".format(prethodni.name))
-    if rezultat.get("prekinuto_zbog_limita"):
-        print("Pretraga je prekinuta jer je dostignut mesečni limit poziva.")
-    print("Snimljeno u: {}\n".format(putanja))
-
-    _ispisi_tabelu(redovi, 15)
-
-    if rezultat.get("poziva"):
-        potroseno = usage.procitaj(KOREN)["poziva"]
-        mesecni_limit = podesavanja["zastita"]["mesecni_limit_poziva"]
-        print("\nPotrošeno poziva u ovoj pretrazi: {}".format(rezultat["poziva"]))
-        print("Ukupno ovog meseca: {} od {}".format(potroseno, mesecni_limit))
+    if result.get("calls"):
+        summary = lead_search.usage_summary()
+        print("\nCalls used by this search: {}".format(result["calls"]))
+        print("Total this month: {} of {}".format(summary["used"], summary["limit"]))
 
     print()
 
