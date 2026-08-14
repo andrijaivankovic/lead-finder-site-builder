@@ -116,7 +116,7 @@ def _address_from_tags(tags):
     return ", ".join(part for part in (street_line, city) if part)
 
 
-def _lead_from_element(element):
+def _lead_from_element(element, place):
     tags = element.get("tags", {})
     name = (tags.get("name") or "").strip()
     if not name:
@@ -126,10 +126,20 @@ def _lead_from_element(element):
     latitude = element.get("lat", center.get("lat"))
     longitude = element.get("lon", center.get("lon"))
 
+    address = _address_from_tags(tags)
+    parts = [name]
+    if address:
+        parts.append(address)
+    if place and place.lower() not in address.lower():
+        parts.append(place)
+    maps_link = "https://www.google.com/maps/search/?api=1&query={}".format(
+        requests.utils.quote(", ".join(parts))
+    )
+
     if latitude is not None and longitude is not None:
-        maps_link = "https://www.google.com/maps/search/?api=1&query={},{}".format(latitude, longitude)
+        map_pin = "https://www.google.com/maps/search/?api=1&query={},{}".format(latitude, longitude)
     else:
-        maps_link = "https://www.google.com/maps/search/?api=1&query={}".format(requests.utils.quote(name))
+        map_pin = ""
 
     website = tags.get("website") or tags.get("contact:website") or tags.get("url") or ""
     phone = tags.get("phone") or tags.get("contact:phone") or tags.get("contact:mobile") or ""
@@ -137,12 +147,13 @@ def _lead_from_element(element):
     return {
         "place_id": "osm:{}/{}".format(element["type"], element["id"]),
         "name": name,
-        "address": _address_from_tags(tags),
+        "address": address,
         "rating": None,
         "review_count": None,
         "website": website.strip(),
         "phone": phone.strip(),
         "google_maps_link": maps_link,
+        "map_pin": map_pin,
         "category": tags.get("amenity") or tags.get("shop") or tags.get("craft") or tags.get("office") or "",
     }
 
@@ -170,7 +181,7 @@ def search(query, limit, settings, on_server_failure=None):
     leads = []
     seen = set()
     for element in data.get("elements", []):
-        lead = _lead_from_element(element)
+        lead = _lead_from_element(element, place)
         if not lead or lead["place_id"] in seen:
             continue
         seen.add(lead["place_id"])

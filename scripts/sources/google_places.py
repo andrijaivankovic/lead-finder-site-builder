@@ -43,6 +43,7 @@ def _lead_from_place(place):
         "website": (place.get("websiteUri") or "").strip(),
         "phone": phone.strip(),
         "google_maps_link": place.get("googleMapsUri", ""),
+        "map_pin": "",
         "category": place.get("primaryType", ""),
         "business_status": place.get("businessStatus", ""),
     }

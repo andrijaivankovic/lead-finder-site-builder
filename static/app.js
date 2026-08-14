@@ -213,6 +213,9 @@ function buildRow(row) {
   if (row.google_maps_link) {
     links.append(linkElement(row.google_maps_link, "maps"));
   }
+  if (row.map_pin) {
+    links.append(linkElement(row.map_pin, "pin"));
+  }
   if (hasWebsite) {
     links.append(linkElement(row.website, "site"));
   }
