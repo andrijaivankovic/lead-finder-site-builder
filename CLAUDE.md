@@ -37,6 +37,9 @@ categories are filled in.
 - Everything is written in English: identifiers, config keys, CSV columns,
   printed output, the browser interface, and the docs.
 - Every tunable number lives in `config.yaml`, never inline in a script.
+- Anything personal to one user — their name, their portfolio links — belongs in
+  `config.local.yaml`, which is gitignored and merged over `config.yaml` at load
+  time. `config.yaml` is public and ships with those fields empty.
 - Secrets come from `.env` through `python-dotenv` and are never printed.
 - No heavy dependencies. `requests`, `beautifulsoup4`, `python-dotenv`,
   `flask`, `PyYAML` and `Pillow` are the whole list.

@@ -1,0 +1,7 @@
+outreach:
+  sender_name: "Your Name"
+  portfolio_links:
+    - url: "https://first-site-you-built.example/"
+      what: "cafe, warm and quiet, one page"
+    - url: "https://second-site-you-built.example/"
+      what: "fast food and grill, bold and hungry"
