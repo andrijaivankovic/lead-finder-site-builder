@@ -35,6 +35,21 @@ pressing enter accepts all defaults. Write the questions in Serbian.
 If the lead has no rating and no review count, say so and recommend "ne" for
 question 3, because there is nothing to show.
 
+Then ask a seventh question about the stack, and give a recommendation rather
+than a blank choice. Judge it from the trade, the sections chosen and whether
+animations were wanted:
+
+- A one page site for a small local business is almost always better as plain
+  HTML, CSS and JavaScript. It opens by double clicking, it can be sent as a
+  folder, and it drops onto any free host in seconds.
+- Reach for a framework only when the site genuinely needs it: many pages, a
+  menu or price list that will change often, a booking flow, or content the
+  owner will edit themselves. Prefer one that builds to static output, such as
+  Astro or Vite, so the result still runs anywhere with no server.
+
+Say which you recommend and why in one sentence, then let them override it.
+Record the answer as `stack` and the one sentence as `stack_reason`.
+
 ## 3. Ask how the place looks
 
 This is the one answer that cannot be defaulted. Ask, in Serbian, what the place

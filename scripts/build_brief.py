@@ -90,8 +90,11 @@ this folder gets edited.
 
 ## Rules that are not negotiable
 
-- Static site only: plain HTML, CSS and JavaScript. No framework, no build step,
-  no server. Double clicking `site/index.html` must show the finished site.
+- The stack is decided in `brief.md` under **Build prompt**. Follow it. Whatever
+  it says, the production build has to end up as a static bundle that runs on
+  any host with no server behind it.
+- Serve the site and look at it before saying it is finished. Never hand over a
+  page nobody has opened.
 - Mobile first. Check 360px wide before anything else.
 - Image paths are relative: `../assets/<purpose>/<file>`. Use only filenames
   that exist. Read `assets/sources.json` so a photograph lands in a section it
@@ -118,6 +121,31 @@ def _pitch(lead, problems):
     return "The business has {}, and it is not obviously broken, so this site has to win on looks and clarity.".format(
         lead["website"]
     )
+
+
+STATIC_STACK_RULES = """- Plain HTML, CSS and JavaScript only. No framework, no build step, no package
+  manager, no server. Opening `site/index.html` by double clicking must show the
+  finished site.
+- Three files: `index.html`, `style.css`, `script.js`. No more unless there is a
+  real reason."""
+
+BUILT_STACK_RULES = """- Built with {stack}, set up inside `site/`.
+- Whatever the stack, the production build must come out as a static bundle that
+  can be dropped on any host with no server behind it. If the chosen stack
+  cannot do that, use plain HTML instead and say why.
+- Keep the dependency list to what the site genuinely needs. Every extra package
+  is weight on a page whose whole point is being faster than what the business
+  has now.
+- Write `site/README.md` with the exact commands to install, run and build, so
+  the folder works months later without anyone remembering anything.
+- Never commit `node_modules`."""
+
+
+def _stack_rules(answers):
+    stack = (answers.get("stack") or "static").strip()
+    if stack.lower() in ("static", "plain", "html", "vanilla"):
+        return STATIC_STACK_RULES
+    return BUILT_STACK_RULES.format(stack=stack)
 
 
 def _animation_rule(answers):
@@ -210,13 +238,11 @@ and has not paid for it. It is being sent to them cold, so it has to look like
 something they would have paid for. Anything that reads as a template loses the
 job.
 
+**Stack: {stack}.** {stack_reason}
+
 **Technical constraints, all of them hard.**
 
-- Plain HTML, CSS and JavaScript only. No React, no Vue, no Tailwind, no build
-  step, no package manager, no server. Opening `site/index.html` by double
-  clicking must show the finished site.
-- Three files: `index.html`, `style.css`, `script.js`. No more unless there is a
-  real reason.
+{stack_rules}
 - Mobile first. Design the phone layout first and let the desktop layout be the
   variation. Test mentally at 360px wide before anything else.
 - Every image lives in `../assets/` relative to `site/index.html`. Use the exact
@@ -262,9 +288,14 @@ used everywhere.
 phone. Keep total JavaScript small, defer anything that is not needed for the
 first paint, and never block rendering on a script.
 
-**When it is done**, list in your reply: the files created, which placeholders
-the owner needs to fill in, and one sentence on what makes this site better than
-the situation described in "Why this business".
+**When it is done**, serve the site and look at it. Never hand it over unseen.
+Open it at 360px wide first, then at desktop width, read the browser console for
+errors, and confirm every image actually loads. Fix what you find, then show a
+screenshot at both widths.
+
+Then list in your reply: the files created, which placeholders the owner needs
+to fill in, and one sentence on what makes this site better than the situation
+described in "Why this business".
 """.format(
         name=lead["name"],
         address=lead["address"] or "not listed",
@@ -281,6 +312,9 @@ the situation described in "Why this business".
         colours=" ".join(colours) or "not known yet",
         trade=answers.get("trade", "local business"),
         city=answers.get("city", "the city"),
+        stack=answers.get("stack", "static"),
+        stack_reason=answers.get("stack_reason", "Chosen as the default."),
+        stack_rules=_stack_rules(answers),
         pitch=_pitch(lead, problems),
         animation_rule=_animation_rule(answers),
         colour_hint=(

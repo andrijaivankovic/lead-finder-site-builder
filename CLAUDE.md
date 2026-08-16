@@ -64,11 +64,17 @@ without migrating existing files.
 ```
 
 When asked to build the site, read that folder's `brief.md` and follow the
-"Build prompt" section in it literally. Write `index.html`, `style.css` and
-`script.js` into `site/`. `/build-site <folder>` does this.
+"Build prompt" section in it literally. `/build-site <folder>` does this.
 
-The site must be static, mobile first, and must open by double clicking
-`site/index.html`.
+The stack is decided per business and written into the brief. Plain HTML, CSS
+and JavaScript is the default and the right answer for most one page local
+business sites, because the folder can be sent as is and opened by double
+clicking. A framework is fine when the site actually needs one, as long as it
+builds to a static bundle that runs on any host with no server behind it.
+
+Whatever the stack, the site is mobile first, and it is never called finished
+until it has been served and looked at in a browser at 360px and at desktop
+width.
 
 ## Git
 
