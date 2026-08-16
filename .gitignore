@@ -6,7 +6,7 @@ ARHITEKTURA.md
 PROMPT.md
 
 .venv/
-.claude/
+.claude/launch.json
 *.pyc
 assets/reference/
 assets/stock/

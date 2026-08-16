@@ -168,6 +168,70 @@ function statusSelect(row) {
   return select;
 }
 
+function legacyCopy(text) {
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.top = "-1000px";
+  document.body.append(area);
+  area.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch (error) {
+    copied = false;
+  }
+
+  area.remove();
+  return copied;
+}
+
+async function copyBriefCommand(row, button) {
+  const command = "/build-brief " + row.place_id;
+  const original = button.textContent;
+  let copied = false;
+
+  try {
+    await navigator.clipboard.writeText(command);
+    copied = true;
+  } catch (error) {
+    copied = legacyCopy(command);
+  }
+
+  showCommand(command, copied);
+
+  if (copied) {
+    button.textContent = "Copied";
+    button.classList.add("copied");
+    setTimeout(() => {
+      button.textContent = original;
+      button.classList.remove("copied");
+    }, 1600);
+  }
+}
+
+function showCommand(command, copied) {
+  elements.searchStatus.textContent = "";
+  elements.searchStatus.classList.remove("error");
+
+  const label = document.createElement("span");
+  label.textContent = copied
+    ? "Copied. Paste it into Claude Code:"
+    : "Select this and copy it into Claude Code:";
+
+  const field = document.createElement("input");
+  field.type = "text";
+  field.readOnly = true;
+  field.value = command;
+  field.className = "command-field";
+
+  elements.searchStatus.append(label, field);
+  field.focus();
+  field.select();
+}
+
 function buildRow(row) {
   const tr = document.createElement("tr");
 
@@ -248,8 +312,8 @@ function buildRow(row) {
   briefButton.type = "button";
   briefButton.className = "secondary";
   briefButton.textContent = "Create brief";
-  briefButton.disabled = true;
-  briefButton.title = "Available from phase 5";
+  briefButton.title = "Copies the command, then paste it into Claude Code";
+  briefButton.addEventListener("click", () => copyBriefCommand(row, briefButton));
   brief.append(briefButton);
   tr.append(brief);
 
