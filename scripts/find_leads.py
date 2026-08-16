@@ -7,6 +7,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import lead_search
 
 
+def _value(text):
+    text = str(text if text is not None else "").strip()
+    return text or "-"
+
+
 def _truncate(text, width):
     text = str(text or "")
     if len(text) <= width:
@@ -29,11 +34,11 @@ def _print_table(rows, count):
             str(position),
             str(row.get("score", "")),
             _truncate(row.get("name"), widths[2]),
-            str(row.get("rating") or "-"),
-            str(row.get("review_count") or "-"),
+            _value(row.get("rating")),
+            _value(row.get("review_count")),
             has_website,
-            str(row.get("website_score") or "-"),
-            _truncate(row.get("phone") or "-", widths[7]),
+            _value(row.get("website_score")),
+            _truncate(_value(row.get("phone")), widths[7]),
         ]
         print("|".join(" {} ".format(cell.ljust(width)) for cell, width in zip(cells, widths)))
 

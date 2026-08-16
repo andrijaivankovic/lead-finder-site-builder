@@ -28,7 +28,12 @@ def calculate_score(lead, settings):
     return total
 
 
+def _ranking_key(lead):
+    website_score = lead.get("website_score")
+    return -lead["score"], -1 if website_score is None else website_score
+
+
 def add_scores(leads, settings):
     for lead in leads:
         lead["score"] = calculate_score(lead, settings)
-    return sorted(leads, key=lambda lead: lead["score"], reverse=True)
+    return sorted(leads, key=_ranking_key)

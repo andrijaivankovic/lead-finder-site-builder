@@ -76,6 +76,11 @@ def load_rows(path):
         return [row for row in csv.DictReader(handle) if row.get("place_id")]
 
 
+def _row_ranking_key(row):
+    website_score = str(row.get("website_score", "")).strip()
+    return -int(row["score"] or 0), int(website_score) if website_score else -1
+
+
 def merge(new_leads, existing_rows):
     merged = {}
 
@@ -107,7 +112,7 @@ def merge(new_leads, existing_rows):
         merged[place_id] = row
 
     rows = list(merged.values())
-    rows.sort(key=lambda row: int(row["score"] or 0), reverse=True)
+    rows.sort(key=_row_ranking_key)
     return rows
 
 
