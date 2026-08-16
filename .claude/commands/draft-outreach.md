@@ -26,9 +26,17 @@ Read the business folder if it exists: `brief.md` for the style and sections,
 `assets/sources.json` for what the photographs show, and `site/` to see whether
 the site is actually built. Never claim a site is ready when `site/` is empty.
 
-Check `config.yaml` for `outreach.portfolio_url` and `outreach.sender_name`. If
-either is empty, say so and ask for it rather than inventing a link or signing
-with a made up name.
+Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`.
+If either is empty, say so and ask, rather than inventing a link or signing with
+a made up name.
+
+Each portfolio entry carries a `what` describing the kind of business it was
+built for. Pick the one closest to this prospect and lead with it — a grill owner
+should see the grill site, not the bakery. Send at most two links in the email
+and exactly one in the short messages. Never paste all three.
+
+If nothing in the list is close, pick the one whose mood matches the style
+description in the brief, and do not pretend it is the same trade.
 
 ## 3. Write three versions
 
