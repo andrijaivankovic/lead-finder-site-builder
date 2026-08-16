@@ -21,11 +21,27 @@ class SearchError(Exception):
     pass
 
 
+def _merge(base, override):
+    for key, value in (override or {}).items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            _merge(base[key], value)
+        else:
+            base[key] = value
+    return base
+
+
 def load_settings():
     path = ROOT / "config.yaml"
     if not path.exists():
         raise SearchError("config.yaml is missing from the project folder.")
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    settings = yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    personal = ROOT / "config.local.yaml"
+    if personal.exists():
+        _merge(settings, yaml.safe_load(personal.read_text(encoding="utf-8")))
+
+    return settings
 
 
 def google_key():

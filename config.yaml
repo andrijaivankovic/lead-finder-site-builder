@@ -25,14 +25,8 @@ contact_search_template: "https://www.google.com/search?q=site%3Acompanywall.rs+
 
 outreach:
   follow_up_days: 4
-  sender_name: "Andrija Ivanković"
-  portfolio_links:
-    - url: "https://cafe-lumiere-site.vercel.app/"
-      what: "cafe, warm and quiet, one page"
-    - url: "https://urban-gyros-grill.vercel.app/"
-      what: "fast food and grill, bold and hungry"
-    - url: "https://sweet-break.vercel.app/"
-      what: "bakery and sweets, light and playful"
+  sender_name: ""
+  portfolio_links: []
   channels:
     - email
     - viber
