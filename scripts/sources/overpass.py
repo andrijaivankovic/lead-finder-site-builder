@@ -83,7 +83,7 @@ def _build_query(area_id, conditions):
     )
 
 
-def _send_query(query_text, on_server_failure=None):
+def _send_query(query_text, on_event=None):
     last_error = None
 
     for server in OVERPASS_SERVERS:
@@ -98,8 +98,8 @@ def _send_query(query_text, on_server_failure=None):
             return response.json()
         except (requests.RequestException, ValueError) as error:
             last_error = error
-            if on_server_failure:
-                on_server_failure(server.split("/")[2])
+            if on_event:
+                on_event("{} did not respond, trying the next server".format(server.split("/")[2]))
             time.sleep(2)
 
     raise SourceError(
@@ -158,7 +158,7 @@ def _lead_from_element(element, place):
     }
 
 
-def search(query, limit, settings, on_server_failure=None):
+def search(query, limit, settings, on_event=None):
     term, place, area = split_term_and_place(query)
     if not area:
         raise SourceError(
@@ -176,7 +176,7 @@ def search(query, limit, settings, on_server_failure=None):
         conditions = _name_conditions(term)
         method = "name"
 
-    data = _send_query(_build_query(area["area_id"], conditions), on_server_failure)
+    data = _send_query(_build_query(area["area_id"], conditions), on_event)
 
     leads = []
     seen = set()

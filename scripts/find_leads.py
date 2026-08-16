@@ -15,8 +15,8 @@ def _truncate(text, width):
 
 
 def _print_table(rows, count):
-    headers = ["#", "score", "name", "rating", "reviews", "website", "phone"]
-    widths = [3, 5, 34, 6, 7, 7, 16]
+    headers = ["#", "score", "name", "rating", "reviews", "website", "site score", "phone"]
+    widths = [3, 5, 32, 6, 7, 7, 10, 16]
 
     divider = "+".join("-" * (width + 2) for width in widths)
     print(divider)
@@ -32,15 +32,16 @@ def _print_table(rows, count):
             str(row.get("rating") or "-"),
             str(row.get("review_count") or "-"),
             has_website,
-            _truncate(row.get("phone") or "-", widths[6]),
+            str(row.get("website_score") or "-"),
+            _truncate(row.get("phone") or "-", widths[7]),
         ]
         print("|".join(" {} ".format(cell.ljust(width)) for cell, width in zip(cells, widths)))
 
     print(divider)
 
 
-def _report_server_failure(host):
-    print("  {} did not respond, trying the next server".format(host))
+def _report_progress(message):
+    print("  {}".format(message))
 
 
 def main():
@@ -51,6 +52,7 @@ def main():
     parser.add_argument("query", help='For example: "pizzeria Novi Sad"')
     parser.add_argument("--limit", type=int, default=None, help="Maximum number of results")
     parser.add_argument("--source", choices=["auto", "google", "osm"], default="auto")
+    parser.add_argument("--no-audit", action="store_true", help="Skip checking the existing websites")
     arguments = parser.parse_args()
 
     print('\nSearch: "{}"'.format(arguments.query))
@@ -69,7 +71,8 @@ def main():
             arguments.query,
             limit=arguments.limit,
             source=arguments.source,
-            on_event=_report_server_failure,
+            on_event=_report_progress,
+            audit=not arguments.no_audit,
         )
     except lead_search.SearchError as error:
         print("\nERROR: {}\n".format(error))
@@ -86,6 +89,10 @@ def main():
     print("Found: {} businesses, {} of them without a website.".format(
         len(result["leads"]), result["without_website"]
     ))
+    if result.get("audited"):
+        print("Checked {} existing websites, {} of them scored poorly enough to be worth pitching.".format(
+            result["audited"], result["poor_websites"]
+        ))
     if result.get("closed_dropped"):
         print("Dropped as closed: {}".format(result["closed_dropped"]))
     if result.get("previous"):

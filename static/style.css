@@ -267,6 +267,25 @@ td.address {
   color: var(--muted);
 }
 
+td.site-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+td.site-score.poor {
+  color: var(--bad);
+}
+
+td.site-score.fine {
+  color: var(--muted);
+}
+
+td.site-score.has-detail {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
 .badge {
   display: inline-block;
   padding: 2px 8px;

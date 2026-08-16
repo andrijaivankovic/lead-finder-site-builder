@@ -1,7 +1,6 @@
 import csv
 import re
 import unicodedata
-from datetime import date
 from pathlib import Path
 
 COLUMNS = [
@@ -11,6 +10,8 @@ COLUMNS = [
     "rating",
     "review_count",
     "website",
+    "website_score",
+    "website_problems",
     "phone",
     "google_maps_link",
     "map_pin",
@@ -39,16 +40,18 @@ def data_dir(root):
 
 
 def output_path(root, query):
-    filename = "leads_{}_{}.csv".format(to_slug(query), date.today().isoformat())
-    return data_dir(root) / filename
+    return data_dir(root) / "leads_{}.csv".format(to_slug(query))
 
 
 def find_previous(root, query):
     folder = data_dir(root)
     if not folder.exists():
         return None
-    matches = sorted(folder.glob("leads_{}_*.csv".format(to_slug(query))))
-    return matches[-1] if matches else None
+    current = output_path(root, query)
+    if current.exists():
+        return current
+    dated = sorted(folder.glob("leads_{}_*.csv".format(to_slug(query))))
+    return dated[-1] if dated else None
 
 
 def list_files(root):
@@ -91,6 +94,8 @@ def merge(new_leads, existing_rows):
                 "rating": "" if lead.get("rating") is None else lead["rating"],
                 "review_count": "" if lead.get("review_count") is None else lead["review_count"],
                 "website": lead.get("website", ""),
+                "website_score": "" if lead.get("website_score") is None else lead["website_score"],
+                "website_problems": "; ".join(lead.get("website_problems") or []),
                 "phone": lead.get("phone", ""),
                 "google_maps_link": lead.get("google_maps_link", ""),
                 "map_pin": lead.get("map_pin", ""),

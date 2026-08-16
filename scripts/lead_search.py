@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import lead_store
 import scoring
+import site_audit
 import usage
 from sources import google_places, overpass
 
@@ -47,6 +48,28 @@ def _add_contact_search(leads, template):
     return leads
 
 
+def _audit_websites(leads, settings, on_event=None):
+    options = settings["audit"]
+    urls = [lead["website"] for lead in leads if (lead.get("website") or "").strip()]
+    if not urls:
+        return 0
+
+    if on_event:
+        on_event("Checking {} existing websites".format(len(urls)))
+
+    reports = site_audit.audit_many(urls, settings)
+
+    for lead in leads:
+        report = reports.get(lead.get("website") or "")
+        if not report:
+            continue
+        lead["website_score"] = report["score"]
+        lead["website_problems"] = report["problems"]
+        lead["website_is_poor"] = report["score"] < options["poor_website_below"]
+
+    return len(urls)
+
+
 def _call_guard(monthly_limit):
     def before_call():
         if usage.read(ROOT)["calls"] >= monthly_limit:
@@ -58,7 +81,7 @@ def _call_guard(monthly_limit):
     return before_call
 
 
-def run_search(query, limit=None, source="auto", on_event=None):
+def run_search(query, limit=None, source="auto", on_event=None, audit=None):
     query = (query or "").strip()
     if not query:
         raise SearchError("The search is empty.")
@@ -97,6 +120,10 @@ def run_search(query, limit=None, source="auto", on_event=None):
         return result
 
     leads = _add_contact_search(leads, settings["contact_search_template"])
+
+    run_audit = settings["audit"]["enabled"] if audit is None else audit
+    audited = _audit_websites(leads, settings, on_event) if run_audit else 0
+
     leads = scoring.add_scores(leads, settings)
 
     previous = lead_store.find_previous(ROOT, query)
@@ -112,6 +139,8 @@ def run_search(query, limit=None, source="auto", on_event=None):
             "path": path,
             "previous": previous.name if previous else None,
             "without_website": sum(1 for lead in leads if not (lead.get("website") or "").strip()),
+            "audited": audited,
+            "poor_websites": sum(1 for lead in leads if lead.get("website_is_poor")),
             "query": query,
             "limit": limit,
         }

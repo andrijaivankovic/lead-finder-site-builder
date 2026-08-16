@@ -23,6 +23,37 @@ thresholds:
 
 contact_search_template: "https://www.google.com/search?q=site%3Acompanywall.rs+{name}"
 
+audit:
+  enabled: true
+  timeout_seconds: 12
+  workers: 8
+  slow_seconds: 3
+  very_slow_seconds: 6
+  stale_after_years: 3
+  poor_website_below: 60
+  penalties:
+    unreachable: 100
+    no_https: 15
+    no_viewport: 30
+    slow: 15
+    very_slow: 25
+    stale_year: 20
+    no_title: 10
+    no_description: 10
+    dated_platform: 15
+    template_platform: 5
+  messages:
+    unreachable: "The website does not open at all, so anyone who searches for you online finds nothing."
+    no_https: "The site has no security certificate, so browsers put a 'Not secure' warning next to the address."
+    no_viewport: "The site does not adapt to phones, and roughly 70% of people look you up on a phone."
+    slow: "The site needs {seconds} seconds to load, and most visitors give up before that."
+    very_slow: "The site needs {seconds} seconds to load, which is slow enough that most visitors never see it."
+    stale_year: "Nothing on the site has changed since {year}, which makes the business look closed."
+    no_title: "The page has no title, so Google shows a blank line or the bare address in search results."
+    no_description: "The page has no description, so Google invents its own text for your search result."
+    dated_platform: "The site still runs on {platform}, which is years behind and a security risk as much as a look."
+    template_platform: "The site is a {platform} template, so it looks like thousands of others and cannot be tailored much."
+
 osm_categories:
   picerija:
     - {amenity: fast_food, cuisine: pizza}

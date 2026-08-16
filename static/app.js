@@ -5,7 +5,7 @@ const STATUS_LABELS = {
   accepted: "Accepted",
 };
 
-const NUMERIC_COLUMNS = ["score", "rating", "review_count"];
+const NUMERIC_COLUMNS = ["score", "rating", "review_count", "website_score"];
 
 const state = {
   file: null,
@@ -203,6 +203,21 @@ function buildRow(row) {
   badge.textContent = hasWebsite ? "has site" : "no site";
   website.append(badge);
   tr.append(website);
+
+  const siteScore = document.createElement("td");
+  siteScore.className = "numeric site-score";
+  if (row.website_score === "" || row.website_score === undefined) {
+    siteScore.textContent = "—";
+  } else {
+    const value = parseInt(row.website_score, 10);
+    siteScore.textContent = value;
+    siteScore.classList.add(value < 60 ? "poor" : "fine");
+    if (row.website_problems) {
+      siteScore.title = row.website_problems.split("; ").join("\n");
+      siteScore.classList.add("has-detail");
+    }
+  }
+  tr.append(siteScore);
 
   const phone = document.createElement("td");
   phone.textContent = row.phone || "—";
