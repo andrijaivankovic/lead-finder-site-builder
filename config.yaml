@@ -23,6 +23,15 @@ thresholds:
 
 contact_search_template: "https://www.google.com/search?q=site%3Acompanywall.rs+{name}"
 
+outreach:
+  follow_up_days: 4
+  portfolio_url: ""
+  sender_name: ""
+  channels:
+    - email
+    - viber
+    - instagram
+
 reference_photos:
   max_per_business: 5
   max_width: 1200
