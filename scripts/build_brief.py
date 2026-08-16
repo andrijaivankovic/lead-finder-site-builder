@@ -69,9 +69,75 @@ def _photo_lines(stock_dir):
     return "".join(lines) or "- no images collected yet\n"
 
 
+PROJECT_GUIDE = """# {name}
+
+A demo website being built for {name}, a business that will be approached cold
+with the finished result.
+
+## What is here
+
+- `brief.md` — everything about the business and the full instruction for the
+  site. Read it before writing a line. The section named **Build prompt** is the
+  instruction and it stands on its own.
+- `assets/` — licensed photographs grouped by purpose. `assets/sources.json`
+  says what each one actually shows and who took it.
+- `site/` — where the website goes. It is empty until someone builds it.
+
+## What to do here
+
+Write `index.html`, `style.css` and `script.js` into `site/`. Nothing else in
+this folder gets edited.
+
+## Rules that are not negotiable
+
+- Static site only: plain HTML, CSS and JavaScript. No framework, no build step,
+  no server. Double clicking `site/index.html` must show the finished site.
+- Mobile first. Check 360px wide before anything else.
+- Image paths are relative: `../assets/<purpose>/<file>`. Use only filenames
+  that exist. Read `assets/sources.json` so a photograph lands in a section it
+  actually matches.
+- Every visible word is in {language}.
+- The name, address and phone in `brief.md` are real. Never change them.
+- Opening hours, prices, staff names and reviews are unknown. Write an obvious
+  placeholder in {language} and list every placeholder in an HTML comment at the
+  bottom of `index.html`. Never invent a review or a person.
+- No lorem ipsum anywhere.
+"""
+
+
+def _pitch(lead, problems):
+    if not (lead.get("website") or "").strip():
+        return (
+            "This business has no website at all, so every person who searches for it "
+            "online finds nothing."
+        )
+    if problems:
+        return "The business already has {}, and it fails on this: {}".format(
+            lead["website"], " ".join(problems)
+        )
+    return "The business has {}, and it is not obviously broken, so this site has to win on looks and clarity.".format(
+        lead["website"]
+    )
+
+
+def _animation_rule(answers):
+    if not answers.get("animations", True):
+        return (
+            "No animation library. Limit motion to short CSS transitions on hover and focus, "
+            "and honour prefers-reduced-motion."
+        )
+    return (
+        "Use GSAP with ScrollTrigger, loaded locally rather than from a CDN. Keep it to "
+        "entrance reveals on scroll and one deliberate hero moment. Every animation must be "
+        "wrapped in gsap.matchMedia so prefers-reduced-motion disables it. Motion must never "
+        "delay reading the content."
+    )
+
+
 def render_brief(lead, answers, stock_dir):
     yes_no = lambda flag: "yes" if flag else "no"
     problems = [item for item in (lead.get("website_problems") or "").split("; ") if item]
+    colours = answers.get("brand_colors") or []
 
     return """# Brief — {name}
 
@@ -128,21 +194,77 @@ are interested.
 | GSAP and ScrollTrigger animations | {animations} |
 | Generate AI images and video | {ai_media} |
 
-## Build rules
+## Build prompt
 
-- Static site only: plain HTML, CSS and JavaScript. No server, no build step,
-  no framework. It has to run by double clicking `index.html`.
-- Mobile first. It must be usable on a phone before it is pretty on a laptop.
-- Every image path points inside `assets/`.
-- Write all visible text in {language}.
-- Keep the page under a second on a normal connection: compress images, no
-  large libraries beyond GSAP if animations were chosen.
-- Include `<title>`, `<meta name="description">` and `<meta name="viewport">`.
-  Those are the three things the existing site is being judged on.
+Everything below is the instruction for whoever builds the site. It is written
+to stand on its own, so it repeats facts from above on purpose.
 
-## Output
+---
 
-Write the finished site into `site/`, entry point `site/index.html`.
+Build a complete one page website for **{name}**, a {trade} in {city}. Write it
+into the `site/` folder next to this file. The entry point is
+`site/index.html`.
+
+**The pitch this site has to win.** {pitch} The owner has never seen this site
+and has not paid for it. It is being sent to them cold, so it has to look like
+something they would have paid for. Anything that reads as a template loses the
+job.
+
+**Technical constraints, all of them hard.**
+
+- Plain HTML, CSS and JavaScript only. No React, no Vue, no Tailwind, no build
+  step, no package manager, no server. Opening `site/index.html` by double
+  clicking must show the finished site.
+- Three files: `index.html`, `style.css`, `script.js`. No more unless there is a
+  real reason.
+- Mobile first. Design the phone layout first and let the desktop layout be the
+  variation. Test mentally at 360px wide before anything else.
+- Every image lives in `../assets/` relative to `site/index.html`. Use the exact
+  filenames listed above. Do not invent filenames and do not hotlink anything.
+- Add `width`, `height` and `loading="lazy"` to every image below the fold, so
+  the page does not jump while it loads.
+- `<title>`, `<meta name="description">` and `<meta name="viewport">` are
+  mandatory. Those three are exactly what the audit judges a site on, so a site
+  built here must not fail its own test.
+- Include Open Graph tags, a favicon, and JSON-LD `LocalBusiness` structured
+  data filled in with the real name, address and phone from the table above.
+- Semantic HTML: one `<h1>`, sections in `<section>`, navigation in `<nav>`,
+  contact details in a `<footer>`. Every image needs a real `alt` in
+  {language}.
+- Colour contrast at least 4.5:1 for body text. Tap targets at least 44px.
+- No cookie banner, no analytics, no third party fonts loaded from a CDN. If a
+  display font is wanted, pick a system font stack instead.
+
+**Language.** Every word the visitor reads is in {language}. Do not mix
+languages. Do not leave lorem ipsum anywhere — write real copy for this
+business, in the voice of a {trade} that wants local customers.
+
+**What to invent and what not to.** Address, phone and the business name are
+real, take them from the table above and never change them. Opening hours,
+prices, staff names and reviews are not known. Where a section needs them,
+write an obvious placeholder in {language} that the owner can fill in, and mark
+those spots in a `<!-- -->` comment list at the bottom of `index.html` so they
+are easy to find. Never invent a fake review or a fake person.
+
+**Sections, in this order.**
+
+{sections}
+**Style direction.** {style}
+
+Build the palette from that description{colour_hint}. Pick one accent colour
+and use it for every call to action, nothing else. Two typefaces at most.
+Generous whitespace, a consistent spacing scale, and a single border radius
+used everywhere.
+
+**Animation.** {animation_rule}
+
+**Performance.** The whole page, images included, should feel instant on a
+phone. Keep total JavaScript small, defer anything that is not needed for the
+first paint, and never block rendering on a script.
+
+**When it is done**, list in your reply: the files created, which placeholders
+the owner needs to fill in, and one sentence on what makes this site better than
+the situation described in "Why this business".
 """.format(
         name=lead["name"],
         address=lead["address"] or "not listed",
@@ -156,7 +278,16 @@ Write the finished site into `site/`, entry point `site/index.html`.
         place_id=lead["place_id"],
         why=_bullet_list(problems, "The business has no website at all."),
         style=answers.get("style") or "not described",
-        colours=" ".join(answers.get("brand_colors") or []) or "not known yet",
+        colours=" ".join(colours) or "not known yet",
+        trade=answers.get("trade", "local business"),
+        city=answers.get("city", "the city"),
+        pitch=_pitch(lead, problems),
+        animation_rule=_animation_rule(answers),
+        colour_hint=(
+            ", anchored on the brand colours {}".format(" ".join(colours))
+            if colours
+            else " and from the photographs in assets/, since no brand colours are known"
+        ),
         language=answers.get("language", "srpski"),
         sections=_bullet_list(answers.get("sections")),
         keywords=_bullet_list(answers.get("seo_keywords")),
@@ -191,6 +322,10 @@ def create(place_id, answers, stock_dir=None, target_root=None):
 
     brief = render_brief(lead, answers, project / "assets")
     (project / "brief.md").write_text(brief, encoding="utf-8")
+    (project / "CLAUDE.md").write_text(
+        PROJECT_GUIDE.format(name=lead["name"], language=answers.get("language", "srpski")),
+        encoding="utf-8",
+    )
 
     return {"folder": project, "lead": lead, "source_file": source_file, "images": copied}
 

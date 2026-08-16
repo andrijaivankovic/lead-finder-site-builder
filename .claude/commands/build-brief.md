@@ -59,7 +59,17 @@ Write the plan to a temporary JSON file and run:
 venv/Scripts/python.exe scripts/find_stock_photos.py --plan <plan.json>
 ```
 
-Report how many photographs came back and where they went.
+Then read every `description` in the generated `sources.json` and check it
+against the trade. The script filters resolution and orientation only — it
+cannot see what is in a picture, so a search for a bright waiting room happily
+returns living rooms and hair salons.
+
+Delete the folder, fix the queries that went wrong, and run it again. Do not
+accept a photograph that shows a different kind of business; it is the fastest
+way to make the demo look careless.
+
+Report how many photographs came back, where they went, and any query you had
+to correct.
 
 ## 5. Write the brief
 
