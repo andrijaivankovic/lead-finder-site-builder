@@ -23,6 +23,39 @@ thresholds:
 
 contact_search_template: "https://www.google.com/search?q=site%3Acompanywall.rs+{name}"
 
+reference_photos:
+  max_per_business: 5
+  max_width: 1200
+  palette_colors: 5
+
+stock_photos:
+  per_purpose: 4
+  max_total: 20
+  min_width: 1920
+  purposes:
+    - hero
+    - gallery
+    - background
+    - team
+    - interior
+  skip_alt_keywords:
+    - portrait
+    - selfie
+    - headshot
+    - logo
+    - billboard
+    - signage
+    - brand
+
+asset_sorting:
+  categories:
+    - interior
+    - food
+    - team
+    - logo
+    - exterior
+  logo_colors: 5
+
 audit:
   enabled: true
   timeout_seconds: 12

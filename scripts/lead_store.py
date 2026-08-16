@@ -99,8 +99,6 @@ def merge(new_leads, existing_rows):
                 "rating": "" if lead.get("rating") is None else lead["rating"],
                 "review_count": "" if lead.get("review_count") is None else lead["review_count"],
                 "website": lead.get("website", ""),
-                "website_score": "" if lead.get("website_score") is None else lead["website_score"],
-                "website_problems": "; ".join(lead.get("website_problems") or []),
                 "phone": lead.get("phone", ""),
                 "google_maps_link": lead.get("google_maps_link", ""),
                 "map_pin": lead.get("map_pin", ""),
@@ -109,6 +107,14 @@ def merge(new_leads, existing_rows):
                 "status": previous_status,
             }
         )
+
+        if not (lead.get("website") or "").strip():
+            row["website_score"] = ""
+            row["website_problems"] = ""
+        elif lead.get("website_score") is not None:
+            row["website_score"] = lead["website_score"]
+            row["website_problems"] = "; ".join(lead.get("website_problems") or [])
+
         merged[place_id] = row
 
     rows = list(merged.values())

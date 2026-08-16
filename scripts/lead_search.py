@@ -41,10 +41,7 @@ def usage_summary(settings=None):
 
 def _add_contact_search(leads, template):
     for lead in leads:
-        if (lead.get("phone") or "").strip():
-            lead["contact_search"] = ""
-        else:
-            lead["contact_search"] = template.format(name=quote_plus(lead.get("name", "")))
+        lead["contact_search"] = template.format(name=quote_plus(lead.get("name", "")))
     return leads
 
 
