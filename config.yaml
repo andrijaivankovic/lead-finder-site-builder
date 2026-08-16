@@ -60,16 +60,16 @@ audit:
   enabled: true
   timeout_seconds: 12
   workers: 8
-  slow_seconds: 3
-  very_slow_seconds: 6
+  slow_seconds: 5
+  very_slow_seconds: 9
   stale_after_years: 3
   poor_website_below: 60
   penalties:
     unreachable: 100
     no_https: 15
     no_viewport: 30
-    slow: 15
-    very_slow: 25
+    slow: 5
+    very_slow: 10
     stale_year: 20
     no_title: 10
     no_description: 10
