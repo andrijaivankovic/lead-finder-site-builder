@@ -5,15 +5,16 @@
   --line: #1b2430;
   --line-strong: #26313f;
 
-  --text: #dde5ef;
-  --muted: #78879a;
-  --dim: #4e5b6b;
+  --text: #eef3fa;
+  --muted: #a3b0c0;
+  --dim: #6f7e91;
 
   --blue: #4d9cff;
   --blue-quiet: #24405f;
-  --amber: #f2b134;
-  --amber-quiet: #5f4718;
-  --red: #e2603f;
+  --green: #3ec98b;
+  --green-quiet: #17362a;
+  --red: #f0674a;
+  --red-quiet: #3d1c16;
 
   --sans: ui-sans-serif, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, monospace;
@@ -217,7 +218,7 @@ form {
   width: 15px;
   height: 15px;
   padding: 0;
-  accent-color: var(--amber);
+  accent-color: var(--green);
   cursor: pointer;
 }
 
@@ -303,11 +304,11 @@ tbody tr {
 }
 
 tbody tr.band-high {
-  border-left-color: var(--amber);
+  border-left-color: var(--green);
 }
 
 tbody tr.band-mid {
-  border-left-color: var(--amber-quiet);
+  border-left-color: #2a6b50;
 }
 
 tbody tr:hover {
@@ -328,11 +329,11 @@ td.score {
 }
 
 tr.band-high td.score {
-  color: var(--amber);
+  color: var(--green);
 }
 
 tr.band-mid td.score {
-  color: #c99b4a;
+  color: #6fae90;
 }
 
 td.name {
@@ -347,20 +348,20 @@ td.address {
   min-width: 170px;
   max-width: 260px;
   font-size: 12.5px;
-  color: var(--dim);
+  color: var(--muted);
 }
 
 td.numeric,
 td.site-score {
   font-family: var(--mono);
   font-size: 13px;
-  color: var(--muted);
+  color: var(--text);
 }
 
 td.phone {
   font-family: var(--mono);
   font-size: 12.5px;
-  color: var(--muted);
+  color: var(--text);
 }
 
 .tag {
@@ -375,23 +376,21 @@ td.phone {
 }
 
 .tag.no-site {
-  background: var(--amber-quiet);
-  color: var(--amber);
+  background: var(--green-quiet);
+  color: var(--green);
 }
 
 .tag.has-site {
-  background: transparent;
-  border: 1px solid var(--line-strong);
-  color: var(--dim);
-  font-weight: 500;
+  background: var(--red-quiet);
+  color: var(--red);
 }
 
 td.site-score.poor {
-  color: var(--amber);
+  color: var(--green);
 }
 
 td.site-score.fine {
-  color: var(--dim);
+  color: var(--muted);
 }
 
 td.site-score.has-detail {
@@ -414,12 +413,12 @@ td.site-score.has-detail {
 td select {
   padding: 4px 7px;
   font-size: 12.5px;
-  color: var(--muted);
+  color: var(--text);
 }
 
 td select.saved {
-  border-color: var(--amber);
-  color: var(--amber);
+  border-color: var(--green);
+  color: var(--green);
 }
 
 td button {
@@ -429,8 +428,8 @@ td button {
 }
 
 td button.copied {
-  border-color: var(--amber);
-  color: var(--amber);
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .empty {
@@ -476,7 +475,7 @@ td button.copied {
   width: 30px;
   height: 30px;
   border: 2px solid var(--line-strong);
-  border-top-color: var(--amber);
+  border-top-color: var(--blue);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
