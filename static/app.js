@@ -280,7 +280,7 @@ function buildRow(row, thresholds) {
   const badge = document.createElement("span");
   const hasWebsite = Boolean((row.website || "").trim());
   badge.className = "tag " + (hasWebsite ? "has-site" : "no-site");
-  badge.textContent = hasWebsite ? "website" : "no website";
+  badge.textContent = hasWebsite ? "has website" : "no website";
   website.append(badge);
   tr.append(website);
 
