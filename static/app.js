@@ -232,8 +232,24 @@ function showCommand(command, copied) {
   field.select();
 }
 
-function buildRow(row) {
+function bandThresholds(rows) {
+  const distinct = [...new Set(rows.map((row) => parseInt(row.score, 10)))]
+    .filter((value) => !Number.isNaN(value))
+    .sort((a, b) => b - a);
+  return { high: distinct[0], mid: distinct[1] };
+}
+
+function scoreBand(score, thresholds) {
+  const value = parseInt(score, 10);
+  if (Number.isNaN(value)) return "";
+  if (value === thresholds.high) return "band-high";
+  if (value === thresholds.mid) return "band-mid";
+  return "";
+}
+
+function buildRow(row, thresholds) {
   const tr = document.createElement("tr");
+  tr.className = scoreBand(row.score, thresholds);
 
   const score = document.createElement("td");
   score.className = "score";
@@ -263,8 +279,8 @@ function buildRow(row) {
   const website = document.createElement("td");
   const badge = document.createElement("span");
   const hasWebsite = Boolean((row.website || "").trim());
-  badge.className = "badge " + (hasWebsite ? "has-site" : "no-site");
-  badge.textContent = hasWebsite ? "has site" : "no site";
+  badge.className = "tag " + (hasWebsite ? "has-site" : "no-site");
+  badge.textContent = hasWebsite ? "website" : "no website";
   website.append(badge);
   tr.append(website);
 
@@ -284,6 +300,7 @@ function buildRow(row) {
   tr.append(siteScore);
 
   const phone = document.createElement("td");
+  phone.className = "phone";
   phone.textContent = row.phone || "—";
   tr.append(phone);
 
@@ -322,8 +339,9 @@ function buildRow(row) {
 
 function render() {
   const rows = visibleRows();
+  const thresholds = bandThresholds(rows);
   elements.body.innerHTML = "";
-  rows.forEach((row) => elements.body.append(buildRow(row)));
+  rows.forEach((row) => elements.body.append(buildRow(row, thresholds)));
 
   const withoutWebsite = rows.filter((row) => !(row.website || "").trim()).length;
   elements.resultCount.textContent = state.file
@@ -332,9 +350,12 @@ function render() {
 
   elements.empty.hidden = rows.length > 0;
   if (!rows.length) {
-    elements.empty.textContent = state.rows.length
-      ? "No business matches these filters."
-      : "No search loaded yet.";
+    if (state.rows.length) {
+      elements.empty.textContent = "No business matches these filters.";
+    } else {
+      elements.empty.innerHTML =
+        "Search a trade and a city to start. Try <code>picerija Novi Sad</code>.";
+    }
   }
 
   document.querySelectorAll("th.sortable").forEach((header) => {
