@@ -5,7 +5,8 @@ written for someone opening the Google Cloud Console for the first time.
 
 Keys go into a `.env` file and nowhere else. That file never reaches GitHub.
 
-Order: **1) Pexels → 2) Google Cloud → 3) GitHub**. Pexels takes two minutes.
+There are two accounts to make: Pexels and Google Cloud. Start with Pexels,
+which takes two minutes and carries no risk at all.
 
 ---
 
@@ -204,77 +205,6 @@ PEXELS_API_KEY=563492ad6f91...
 
 ---
 
-## 3. GitHub
-
-### What it does
-
-A backup of the code, and a public shopfront — an open repository you can put
-in a CV or send to a client as proof of work.
-
-**Without it:** the project exists only on your desktop, and a disk failure
-takes everything with it.
-
-### Cost
-
-Free. Public repositories are unlimited, `gh` is free and open source, and no
-card is involved.
-
-### Steps
-
-**1. Account** — **https://github.com/signup**. Choose the username carefully;
-it appears in the address of every project you publish.
-
-**2. Install `gh` (GitHub CLI)**
-
-```powershell
-winget install --id GitHub.cli
-```
-
-Then **close PowerShell and open a new window** — until you do, the system
-still holds the old list of commands. Verify:
-
-```powershell
-gh --version
-```
-
-**3. Sign in**
-
-```powershell
-gh auth login
-```
-
-Answer with arrow keys and Enter:
-
-1. *What account do you want to log into?* → **GitHub.com**
-2. *What is your preferred protocol for Git operations?* → **HTTPS**
-3. *Authenticate Git with your GitHub credentials?* → **Yes**
-4. *How would you like to authenticate?* → **Login with a web browser**
-5. Note the `XXXX-XXXX` code, press Enter, paste it in the browser, then
-   **"Authorize github"**
-
-`gh` stores the token in Windows Credential Manager. If you picked SSH by
-mistake, switch afterwards with `gh config set git_protocol https` followed by
-`gh auth setup-git`.
-
-**4. Create an empty repository** — ⚠️ this is where it goes wrong
-
-- **https://github.com/new**
-- **Repository name:** `lead-finder-site-builder`
-- **Description:**
-  `Automatically find local businesses without a website, then generate a ready-to-deploy site and outreach message for each one.`
-- **Public**
-- **Tick none of these:** ☐ *Add a README file* ☐ *Add .gitignore*
-  ☐ *Choose a license*
-- **"Create repository"**
-
-**Why nothing is ticked:** each of those options creates a first commit on
-GitHub. Your machine already has its own first commit. Git would see two
-unrelated histories of the same project and refuse to merge them
-(`refused to merge unrelated histories`). The README, licence and `.gitignore`
-are created locally and travel up with the first push.
-
----
-
 ## Checklist
 
 - [ ] `.env` exists with `PEXELS_API_KEY` filled in
@@ -283,8 +213,6 @@ are created locally and travel up with the first push.
 - [ ] Key restricted to Places API (New) only
 - [ ] **Daily quota set to 50**
 - [ ] Budget alert at 1 unit of currency
-- [ ] `gh --version` works and `gh auth login` succeeded
-- [ ] Empty public repository created
 
 The Google key is not required to start — without it the tool runs on
 OpenStreetMap.
@@ -298,6 +226,5 @@ OpenStreetMap.
 | `REQUEST_DENIED` or `403` | key inactive, or API not enabled | steps 4 and 6 |
 | `This API project is not authorized to use this API` | the old "Places API" was enabled instead of "(New)" | step 4 |
 | `You must enable Billing` | no card linked | step 3 |
-| `gh: command not found` | terminal still holds the old PATH | open a new PowerShell |
 | `RESOURCE_EXHAUSTED` / `429` | daily quota hit | the brake is working — wait for tomorrow |
 | `504 Gateway Timeout` from Overpass | free OpenStreetMap servers are overloaded | try again in a few minutes |

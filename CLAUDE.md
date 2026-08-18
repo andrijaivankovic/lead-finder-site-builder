@@ -4,6 +4,11 @@ Finds local businesses that have no website or a bad one, ranks them as
 prospects, then prepares everything needed to send them a finished demo site
 and a message.
 
+This file is the briefing for whoever works on this repository. It is written
+for Claude Code, which reads it automatically at the start of a session. If you
+work with a different assistant, hand it the contents of this file first. It is
+plain English and nothing in it is specific to one tool.
+
 ## Run things with the virtual environment
 
 Always use `venv/Scripts/python.exe`, never a bare `python`.
@@ -19,11 +24,10 @@ available.
 
 ## The rule the architecture rests on
 
-Anything that gives the same answer every time — searching, filtering,
-scoring, downloading, moving files, reading colours — is a Python script.
-The model is only used where judgement is required: describing what a place
-looks like, choosing sections for a trade, writing copy, writing the outreach
-message.
+Anything that gives the same answer every time, meaning searching, filtering,
+scoring, downloading, moving files and reading colours, is a Python script. The
+model is used only where judgement is required: describing what a place looks
+like, choosing sections for a trade, writing copy, writing the outreach message.
 
 This is why `find_stock_photos.py` is handed a query plan instead of inventing
 search terms, and why `sort_assets.py` refuses to move anything until the
@@ -37,9 +41,10 @@ categories are filled in.
 - Everything is written in English: identifiers, config keys, CSV columns,
   printed output, the browser interface, and the docs.
 - Every tunable number lives in `config.yaml`, never inline in a script.
-- Anything personal to one user — their name, their portfolio links — belongs in
-  `config.local.yaml`, which is gitignored and merged over `config.yaml` at load
-  time. `config.yaml` is public and ships with those fields empty.
+- Anything personal to one user, such as their name and their portfolio links,
+  belongs in `config.local.yaml`. That file is gitignored and merged over
+  `config.yaml` when settings load, so `config.yaml` can stay public and ship
+  with those fields empty.
 - Secrets come from `.env` through `python-dotenv` and are never printed.
 - No heavy dependencies. `requests`, `beautifulsoup4`, `python-dotenv`,
   `flask`, `PyYAML` and `Pillow` are the whole list.
@@ -53,7 +58,8 @@ across searches, which is what lets a rerun refresh the data while keeping the
 `status` column the user typed by hand. Never reorder or rename CSV columns
 without migrating existing files.
 
-`data/`, `.env`, `assets/` and `ARHITEKTURA.md` never get committed.
+`data/`, `.env`, `config.local.yaml`, `assets/` and `ARHITEKTURA.md` never get
+committed.
 
 ## Building a website for a lead
 
@@ -81,8 +87,8 @@ width.
 
 ## Git
 
-Work on a branch per phase, open a pull request, then merge it. Commit
-messages in English. Do not add co-author trailers.
+Work on a branch per phase, open a pull request, then merge it. Commit messages
+in English. Do not add co-author trailers.
 
 ## Boundaries that are deliberate, do not remove them
 
