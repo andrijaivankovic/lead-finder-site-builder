@@ -40,7 +40,7 @@ description in the brief, and do not pretend it is the same trade.
 
 ## 3. Write three versions
 
-All three in the language the brief names, Serbian unless it says otherwise.
+All three in the language the brief names under **Site language**.
 
 Every version must carry four things:
 

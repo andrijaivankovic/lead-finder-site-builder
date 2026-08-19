@@ -322,7 +322,7 @@ described in "Why this business".
             if colours
             else " and from the photographs in assets/, since no brand colours are known"
         ),
-        language=answers.get("language", "srpski"),
+        language=answers.get("language", "English"),
         sections=_bullet_list(answers.get("sections")),
         keywords=_bullet_list(answers.get("seo_keywords")),
         photos=_photo_lines(stock_dir),
@@ -336,6 +336,7 @@ described in "Why this business".
 
 def create(place_id, answers, stock_dir=None, target_root=None):
     lead, source_file = find_lead(place_id)
+    answers.setdefault("language", lead_search.load_settings()["brief"]["default_language"])
     base = Path(target_root) if target_root else desktop_dir()
     project = base / folder_name(lead["name"])
 
@@ -357,7 +358,7 @@ def create(place_id, answers, stock_dir=None, target_root=None):
     brief = render_brief(lead, answers, project / "assets")
     (project / "brief.md").write_text(brief, encoding="utf-8")
     (project / "CLAUDE.md").write_text(
-        PROJECT_GUIDE.format(name=lead["name"], language=answers.get("language", "srpski")),
+        PROJECT_GUIDE.format(name=lead["name"], language=answers.get("language", "English")),
         encoding="utf-8",
     )
 

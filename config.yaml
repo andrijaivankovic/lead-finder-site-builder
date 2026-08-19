@@ -23,6 +23,9 @@ thresholds:
 
 contact_search_template: "https://www.google.com/search?q=site%3Acompanywall.rs+{name}"
 
+brief:
+  default_language: "English"
+
 outreach:
   follow_up_days: 4
   sender_name: ""
