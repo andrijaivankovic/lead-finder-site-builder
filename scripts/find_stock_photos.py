@@ -153,7 +153,7 @@ def plan_for_category(category, settings, business="", note=""):
         label = key or "local business"
         for purpose in ("hero", "interior"):
             if purpose in queries:
-                queries[purpose].append("{} {}".format(note, label))
+                queries[purpose].insert(0, "{} {}".format(note, label))
 
     return {"business": business, "category": category, "matched": matched, "queries": queries}
 
