@@ -94,8 +94,9 @@ in English. Do not add co-author trailers.
 
 - The tool never sends a message anywhere and holds no credentials for any
   messaging account. It only drafts.
-- Google Place Photos are a visual reference only. They never go onto a built
-  site. Site images come from Pexels or from the client.
+- Google Place Photos never go onto a built site. They belong to the owners and
+  the customers who took them. Site images come from Pexels, chosen by trade
+  from `stock_photos.plans` in `config.yaml`, or from the client.
 - The monthly Google call limit in `config.yaml` stays below the free tier.
 - Nothing scrapes Google Maps or CompanyWall. The tool generates links a human
   clicks.

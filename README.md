@@ -55,10 +55,19 @@ A bad site scores lower than 60, which adds 30 points to that business and moves
 it up your list. So the ranking covers both people who have nothing and people
 who have something broken.
 
-**4. Gather photos.** The tool downloads photographs from Pexels, which are free
-to use commercially, and sorts them by where they belong on the page. Each
-folder gets a `sources.json` file naming the photographer and linking the
-original.
+**4. Gather photographs.** Once the tool knows the trade, for example a pizzeria
+or a dentist, it already knows what to look for. `config.yaml` holds a ready set
+of searches for each trade, split by where the photographs belong on the page:
+the image at the top, the gallery, section backgrounds, the interior.
+
+Those searches go to Pexels, whose photographs are free to use commercially, so
+they can go straight onto a demo site. Every folder gets a `sources.json` naming
+the photographer and linking the original.
+
+Nothing has to be described and no account is needed beyond the Pexels key. If
+you do want the images closer to one particular place, you can add a few words
+such as "modern, white, lots of glass" and the search narrows. Skipping that is
+the normal case.
 
 **5. Build.** It writes a folder on your Desktop containing everything the
 website needs: the business details, the visual direction, the list of sections,

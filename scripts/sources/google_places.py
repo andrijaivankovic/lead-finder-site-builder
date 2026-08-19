@@ -44,7 +44,7 @@ def _lead_from_place(place):
         "phone": phone.strip(),
         "google_maps_link": place.get("googleMapsUri", ""),
         "map_pin": "",
-        "category": place.get("primaryType", ""),
+        "category": (place.get("primaryType") or "").replace("_", " "),
         "business_status": place.get("businessStatus", ""),
     }
 

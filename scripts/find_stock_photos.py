@@ -133,15 +133,45 @@ def collect(plan, out_dir, settings, on_event=None):
     return collected
 
 
-def _plan_from_arguments(arguments):
+def plan_for_category(category, settings, business="", note=""):
+    plans = settings["stock_photos"]["plans"]
+    key = (category or "").strip().lower()
+    queries = plans.get(key)
+    matched = bool(queries)
+
+    if not matched:
+        label = key or "local business"
+        queries = {
+            purpose: [text.format(category=label) for text in terms]
+            for purpose, terms in plans["default"].items()
+        }
+    else:
+        queries = {purpose: list(terms) for purpose, terms in queries.items()}
+
+    note = (note or "").strip()
+    if note:
+        label = key or "local business"
+        for purpose in ("hero", "interior"):
+            if purpose in queries:
+                queries[purpose].append("{} {}".format(note, label))
+
+    return {"business": business, "category": category, "matched": matched, "queries": queries}
+
+
+def _plan_from_arguments(arguments, settings):
     if arguments.plan:
         path = Path(arguments.plan)
         if not path.exists():
             raise StockPhotoError("Plan file {} does not exist.".format(path))
         return json.loads(path.read_text(encoding="utf-8"))
 
+    if arguments.category:
+        return plan_for_category(
+            arguments.category, settings, arguments.business or "", arguments.note or ""
+        )
+
     if not arguments.query:
-        raise StockPhotoError("Give either --plan or at least one --query.")
+        raise StockPhotoError("Give --category, or --plan, or at least one --query.")
 
     return {"business": arguments.business or "", "queries": {arguments.purpose: arguments.query}}
 
@@ -154,6 +184,8 @@ def main():
         description="Downloads free Pexels photographs for a business, grouped by where they go on the site."
     )
     parser.add_argument("--plan", help="JSON file holding the business name and one query list per purpose")
+    parser.add_argument("--category", help="Trade of the business, which picks a ready query plan from config.yaml")
+    parser.add_argument("--note", help="Optional words about how the place looks, to sharpen the search")
     parser.add_argument("--query", action="append", help="A single search term, repeatable")
     parser.add_argument("--purpose", default="gallery", help="Where the --query photos belong on the site")
     parser.add_argument("--business", help="Business name, used for the output folder")
@@ -162,11 +194,14 @@ def main():
 
     try:
         settings = lead_search.load_settings()
-        plan = _plan_from_arguments(arguments)
+        plan = _plan_from_arguments(arguments, settings)
         business = plan.get("business") or "stock"
         out_dir = Path(arguments.out) if arguments.out else ROOT / "assets" / "stock" / _slug(business)
 
         print("\nBusiness: {}".format(business or "not given"))
+        if plan.get("category"):
+            fit = "ready plan" if plan.get("matched") else "generic plan, no entry in config.yaml"
+            print("Trade: {} ({})".format(plan["category"], fit))
         print("Folder: {}\n".format(out_dir))
 
         collected = collect(plan, out_dir, settings, on_event=lambda message: print("  " + message))

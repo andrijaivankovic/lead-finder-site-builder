@@ -6,6 +6,7 @@ from pathlib import Path
 COLUMNS = [
     "score",
     "name",
+    "category",
     "address",
     "rating",
     "review_count",
@@ -95,6 +96,7 @@ def merge(new_leads, existing_rows):
             {
                 "score": lead["score"],
                 "name": lead.get("name", ""),
+                "category": lead.get("category", ""),
                 "address": lead.get("address", ""),
                 "rating": "" if lead.get("rating") is None else lead["rating"],
                 "review_count": "" if lead.get("review_count") is None else lead["review_count"],

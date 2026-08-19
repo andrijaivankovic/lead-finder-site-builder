@@ -17,10 +17,11 @@ Work in this order and do not skip the questions.
 venv/Scripts/python.exe scripts/build_brief.py "$1" --info
 ```
 
-Report the business name, address, phone, whether it has a website, and the
-website problems if any were found. Keep it to three lines.
+Report the business name, its trade from the `category` field, the address, the
+phone, whether it has a website, and the website problems if any were found.
+Keep it to three lines.
 
-## 2. Ask the six questions
+## 2. Ask the questions
 
 Ask them as one numbered block, with the default in brackets, and say that
 pressing enter accepts all defaults. Write the questions in Serbian.
@@ -50,57 +51,56 @@ animations were wanted:
 Say which you recommend and why in one sentence, then let them override it.
 Record the answer as `stack` and the one sentence as `stack_reason`.
 
-## 3. Ask how the place looks
+Finally, offer one optional line rather than asking a question they must answer:
 
-This is the one answer that cannot be defaulted. Ask, in Serbian, what the place
-looks like — materials, colours, lighting, whether it is modern or traditional,
-who the customers are. Tell them to click the `maps` or `pin` link in the table
-and glance at the photos for ten seconds if they do not know.
+> Ako hoćeš da slike budu bliže baš ovom lokalu, dopiši par reči o njemu
+> (npr. "moderno, belo, puno stakla"). Ako preskočiš, uzimam slike po delatnosti.
 
-If `assets/reference/` already holds photographs for this business, read them
-first with the Read tool, describe what you see, and ask them to confirm or
-correct it rather than write it from scratch.
+Whatever they write goes in as `note`, translated into English first, because
+Pexels only searches in English. "moderno, belo, puno stakla" becomes
+"modern white glass". An empty answer is a perfectly good answer and must not be
+pushed.
 
-## 4. Collect the photographs
+## 3. Collect the photographs
 
-Turn their description into five to eight Pexels search terms, spread across the
-purposes `hero`, `gallery`, `background`, `interior` and, only if the business
-plausibly shows staff, `team`. Terms must be in English and must describe the
-mood, not the business name.
-
-Write the plan to a temporary JSON file and run:
+The trade in the `category` field picks a ready set of Pexels searches from
+`config.yaml`, so nothing has to be invented:
 
 ```
-venv/Scripts/python.exe scripts/find_stock_photos.py --plan <plan.json>
+venv/Scripts/python.exe scripts/find_stock_photos.py --category "<category>" --business "<name>" --note "<note>"
 ```
+
+Drop `--note` when they did not write one.
 
 Then read every `description` in the generated `sources.json` and check it
-against the trade. The script filters resolution and orientation only — it
-cannot see what is in a picture, so a search for a bright waiting room happily
-returns living rooms and hair salons.
+against the trade. The script filters resolution and orientation only. It cannot
+see what is in a picture, so a search for a bright waiting room happily returns
+living rooms and hair salons.
 
-Delete the folder, fix the queries that went wrong, and run it again. Do not
-accept a photograph that shows a different kind of business; it is the fastest
-way to make the demo look careless.
+If something obviously belongs to a different kind of business, delete the
+folder and run it again with better terms through `--query`, then say which ones
+you had to correct. If a whole trade keeps coming back wrong, that is a sign its
+entry in `config.yaml` under `stock_photos.plans` needs fixing, so say that too.
 
-Report how many photographs came back, where they went, and any query you had
-to correct.
+Report how many photographs came back and where they went.
 
-## 5. Write the brief
+## 4. Write the brief
 
 Compose the remaining fields yourself:
 
-- `sections` — the section list for the site, in build order, honouring the
+- `sections` is the section list for the site, in build order, honouring the
   answers above. Base it on the trade: a restaurant needs a menu, a dentist
   needs services and prices, a hairdresser needs a booking call to action.
-- `seo_keywords` — eight to twelve phrases that someone in that city would
+- `seo_keywords` is eight to twelve phrases that someone in that city would
   actually type, in the site language, mixing the trade, the city and the
   neighbourhood.
-- `brand_colors` — only if `assets.json` from `sort_assets.py` already holds
-  them, otherwise leave the list empty.
-- `style` — their description from step 3, tidied up.
-- `language`, `faq`, `careers`, `show_reviews`, `animations`, `ai_media` — their
-  answers from step 2.
+- `brand_colors` only if `assets.json` from `sort_assets.py` already holds them,
+  otherwise leave the list empty.
+- `style` is their optional note tidied up, or a plain description of the trade
+  if they skipped it.
+- `trade` and `city` in English, for the build prompt.
+- `language`, `faq`, `careers`, `show_reviews`, `animations`, `ai_media`,
+  `stack` and `stack_reason` are their answers from step 2.
 
 Write that JSON to a temporary file and run:
 
@@ -108,11 +108,11 @@ Write that JSON to a temporary file and run:
 venv/Scripts/python.exe scripts/build_brief.py "$1" --answers <answers.json> --stock <stock folder>
 ```
 
-## 6. Report
+## 5. Report
 
 Tell them the folder path, that `brief.md` is inside it, how many images were
-copied, and that they can now say "napravi sajt po brifu iz <folder>" to have
-the site built into `site/`.
+copied, and that they can now say `/build-site "<folder name>"` to have the site
+built into `site/`.
 
 Never write the website itself during this command. This command only prepares
 the folder.

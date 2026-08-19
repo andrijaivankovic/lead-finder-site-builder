@@ -116,6 +116,16 @@ def _address_from_tags(tags):
     return ", ".join(part for part in (street_line, city) if part)
 
 
+def _category_from_tags(tags):
+    cuisine = (tags.get("cuisine") or "").split(";")[0].strip()
+    if cuisine:
+        return cuisine
+    for key in ("amenity", "shop", "craft", "office", "tourism", "leisure", "healthcare"):
+        if tags.get(key):
+            return tags[key]
+    return ""
+
+
 def _lead_from_element(element, place):
     tags = element.get("tags", {})
     name = (tags.get("name") or "").strip()
@@ -154,7 +164,7 @@ def _lead_from_element(element, place):
         "phone": phone.strip(),
         "google_maps_link": maps_link,
         "map_pin": map_pin,
-        "category": tags.get("amenity") or tags.get("shop") or tags.get("craft") or tags.get("office") or "",
+        "category": _category_from_tags(tags),
     }
 
 
