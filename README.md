@@ -97,12 +97,39 @@ python -m venv venv
 venv/Scripts/python.exe -m pip install -r requirements.txt
 ```
 
-The third command creates a private folder called `venv` that holds this
-project's libraries, so it cannot interfere with anything else on your computer.
-That is why every command below starts with `venv/Scripts/python.exe` instead of
-plain `python`.
+On macOS and Linux that last path is `venv/bin/python` instead.
 
-On macOS and Linux that path is `venv/bin/python` instead.
+### What `venv` is, and why every command starts with it
+
+Python programs rely on libraries, which are pieces of code other people wrote
+and shared. This project uses six of them.
+
+Installing libraries the ordinary way puts them in one shared pile for your whole
+computer. That works until two projects need different versions of the same
+library, at which point one of them breaks and the reason is not obvious. It also
+does not stay still: libraries change on purpose, and code written against one
+version can stop running on the next. The problem rarely bites today. It bites a
+year from now, when you come back to a project that used to work.
+
+The third command, `python -m venv venv`, creates a folder called `venv` inside
+this project holding its own private copy of Python and its own libraries.
+Nothing outside that folder is touched, and nothing outside it can break what is
+inside. Together with `requirements.txt`, which lists the exact libraries this
+project needs, it is what makes the project still run next year.
+
+The trade is that you have to point at that private copy on purpose, which is why
+every command here begins with `venv/Scripts/python.exe` rather than plain
+`python`. Typing plain `python` would reach for the shared pile, which does not
+have this project's libraries, and you would see an error saying a module could
+not be found.
+
+`venv` is part of Python itself, so there is nothing extra to install. Other
+tools do the same job more comfortably, `uv` and `poetry` among them, but each is
+a separate program you would have to install first, and this project would rather
+run on a plain Python and nothing else.
+
+It also makes removing the project simple. Delete the folder and it is gone.
+Nothing was ever installed anywhere else on your computer.
 
 You can now run a search:
 
@@ -235,6 +262,27 @@ A `.csv` file is a plain table that opens in Excel, in Google Sheets, or in any
 text editor. Run the same search again a month later and the tool updates the
 existing file rather than replacing it: business details are refreshed, but any
 status you typed by hand is left exactly as you wrote it.
+
+### What `place_id` is
+
+Every business in your results carries a `place_id`. That is the identifier the
+data source uses for that one particular business. From Google it looks like
+`ChIJN1t_tDeuEmsRUsoyG83frY4`. From OpenStreetMap it looks like
+`osm:node/4031258789`.
+
+It exists because names are not reliable. Three businesses in the same city can
+all be called Caribic. The same business can be spelled two different ways a
+month apart, because a volunteer corrected the map. Addresses are often missing
+altogether.
+
+The identifier is what lets the tool run the same search again next month and
+recognise that a row is the same business as before, so it can refresh the phone
+number and the score while leaving the status you typed by hand exactly as it
+was. Without it, a business whose name had been corrected would come back as a
+second row and you would contact the same owner twice.
+
+You never have to type it or read it. You only copy it when a command asks for
+one, and the "Create brief" button next to each row does that for you.
 
 ### Why a plain file instead of a real database
 
