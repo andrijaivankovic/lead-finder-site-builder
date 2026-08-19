@@ -23,15 +23,20 @@ Keep it to three lines.
 
 ## 2. Ask the questions
 
-Ask them as one numbered block, with the default in brackets, and say that
-pressing enter accepts all defaults. Write the questions in Serbian.
+Read `brief.default_language` from `config.yaml`, which a `config.local.yaml`
+may override. That is the language the sites are written in, and it is also the
+language to ask these questions in. Translate them; do not ask in English out of
+habit when the setting says otherwise.
 
-1. FAQ sekcija? [da]
-2. Sekcija za zapošljavanje? [da]
-3. Prikaz ocene i broja recenzija? [da]
-4. GSAP + ScrollTrigger animacije? [da]
-5. Generisati AI slike i video? [da]
-6. Jezik sajta? [srpski]
+Ask them as one numbered block, with the default in brackets, and say that
+pressing enter accepts all defaults.
+
+1. FAQ section? [yes]
+2. Careers section? [yes]
+3. Show the rating and review count? [yes]
+4. GSAP and ScrollTrigger animations? [yes]
+5. Generate AI images and video? [yes]
+6. Language of the site? [the configured default]
 
 If the lead has no rating and no review count, say so and recommend "ne" for
 question 3, because there is nothing to show.
@@ -53,13 +58,15 @@ Record the answer as `stack` and the one sentence as `stack_reason`.
 
 Finally, offer one optional line rather than asking a question they must answer:
 
-> Ako hoćeš da slike budu bliže baš ovom lokalu, dopiši par reči o njemu
-> (npr. "moderno, belo, puno stakla"). Ako preskočiš, uzimam slike po delatnosti.
+> If you want the photographs closer to this particular place, add a few words
+> about it, for example "modern, white, lots of glass". Skip it and the trade
+> alone decides.
+
+Ask that in the same language as the questions above.
 
 Whatever they write goes in as `note`, translated into English first, because
-Pexels only searches in English. "moderno, belo, puno stakla" becomes
-"modern white glass". An empty answer is a perfectly good answer and must not be
-pushed.
+Pexels only searches in English. An empty answer is a perfectly good answer and
+must not be pushed.
 
 ## 3. Collect the photographs
 
