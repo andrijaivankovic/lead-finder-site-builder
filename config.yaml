@@ -32,11 +32,6 @@ outreach:
     - viber
     - instagram
 
-reference_photos:
-  max_per_business: 5
-  max_width: 1200
-  palette_colors: 5
-
 stock_photos:
   per_purpose: 4
   max_total: 20
@@ -45,7 +40,6 @@ stock_photos:
     - hero
     - gallery
     - background
-    - team
     - interior
   skip_alt_keywords:
     - portrait
@@ -55,6 +49,141 @@ stock_photos:
     - billboard
     - signage
     - brand
+  plans:
+    default:
+      hero: ["{category} interior modern", "{category} storefront"]
+      gallery: ["{category} close up", "{category} detail"]
+      background: ["clean minimal light texture", "soft neutral surface"]
+      interior: ["{category} interior bright daylight"]
+    pizza: &pizza
+      hero: ["wood fired pizza oven", "modern pizzeria interior"]
+      gallery: ["neapolitan pizza close up", "pizza slice served"]
+      background: ["flour on dark wood", "dark stone texture"]
+      interior: ["rustic pizzeria dining room", "pizzeria interior warm light"]
+    pizza restaurant: *pizza
+    pizza_restaurant: *pizza
+    restaurant: &restaurant
+      hero: ["restaurant interior warm light", "plated dish on table"]
+      gallery: ["fine dining plate close up", "chef plating food"]
+      background: ["dark linen texture", "wooden table surface"]
+      interior: ["restaurant dining room daylight", "restaurant bar counter"]
+    fast_food: *restaurant
+    fast food: *restaurant
+    cafe: &cafe
+      hero: ["cafe interior daylight", "latte art close up"]
+      gallery: ["espresso machine close up", "coffee and pastry on table"]
+      background: ["coffee beans texture", "warm concrete wall"]
+      interior: ["cosy cafe seating", "cafe counter interior"]
+    coffee_shop: *cafe
+    coffee shop: *cafe
+    bakery: &bakery
+      hero: ["artisan bread on shelf", "bakery display counter"]
+      gallery: ["croissant close up", "fresh bread crumb"]
+      background: ["flour dusted surface", "linen cloth texture"]
+      interior: ["bakery shop interior daylight"]
+    confectionery: &sweets
+      hero: ["cake display case", "pastry shop counter"]
+      gallery: ["decorated cake close up", "macarons close up"]
+      background: ["pastel pink surface", "marble slab texture"]
+      interior: ["sweet shop interior bright"]
+    ice_cream: *sweets
+    hairdresser: &hair
+      hero: ["hair salon interior modern", "barber chair salon"]
+      gallery: ["hairdresser scissors close up", "styling tools on counter"]
+      background: ["soft grey wall texture", "brushed metal surface"]
+      interior: ["salon mirrors interior daylight"]
+    hair_salon: *hair
+    hair salon: *hair
+    barber: *hair
+    beauty: &beauty
+      hero: ["beauty salon interior white", "spa treatment room"]
+      gallery: ["manicure close up", "skincare products flat lay"]
+      background: ["soft pink marble texture", "linen towel texture"]
+      interior: ["beauty studio interior bright"]
+    beauty_salon: *beauty
+    fitness_centre: &gym
+      hero: ["gym interior weights", "empty modern gym"]
+      gallery: ["dumbbell rack close up", "treadmill row gym"]
+      background: ["dark rubber floor texture", "concrete wall dark"]
+      interior: ["gym studio interior daylight"]
+    gym: *gym
+    dentist: &dentist
+      hero: ["modern white dental clinic interior", "bright clinic glass wall"]
+      gallery: ["dental chair modern white clinic", "dental instruments clean"]
+      background: ["soft white glass texture", "light blue clean surface"]
+      interior: ["dental clinic waiting room", "medical clinic reception white"]
+    dental_clinic: *dentist
+    dental clinic: *dentist
+    doctors: &clinic
+      hero: ["medical clinic interior white", "consultation room bright"]
+      gallery: ["stethoscope on desk", "medical equipment clean white"]
+      background: ["white minimal wall texture", "pale blue clean surface"]
+      interior: ["clinic waiting room bright", "medical reception desk"]
+    doctor: *clinic
+    pharmacy:
+      hero: ["pharmacy interior shelves", "pharmacy counter white"]
+      gallery: ["medicine boxes on shelf", "mortar and pestle close up"]
+      background: ["white clean surface", "pale green minimal wall"]
+      interior: ["pharmacy interior daylight"]
+    veterinary: &vet
+      hero: ["veterinary clinic interior", "vet examining dog"]
+      gallery: ["dog at vet close up", "cat in carrier clinic"]
+      background: ["soft warm wall texture", "pale wood surface"]
+      interior: ["veterinary waiting room bright"]
+    vet: *vet
+    car_repair: &garage
+      hero: ["car workshop interior", "mechanic working on car"]
+      gallery: ["engine bay close up", "workshop tools on wall"]
+      background: ["brushed metal texture dark", "concrete garage floor"]
+      interior: ["car service garage interior"]
+    car repair: *garage
+    car_wash:
+      hero: ["car wash foam close up", "clean car after wash"]
+      gallery: ["water droplets on car paint", "polishing car detail"]
+      background: ["water on dark surface", "soap foam texture"]
+      interior: ["car wash bay interior"]
+    florist:
+      hero: ["flower shop interior", "bouquet on counter"]
+      gallery: ["fresh flowers close up", "florist arranging bouquet"]
+      background: ["green leaves texture", "kraft paper texture"]
+      interior: ["flower shop daylight interior"]
+    lawyer: &office
+      hero: ["law office interior", "meeting room bookshelf"]
+      gallery: ["fountain pen on document", "handshake in office"]
+      background: ["dark wood texture", "linen paper texture"]
+      interior: ["office reception interior daylight"]
+    accountant: *office
+    estate_agent: *office
+    hotel:
+      hero: ["hotel room interior warm", "hotel lobby daylight"]
+      gallery: ["made bed close up hotel", "bathroom detail hotel"]
+      background: ["linen bedding texture", "warm stone wall"]
+      interior: ["hotel reception interior"]
+    clothes:
+      hero: ["clothing store interior", "boutique rack of clothes"]
+      gallery: ["folded shirts close up", "shop window mannequin"]
+      background: ["fabric texture neutral", "concrete wall pale"]
+      interior: ["boutique interior daylight"]
+    optician:
+      hero: ["optician shop interior", "eyeglasses on display"]
+      gallery: ["glasses frames close up", "eye test chart"]
+      background: ["white minimal surface", "brushed metal light"]
+      interior: ["optical store interior bright"]
+    jewelry:
+      hero: ["jewellery shop display case", "rings on velvet"]
+      gallery: ["gold necklace close up", "jeweller at work"]
+      background: ["black velvet texture", "marble surface dark"]
+      interior: ["jewellery store interior warm"]
+    tattoo:
+      hero: ["tattoo studio interior", "tattoo artist working"]
+      gallery: ["tattoo machine close up", "ink bottles studio"]
+      background: ["dark concrete wall", "black leather texture"]
+      interior: ["tattoo shop interior dark"]
+    laundry:
+      hero: ["laundry shop interior", "folded clean clothes"]
+      gallery: ["washing machine close up", "steam iron on shirt"]
+      background: ["white fabric texture", "pale blue clean surface"]
+      interior: ["laundrette interior bright"]
 
 asset_sorting:
   categories:
