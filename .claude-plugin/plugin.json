@@ -1,0 +1,19 @@
+{
+  "name": "lead-finder-site-builder",
+  "version": "0.1.0",
+  "description": "Find local businesses without a website, then prepare a finished demo site and an outreach message for each one.",
+  "author": {
+    "name": "Andrija Ivankovic",
+    "url": "https://github.com/andrijaivankovic"
+  },
+  "homepage": "https://github.com/andrijaivankovic/lead-finder-site-builder",
+  "repository": "https://github.com/andrijaivankovic/lead-finder-site-builder",
+  "license": "MIT",
+  "keywords": [
+    "lead-generation",
+    "local-business",
+    "prospecting",
+    "cold-outreach",
+    "web-agency"
+  ]
+}

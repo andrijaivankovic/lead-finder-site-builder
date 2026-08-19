@@ -8,6 +8,7 @@ PROMPT.md
 
 .venv/
 .claude/launch.json
+.claude/commands
 *.pyc
 assets/reference/
 assets/stock/
