@@ -205,26 +205,7 @@ PEXELS_API_KEY=563492ad6f91...
 
 ---
 
-## Checklist
-
-- [ ] `.env` exists with `PEXELS_API_KEY` filled in
-- [ ] `GOOGLE_MAPS_API_KEY` filled in
-- [ ] Places API **(New)** enabled on project `lead-finder-site-builder`
-- [ ] Key restricted to Places API (New) only
-- [ ] **Daily quota set to 50**
-- [ ] Budget alert at 1 unit of currency
 
 The Google key is not required to start — without it the tool runs on
 OpenStreetMap.
 
----
-
-## Troubleshooting
-
-| Message | Meaning | Fix |
-|---|---|---|
-| `REQUEST_DENIED` or `403` | key inactive, or API not enabled | steps 4 and 6 |
-| `This API project is not authorized to use this API` | the old "Places API" was enabled instead of "(New)" | step 4 |
-| `You must enable Billing` | no card linked | step 3 |
-| `RESOURCE_EXHAUSTED` / `429` | daily quota hit | the brake is working — wait for tomorrow |
-| `504 Gateway Timeout` from Overpass | free OpenStreetMap servers are overloaded | try again in a few minutes |
