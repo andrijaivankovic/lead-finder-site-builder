@@ -55,9 +55,22 @@ def usage_summary(settings=None):
     return {"used": usage.read(ROOT)["calls"], "limit": limit}
 
 
-def _add_contact_search(leads, template):
+def _country_of(lead, settings, hint=""):
+    if hint:
+        return hint.lower()
+    names = settings["contact_search"]["country_names"]
+    tail = (lead.get("address") or "").split(",")[-1].strip().lower()
+    return names.get(tail, "")
+
+
+def _add_contact_search(leads, settings, place="", country=""):
+    options = settings["contact_search"]
     for lead in leads:
-        lead["contact_search"] = template.format(name=quote_plus(lead.get("name", "")))
+        template = options["by_country"].get(_country_of(lead, settings, country), options["default"])
+        lead["contact_search"] = template.format(
+            name=quote_plus(lead.get("name", "")),
+            place=quote_plus(place or lead.get("address", "")),
+        )
     return leads
 
 
@@ -132,7 +145,7 @@ def run_search(query, limit=None, source="auto", on_event=None, audit=None):
         result.update({"rows": [], "path": None, "previous": None, "without_website": 0})
         return result
 
-    leads = _add_contact_search(leads, settings["contact_search_template"])
+    leads = _add_contact_search(leads, settings, result.get("place", ""), result.get("country", ""))
 
     run_audit = settings["audit"]["enabled"] if audit is None else audit
     audited = _audit_websites(leads, settings, on_event) if run_audit else 0
