@@ -21,7 +21,14 @@ thresholds:
   some_reviews: 20
   few_reviews: 10
 
-contact_search_template: "https://www.google.com/search?q=site%3Acompanywall.rs+{name}"
+contact_search:
+  default: "https://www.google.com/search?q=%22{name}%22+{place}"
+  by_country:
+    rs: "https://www.google.com/search?q=site%3Acompanywall.rs+{name}"
+  country_names:
+    serbia: rs
+    srbija: rs
+    србија: rs
 
 brief:
   default_language: "English"

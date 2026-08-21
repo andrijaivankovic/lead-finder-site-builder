@@ -22,7 +22,7 @@ def _geocode(place):
     try:
         response = requests.get(
             NOMINATIM_URL,
-            params={"q": place, "format": "json", "limit": 1},
+            params={"q": place, "format": "json", "limit": 1, "addressdetails": 1},
             headers={"User-Agent": USER_AGENT},
             timeout=30,
         )
@@ -36,10 +36,11 @@ def _geocode(place):
 
     first = results[0]
     osm_id = int(first["osm_id"])
+    country = (first.get("address") or {}).get("country_code", "")
     if first["osm_type"] == "relation":
-        return {"area_id": 3600000000 + osm_id, "name": first["display_name"]}
+        return {"area_id": 3600000000 + osm_id, "name": first["display_name"], "country": country}
     if first["osm_type"] == "way":
-        return {"area_id": 2400000000 + osm_id, "name": first["display_name"]}
+        return {"area_id": 2400000000 + osm_id, "name": first["display_name"], "country": country}
     return None
 
 
@@ -203,6 +204,7 @@ def search(query, limit, settings, on_event=None):
         "term": term,
         "place": place,
         "area": area["name"],
+        "country": area.get("country", ""),
         "method": method,
         "calls": 0,
     }
