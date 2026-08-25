@@ -213,7 +213,6 @@ audit:
   stale_after_years: 3
   poor_website_below: 60
   penalties:
-    unreachable: 100
     no_https: 15
     no_viewport: 30
     slow: 5
