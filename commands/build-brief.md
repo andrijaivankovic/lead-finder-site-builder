@@ -11,10 +11,17 @@ which one, then continue with the place_id they pick.
 
 Work in this order and do not skip the questions.
 
+`{venv python}` below is the Python inside `venv`: `venv/bin/python` on macOS and
+Linux, `venv/Scripts/python.exe` on Windows. Check which of the two exists in the
+project folder and use that one. Never a bare `python`.
+
+Substitute every `{...}` before running a command. Never paste one into a shell
+as it stands.
+
 ## 1. Read the lead
 
 ```
-venv/Scripts/python.exe scripts/build_brief.py "$1" --info
+{venv python} scripts/build_brief.py "$1" --info
 ```
 
 Report the business name, its trade from the `category` field, the address, the
@@ -74,7 +81,7 @@ The trade in the `category` field picks a ready set of Pexels searches from
 `config.yaml`, so nothing has to be invented:
 
 ```
-venv/Scripts/python.exe scripts/find_stock_photos.py --category "<category>" --business "<name>" --note "<note>"
+{venv python} scripts/find_stock_photos.py --category "{category}" --business "{name}" --note "{note}"
 ```
 
 Drop `--note` when they did not write one.
@@ -112,7 +119,7 @@ Compose the remaining fields yourself:
 Write that JSON to a temporary file and run:
 
 ```
-venv/Scripts/python.exe scripts/build_brief.py "$1" --answers <answers.json> --stock <stock folder>
+{venv python} scripts/build_brief.py "$1" --answers {answers.json} --stock {stock folder}
 ```
 
 ## 5. Report

@@ -7,10 +7,17 @@ allowed-tools: Bash, Read, Glob
 Draft the messages for `$1`. You write them. You never send them, and this
 project holds no credentials for any messaging account. That is deliberate.
 
+`{venv python}` below is the Python inside `venv`: `venv/bin/python` on macOS and
+Linux, `venv/Scripts/python.exe` on Windows. Check which of the two exists in the
+project folder and use that one. Never a bare `python`.
+
+Substitute every `{...}` before running a command. Never paste one into a shell
+as it stands.
+
 ## 1. Show what is outstanding first
 
 ```
-venv/Scripts/python.exe scripts/outreach.py --due
+{venv python} scripts/outreach.py --due
 ```
 
 Report anyone waiting on a follow up before anything else, oldest first. If
@@ -19,7 +26,7 @@ Report anyone waiting on a follow up before anything else, oldest first. If
 ## 2. Gather the material
 
 ```
-venv/Scripts/python.exe scripts/build_brief.py "$1" --info
+{venv python} scripts/build_brief.py "$1" --info
 ```
 
 Read the business folder if it exists: `brief.md` for the style and sections,
@@ -79,11 +86,11 @@ Tell them that once they have actually sent it, this records it and sets the
 follow up:
 
 ```
-venv/Scripts/python.exe scripts/outreach.py --sent "<place_id>" --channel email
+{venv python} scripts/outreach.py --sent "{place_id}" --channel email
 ```
 
 And when a reply arrives:
 
 ```
-venv/Scripts/python.exe scripts/outreach.py --answered "<place_id>" --response interested
+{venv python} scripts/outreach.py --answered "{place_id}" --response interested
 ```

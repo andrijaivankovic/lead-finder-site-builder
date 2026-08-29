@@ -11,13 +11,36 @@ plain English and nothing in it is specific to one tool.
 
 ## Run things with the virtual environment
 
-Always use `venv/Scripts/python.exe`, never a bare `python`.
+Never a bare `python`. Always the copy inside `venv`, which lands in a different
+folder depending on the platform:
+
+- macOS and Linux: `venv/bin/python`
+- Windows: `venv/Scripts/python.exe`
+
+The same clone gets used on both, so nothing in this repository hardcodes either
+one. Commands here and under `commands/` are written as `{venv python}`. Look at
+which of the two paths actually exists in the project folder and run that one,
+rather than guessing from the platform you think you are on.
 
 ```
-venv/Scripts/python.exe scripts/find_leads.py "picerija Novi Sad"
-venv/Scripts/python.exe scripts/audit_site.py example.com
-venv/Scripts/python.exe app.py
+{venv python} scripts/find_leads.py "picerija Novi Sad"
+{venv python} scripts/audit_site.py example.com
+{venv python} app.py
 ```
+
+Substitute a `{...}` before running the command, never after. A shell reads `<`
+and `>` as redirection, so pasting a placeholder written that way empties the
+file named on the right of the `>` before reporting that the command does not
+exist. Braces cannot do that, which is why they are the ones used here.
+
+`run` and `run.bat` in the project root do that same resolution for a person
+typing by hand: `./run scripts/find_leads.py "picerija Novi Sad"` on macOS and
+Linux, the same without the `./` on Windows. That is the form the README
+documents, because a person types it thirty times a day.
+
+Keep using `{venv python}` in instructions like these. A ZIP download of the
+repository loses the flag that makes `run` executable, and an interpreter path
+cannot lose anything.
 
 Never start `app.py` with a plain shell command when a preview tool is
 available.
