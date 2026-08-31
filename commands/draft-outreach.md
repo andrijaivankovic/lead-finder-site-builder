@@ -37,13 +37,14 @@ Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`.
 If either is empty, say so and ask, rather than inventing a link or signing with
 a made up name.
 
-Each portfolio entry carries a `what` describing the kind of business it was
-built for. Pick the one closest to this prospect and lead with it — a grill owner
-should see the grill site, not the bakery. Send at most two links in the email
-and exactly one in the short messages. Never paste all three.
+Send every link in the list, in all three versions. Do not drop one for being
+off trade and do not hold any back.
 
-If nothing in the list is close, pick the one whose mood matches the style
-description in the brief, and do not pretend it is the same trade.
+Each entry carries a `what` describing the kind of business it was built for.
+That decides the order, not whether a link is sent: put the closest one to this
+prospect first, so a grill owner reads the grill site before the bakery. Where
+there is room, label each link with its `what` so the reader can tell them apart
+without opening all of them.
 
 ## 3. Write three versions
 
@@ -56,7 +57,7 @@ Every version must carry four things:
    photographs. Generic praise reads as a mail merge and gets deleted.
 2. **The site already exists and costs nothing to look at.** Not an offer to
    build one. It is built.
-3. **A link to previous work**, from `outreach.portfolio_url`.
+3. **Links to previous work**, all of `outreach.portfolio_links`.
 4. **That the photographs are temporary** and get swapped for their own as soon
    as they say they are interested. Never let them think those are their rooms.
 
@@ -76,6 +77,10 @@ ceremony. Assume it is read on a phone between two other things.
 
 **Instagram DM** — two or three sentences at most. The first line has to survive
 being shown as a preview.
+
+Those counts are the prose. The links sit under it as their own list and do not
+count against them, which is what keeps a short message short while still
+carrying all of them.
 
 Print all three plainly so they can be copied.
 
