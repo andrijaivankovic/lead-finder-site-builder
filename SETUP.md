@@ -187,7 +187,17 @@ In `.env`, on the line `GOOGLE_MAPS_API_KEY=`
 
 ### Creating the `.env` file
 
-From the project folder:
+From the project folder, on macOS and Linux:
+
+```bash
+cp .env.example .env
+open -e .env
+```
+
+`open -e` is macOS. On Linux use whatever editor you have, for example
+`nano .env`.
+
+On Windows, in PowerShell:
 
 ```powershell
 Copy-Item .env.example .env

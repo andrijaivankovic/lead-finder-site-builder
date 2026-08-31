@@ -86,18 +86,29 @@ It does not send anything. See "Things it will not do" below.
 Python 3.11 or newer. Nothing else. There is no database to install, no server
 to configure, and no account you must have before you can try it.
 
+It also runs on Python 3.9, which is what macOS still ships, with one cosmetic
+cost: `requests` prints a `urllib3 ... LibreSSL` warning above every command.
+The warning is harmless, and it disappears if you install a current Python from
+python.org or Homebrew and build the `venv` with that one instead.
+
 ## Installing it
 
-Open a terminal and run these four commands.
+Open a terminal and run these four commands. On macOS and Linux:
 
 ```bash
 git clone https://github.com/andrijaivankovic/lead-finder-site-builder.git
 cd lead-finder-site-builder
+python3 -m venv venv
+venv/bin/python -m pip install -r requirements.txt
+```
+
+On Windows the last two lines differ, because the launcher there is called
+`python` and the private copy lands in a different folder:
+
+```
 python -m venv venv
 venv/Scripts/python.exe -m pip install -r requirements.txt
 ```
-
-On macOS and Linux that last path is `venv/bin/python` instead.
 
 ### What `venv` is, and why every command starts with it
 
@@ -111,17 +122,18 @@ does not stay still: libraries change on purpose, and code written against one
 version can stop running on the next. The problem rarely bites today. It bites a
 year from now, when you come back to a project that used to work.
 
-The third command, `python -m venv venv`, creates a folder called `venv` inside
+The third command, `python3 -m venv venv`, creates a folder called `venv` inside
 this project holding its own private copy of Python and its own libraries.
 Nothing outside that folder is touched, and nothing outside it can break what is
 inside. Together with `requirements.txt`, which lists the exact libraries this
 project needs, it is what makes the project still run next year.
 
-The trade is that you have to point at that private copy on purpose, which is why
-every command here begins with `venv/Scripts/python.exe` rather than plain
-`python`. Typing plain `python` would reach for the shared pile, which does not
-have this project's libraries, and you would see an error saying a module could
-not be found.
+The trade is that you have to point at that private copy on purpose, rather than
+typing a plain `python`. Typing plain `python` would reach for the shared pile,
+which does not have this project's libraries, and you would see an error saying
+a module could not be found. On macOS it usually fails one step earlier, with
+`command not found`, because there is no `python` on the system at all, only
+`python3`. The `run` launcher below does that pointing for you.
 
 `venv` is part of Python itself, so there is nothing extra to install. Other
 tools do the same job more comfortably, `uv` and `poetry` among them, but each is
@@ -131,14 +143,29 @@ run on a plain Python and nothing else.
 It also makes removing the project simple. Delete the folder and it is gone.
 Nothing was ever installed anywhere else on your computer.
 
-You can now run a search:
+### The `run` launcher
+
+`run` hands whatever you type after it to the Python inside `venv`, so you do
+not have to write that path out every time. You can now run a search:
 
 ```bash
-venv/Scripts/python.exe scripts/find_leads.py "bakery Novi Sad"
+./run scripts/find_leads.py "bakery Novi Sad"
 ```
 
-This works immediately with no account and no key, using OpenStreetMap. Read on
-if you want the better data.
+Windows drops the `./`, because it looks in the current folder for programs and
+macOS and Linux deliberately do not. That is the only difference between the
+two. If you would rather see what is happening, this is the same command:
+
+```
+venv/bin/python scripts/find_leads.py "bakery Novi Sad"
+```
+
+Both work. If `./run` says `permission denied`, you downloaded a ZIP rather
+than cloning, and a ZIP drops the flag that marks a file runnable: run
+`chmod +x run` once, or type `sh run` instead.
+
+The search above needs no account and no key, using OpenStreetMap. Read on if
+you want the better data.
 
 ## Adding your API keys
 
@@ -190,8 +217,8 @@ by Git, so updates will never conflict with your details.
 ### Searching from the terminal
 
 ```bash
-venv/Scripts/python.exe scripts/find_leads.py "bakery Novi Sad"
-venv/Scripts/python.exe scripts/find_leads.py "dentist Berlin" --limit 60
+./run scripts/find_leads.py "bakery Novi Sad"
+./run scripts/find_leads.py "dentist Berlin" --limit 60
 ```
 
 Add `--no-audit` to skip checking existing websites, which makes a search much
@@ -200,7 +227,7 @@ faster when you only want to see whether a place is worth searching at all.
 ### Checking one website on its own
 
 ```bash
-venv/Scripts/python.exe scripts/audit_site.py example.com
+./run scripts/audit_site.py example.com
 ```
 
 You get a score out of 100 and a list of problems written as sentences you can
@@ -209,11 +236,15 @@ quote to the owner.
 ### The table in your browser
 
 ```bash
-venv/Scripts/python.exe app.py
+./run app.py
 ```
 
 Then open `http://localhost:5000`. This runs entirely on your own computer.
 Nothing is published and no one else can reach it.
+
+On macOS, port 5000 is also where AirPlay Receiver listens. If the page refuses
+to load, or starting it fails with `Address already in use`, turn AirPlay
+Receiver off in System Settings, under General, AirDrop & Handoff.
 
 The page shows your results as a table you can sort by clicking any column. You
 can filter to businesses without a website, set a minimum rating or review
