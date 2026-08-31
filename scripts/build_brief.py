@@ -17,7 +17,10 @@ class BriefError(Exception):
     pass
 
 
-def desktop_dir():
+def output_dir(settings):
+    configured = (settings["brief"].get("output_dir") or "").strip()
+    if configured:
+        return Path(configured).expanduser()
     candidates = [Path.home() / "Desktop", Path.home() / "OneDrive" / "Desktop"]
     for candidate in candidates:
         if candidate.is_dir():
@@ -336,8 +339,9 @@ described in "Why this business".
 
 def create(place_id, answers, stock_dir=None, target_root=None):
     lead, source_file = find_lead(place_id)
-    answers.setdefault("language", lead_search.load_settings()["brief"]["default_language"])
-    base = Path(target_root) if target_root else desktop_dir()
+    settings = lead_search.load_settings()
+    answers.setdefault("language", settings["brief"]["default_language"])
+    base = Path(target_root).expanduser() if target_root else output_dir(settings)
     project = base / folder_name(lead["name"])
 
     (project / "assets").mkdir(parents=True, exist_ok=True)
@@ -374,7 +378,7 @@ def main():
     parser.add_argument("--info", action="store_true", help="Print the lead as JSON and stop")
     parser.add_argument("--answers", help="JSON file holding the answers to the brief questions")
     parser.add_argument("--stock", help="Folder of collected stock photos to copy into assets/")
-    parser.add_argument("--into", help="Where to create the project folder, defaults to the Desktop")
+    parser.add_argument("--into", help="Where to create the project folder, overriding brief.output_dir")
     arguments = parser.parse_args()
 
     try:

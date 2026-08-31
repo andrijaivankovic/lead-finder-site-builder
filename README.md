@@ -69,8 +69,8 @@ you do want the images closer to one particular place, you can add a few words
 such as "modern, white, lots of glass" and the search narrows. Skipping that is
 the normal case.
 
-**5. Build.** It writes a folder on your Desktop containing everything the
-website needs: the business details, the visual direction, the list of sections,
+**5. Build.** It writes a folder, on your Desktop unless you point it
+somewhere else, containing everything the website needs: the business details, the visual direction, the list of sections,
 search keywords for that trade and city, the photographs, and a complete
 instruction for building the site. Then the site gets built into that folder.
 
@@ -263,8 +263,19 @@ Code session opened inside this folder.
 ```
 
 Asks you a handful of questions about the business, collects the photographs,
-and creates a folder on your Desktop containing `brief.md`, an `assets` folder,
-and an empty `site` folder.
+and creates a folder containing `brief.md`, an `assets` folder, and an empty
+`site` folder.
+
+That folder lands on your Desktop. To keep client work somewhere else, set
+`brief.output_dir` in `config.yaml`, or in `config.local.yaml` if the path is
+personal to you:
+
+```yaml
+brief:
+  output_dir: "~/Developer/sites"
+```
+
+The `~` is expanded, and the folder is created if it does not exist.
 
 ```
 /build-site "Business Name"
