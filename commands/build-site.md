@@ -7,7 +7,9 @@ allowed-tools: Bash, Read, Write, Edit, Glob
 Build the website described by the brief in `$1`.
 
 `$1` may be a full path, or just the business name, in which case look for a
-folder with that name on the Desktop.
+folder with that name in `brief.output_dir` from `config.yaml`, which a
+`config.local.yaml` may override. Look on the Desktop when that setting is
+empty.
 
 ## 1. Read the brief
 
