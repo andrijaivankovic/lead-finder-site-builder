@@ -205,8 +205,9 @@ outreach:
       what: "cafe, warm and quiet, one page"
 ```
 
-The `what` line matters. The tool picks the link closest to the business it is
-writing to, so a grill owner sees the grill site rather than the bakery.
+Every link in that list goes into every message. The `what` line decides the
+order they appear in, so a grill owner reads the grill site before the bakery,
+and it doubles as the label next to each link.
 
 If you plan to pull future updates of this project, put those values in a file
 called `config.local.yaml` instead, using the same shape. That file is ignored
