@@ -384,9 +384,10 @@ Viber, WhatsApp or Instagram, and it should never be given one. You log a
 message as sent after you have actually sent it.
 
 **Google's photographs never end up on a website you build.** Those pictures
-belong to the owners and the customers who took them. The tool downloads them
-only so you can see what a place looks like. Every image that goes on a site
-comes from Pexels or from the client.
+belong to the owners and the customers who took them. The tool never downloads
+them at all: to see what a place looks like, it gives you a link to open, the
+same as everywhere else. Every image that goes on a site comes from Pexels or
+from the client.
 
 **Nothing is scraped.** Not Google Maps, not the company register. The tool
 builds links for a human to click.
