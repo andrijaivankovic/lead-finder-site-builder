@@ -354,6 +354,15 @@ described in "Why this business".
 
 def create(place_id, answers, stock_dir=None, target_root=None):
     lead, source_file = find_lead(place_id)
+    typed = {
+        column: answers[column].strip()
+        for column in lead_store.TYPED_FIELDS
+        if (answers.get(column) or "").strip() and not (lead.get(column) or "").strip()
+    }
+    if typed:
+        lead.update(typed)
+        lead_store.update_fields(lead_store.data_dir(ROOT) / source_file, place_id, typed)
+
     settings = lead_search.load_settings()
     answers.setdefault("language", settings["brief"]["default_language"])
     base = Path(target_root).expanduser() if target_root else output_dir(settings)
