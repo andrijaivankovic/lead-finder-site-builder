@@ -30,6 +30,12 @@ Keep it to three lines.
 
 ## 2. Ask the questions
 
+Before asking anything, open the business and look at it. The lead carries a
+Google Maps link, and the name plus the city usually turns up an Instagram or a
+Facebook page. Two minutes of that changes every answer below: you see what the
+place actually looks like, and often what colours are already on their sign,
+their menu or their posts.
+
 Read `brief.default_language` from `config.yaml`, which a `config.local.yaml`
 may override. That is the language the sites are written in, and it is also the
 language to ask these questions in. Translate them; do not ask in English out of
@@ -67,16 +73,26 @@ animations were wanted:
 Say which you recommend and why in one sentence, then let them override it.
 Record the answer as `stack` and the one sentence as `stack_reason`.
 
-Finally, offer one optional line rather than asking a question they must answer:
+Finally, two optional things, both drawn from what you saw when you opened the
+business:
 
-> If you want the photographs closer to this particular place, add a few words
-> about it, for example "modern, white, lots of glass". Skip it and the trade
-> alone decides.
+> Their colours, if the sign, the menu or the posts show any. Skip it and the
+> palette comes from the trade and the photographs.
 
-Ask that in the same language as the questions above.
+> A few words about how the place looks, for example "modern, white, lots of
+> glass". Skip it and the trade alone decides.
 
-Whatever they write goes in as `note`, translated into English first, because
-Pexels only searches in English. An empty answer is a perfectly good answer and
+Ask both in the same language as the questions above, and offer what you saw as
+the suggestion rather than handing them an empty field.
+
+The colours go in as `brand_colors`, a list of hex codes. `build_brief.py` reads
+that straight from the answers, so it does not have to come from
+`sort_assets.py`. With colours the build prompt anchors the palette on what the
+business already uses instead of inventing one, which is most of what separates
+a demo that looks made for them from a demo that looks like a template.
+
+The words go in as `note`, translated into English first, because Pexels only
+searches in English. An empty answer to either is a perfectly good answer and
 must not be pushed.
 
 ## 3. Collect the photographs
@@ -112,8 +128,9 @@ Compose the remaining fields yourself:
 - `seo_keywords` is eight to twelve phrases that someone in that city would
   actually type, in the site language, mixing the trade, the city and the
   neighbourhood.
-- `brand_colors` only if `assets.json` from `sort_assets.py` already holds them,
-  otherwise leave the list empty.
+- `brand_colors` is what they answered above, or what `assets.json` from
+  `sort_assets.py` holds once a client has sent their own images. Empty when
+  there is neither.
 - `style` is their optional note tidied up, or a plain description of the trade
   if they skipped it.
 - `trade` and `city` in English, for the build prompt.
