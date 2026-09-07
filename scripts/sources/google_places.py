@@ -42,6 +42,7 @@ def _lead_from_place(place):
         "review_count": place.get("userRatingCount"),
         "website": (place.get("websiteUri") or "").strip(),
         "phone": phone.strip(),
+        "opening_hours": "",
         "google_maps_link": place.get("googleMapsUri", ""),
         "map_pin": "",
         "category": (place.get("primaryType") or "").replace("_", " "),
