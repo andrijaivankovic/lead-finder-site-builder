@@ -104,7 +104,7 @@ this folder gets edited.
   actually matches.
 - Every visible word is in {language}.
 - The name, address and phone in `brief.md` are real. Never change them.
-- Opening hours, prices, staff names and reviews are unknown. Write an obvious
+- {unknown_facts} are unknown. Write an obvious
   placeholder in {language} and list every placeholder in an HTML comment at the
   bottom of `index.html`. Never invent a review or a person.
 - No lorem ipsum anywhere.
@@ -165,6 +165,18 @@ def _animation_rule(answers):
     )
 
 
+def _fact_split(lead):
+    if (lead.get("opening_hours") or "").strip():
+        return (
+            "Address, phone, opening hours and the business name",
+            "Prices, staff names and reviews",
+        )
+    return (
+        "Address, phone and the business name",
+        "Opening hours, prices, staff names and reviews",
+    )
+
+
 def render_brief(lead, answers, stock_dir):
     yes_no = lambda flag: "yes" if flag else "no"
     problems = [item for item in (lead.get("website_problems") or "").split("; ") if item]
@@ -179,6 +191,7 @@ def render_brief(lead, answers, stock_dir):
 | Name | {name} |
 | Address | {address} |
 | Phone | {phone} |
+| Opening hours | {hours} |
 | Rating | {rating} |
 | Reviews | {review_count} |
 | Existing website | {website} |
@@ -268,9 +281,8 @@ job.
 languages. Do not leave lorem ipsum anywhere — write real copy for this
 business, in the voice of a {trade} that wants local customers.
 
-**What to invent and what not to.** Address, phone and the business name are
-real, take them from the table above and never change them. Opening hours,
-prices, staff names and reviews are not known. Where a section needs them,
+**What to invent and what not to.** {known_facts} are
+real, take them from the table above and never change them. {unknown_facts} are not known. Where a section needs them,
 write an obvious placeholder in {language} that the owner can fill in, and mark
 those spots in a `<!-- -->` comment list at the bottom of `index.html` so they
 are easy to find. Never invent a fake review or a fake person.
@@ -315,6 +327,9 @@ described in "Why this business".
         colours=" ".join(colours) or "not known yet",
         trade=answers.get("trade", "local business"),
         city=answers.get("city", "the city"),
+        hours=lead.get("opening_hours") or "not listed",
+        known_facts=_fact_split(lead)[0],
+        unknown_facts=_fact_split(lead)[1],
         stack=answers.get("stack", "static"),
         stack_reason=answers.get("stack_reason", "Chosen as the default."),
         stack_rules=_stack_rules(answers),
@@ -362,7 +377,11 @@ def create(place_id, answers, stock_dir=None, target_root=None):
     brief = render_brief(lead, answers, project / "assets")
     (project / "brief.md").write_text(brief, encoding="utf-8")
     (project / "CLAUDE.md").write_text(
-        PROJECT_GUIDE.format(name=lead["name"], language=answers.get("language", "English")),
+        PROJECT_GUIDE.format(
+            name=lead["name"],
+            language=answers.get("language", "English"),
+            unknown_facts=_fact_split(lead)[1],
+        ),
         encoding="utf-8",
     )
 
