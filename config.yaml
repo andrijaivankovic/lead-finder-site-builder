@@ -73,13 +73,19 @@ stock_photos:
       interior: ["rustic pizzeria dining room", "pizzeria interior warm light"]
     pizza restaurant: *pizza
     pizza_restaurant: *pizza
-    restaurant: &restaurant
+    restaurant:
       hero: ["restaurant interior warm light", "plated dish on table"]
       gallery: ["fine dining plate close up", "chef plating food"]
       background: ["dark linen texture", "wooden table surface"]
       interior: ["restaurant dining room daylight", "restaurant bar counter"]
-    fast_food: *restaurant
-    fast food: *restaurant
+    fast_food: &grill
+      hero: ["grilled meat on charcoal grill", "kebab grill house"]
+      gallery: ["grilled minced meat kebab", "grilled meat platter"]
+      background: ["charcoal embers texture", "rustic dark wood table"]
+      interior: ["casual grill restaurant interior", "simple fast food interior daylight"]
+    fast food: *grill
+    barbecue: *grill
+    kebab: *grill
     cafe: &cafe
       hero: ["cafe interior daylight", "latte art close up"]
       gallery: ["espresso machine close up", "coffee and pastry on table"]
