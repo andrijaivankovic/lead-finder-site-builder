@@ -98,12 +98,12 @@ def merge(new_leads, existing_rows):
                 "score": lead["score"],
                 "name": lead.get("name", ""),
                 "category": lead.get("category", ""),
-                "address": lead.get("address", ""),
+                "address": lead.get("address") or row.get("address", ""),
                 "rating": "" if lead.get("rating") is None else lead["rating"],
                 "review_count": "" if lead.get("review_count") is None else lead["review_count"],
                 "website": lead.get("website", ""),
-                "phone": lead.get("phone", ""),
-                "opening_hours": lead.get("opening_hours", ""),
+                "phone": lead.get("phone") or row.get("phone", ""),
+                "opening_hours": lead.get("opening_hours") or row.get("opening_hours", ""),
                 "google_maps_link": lead.get("google_maps_link", ""),
                 "map_pin": lead.get("map_pin", ""),
                 "contact_search": lead.get("contact_search", ""),
@@ -139,6 +139,23 @@ def save(path, rows):
             "{} is open in another program, most likely Excel. Close it and try again.".format(path.name)
         )
     return path
+
+
+TYPED_FIELDS = ["address", "phone", "opening_hours"]
+
+
+def update_fields(path, place_id, fields):
+    rows = load_rows(path)
+    changed = False
+    for row in rows:
+        if row["place_id"] == place_id:
+            for column, value in fields.items():
+                if column in COLUMNS:
+                    row[column] = value
+                    changed = True
+    if changed:
+        save(path, rows)
+    return changed
 
 
 def update_status(path, place_id, status):

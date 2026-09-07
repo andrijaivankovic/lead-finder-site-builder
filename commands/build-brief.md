@@ -73,6 +73,21 @@ animations were wanted:
 Say which you recommend and why in one sentence, then let them override it.
 Record the answer as `stack` and the one sentence as `stack_reason`.
 
+If step 1 reported the address, the phone or the opening hours as missing, ask
+for them now. You have the Maps listing open, so they are usually a copy and a
+paste away. Ask only for the ones that are actually missing, and let each be
+skipped.
+
+They go in as `address`, `phone` and `opening_hours`. `build_brief.py` fills
+them into the brief and writes them back into the CSV row, so the browser
+table, `/draft-outreach` and every later run see them too. A value already in
+the row is never overwritten.
+
+This matters more than it looks: the build prompt asks for JSON-LD
+`LocalBusiness` data and a contact section built from the real name, address and
+phone. Without them the site ships with a hole where a customer would look for
+the phone number.
+
 Finally, two optional things, both drawn from what you saw when you opened the
 business:
 
