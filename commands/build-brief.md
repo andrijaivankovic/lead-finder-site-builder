@@ -35,8 +35,12 @@ may override. That is the language the sites are written in, and it is also the
 language to ask these questions in. Translate them; do not ask in English out of
 habit when the setting says otherwise.
 
-Ask them as one numbered block, with the default in brackets, and say that
-pressing enter accepts all defaults.
+Put these to them as choices they pick from, through whatever interactive
+question mechanism you have, so they answer by selecting rather than by typing
+answers back. Where the mechanism takes several answers at once, group the yes
+or no ones into a single question. If you have no such mechanism, fall back to
+one numbered block with the default in brackets, and say that pressing enter
+accepts all defaults.
 
 1. FAQ section? [yes]
 2. Careers section? [yes]
