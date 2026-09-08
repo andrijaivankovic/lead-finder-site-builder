@@ -210,6 +210,12 @@ asset_sorting:
     - logo
     - exterior
   logo_colors: 5
+  purposes:
+    exterior: hero
+    interior: interior
+    food: gallery
+    team: gallery
+    logo: logo
 
 audit:
   enabled: true

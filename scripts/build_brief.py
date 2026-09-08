@@ -48,20 +48,85 @@ def _bullet_list(items, empty="not provided"):
     return "".join("- {}\n".format(item) for item in items)
 
 
-def _photo_lines(stock_dir):
-    if not stock_dir:
-        return "- no images collected yet\n"
+def _client_photos(assets_dir, settings):
+    manifest = Path(assets_dir) / "assets.json"
+    if not manifest.exists():
+        return []
 
-    sources = Path(stock_dir) / "sources.json"
+    purposes = settings["asset_sorting"].get("purposes", {})
+    photos = []
+    for image in json.loads(manifest.read_text(encoding="utf-8")).get("images", []):
+        category = (image.get("category") or "").strip().lower()
+        photos.append(
+            {
+                "file": image["file"],
+                "category": category,
+                "purpose": purposes.get(category, "gallery"),
+                "description": image.get("description") or category or "the client's photograph",
+                "width": image.get("width", 0),
+                "height": image.get("height", 0),
+            }
+        )
+    return photos
+
+
+def _stock_photos(assets_dir, covered):
+    sources = Path(assets_dir) / "sources.json"
     if not sources.exists():
-        return "- no images collected yet\n"
+        return []
 
     payload = json.loads(sources.read_text(encoding="utf-8"))
-    lines = []
-    for photo in payload.get("photos", []):
+    return [photo for photo in payload.get("photos", []) if photo.get("purpose") not in covered]
+
+
+def _image_rule(theirs, stock):
+    if not theirs:
+        return (
+            "Every one is a Pexels photograph, free for commercial use. None of them show\n"
+            "the real place, so the outreach message must say the images are temporary and\n"
+            "get replaced with the owner's own once they are interested."
+        )
+
+    lines = [
+        "The ones marked \"the client's own\" are the business's own photographs. They are",
+        "real, they show the real place, and they are not placeholders. Never describe them",
+        "as temporary and never swap one for a stock photograph.",
+    ]
+    if stock:
+        lines.append("")
         lines.append(
-            "- `{}` — {} ({}x{}), by {}, {}\n".format(
+            "The ones marked \"stock\" are Pexels photographs filling what the client did not"
+        )
+        lines.append(
+            "supply. Those are temporary, and the outreach message has to say so without"
+        )
+        lines.append("implying the same about their own.")
+    if any(photo["purpose"] == "logo" for photo in theirs):
+        lines.append("")
+        lines.append(
+            "The one marked \"logo\" is their logo. It belongs in the header and as the"
+        )
+        lines.append("favicon, never in the gallery.")
+    return "\n".join(lines)
+
+
+def _photo_lines(theirs, stock):
+    lines = []
+    for photo in theirs:
+        lines.append(
+            "- `{}` — {}, the client's own. {} ({}x{})\n".format(
                 photo["file"],
+                photo["purpose"],
+                photo["description"],
+                photo["width"],
+                photo["height"],
+            )
+        )
+    for photo in stock:
+        lines.append(
+            "- `{}` — {}, stock. {} ({}x{}). Pexels, by {}, {}\n".format(
+                photo["file"],
+                photo.get("purpose", "gallery"),
                 photo["description"] or photo["query"],
                 photo["width"],
                 photo["height"],
@@ -177,10 +242,12 @@ def _fact_split(lead):
     )
 
 
-def render_brief(lead, answers, stock_dir):
+def render_brief(lead, answers, assets_dir, settings):
     yes_no = lambda flag: "yes" if flag else "no"
     problems = [item for item in (lead.get("website_problems") or "").split("; ") if item]
     colours = answers.get("brand_colors") or []
+    theirs = _client_photos(assets_dir, settings)
+    stock = _stock_photos(assets_dir, {photo["purpose"] for photo in theirs})
 
     return """# Brief — {name}
 
@@ -222,10 +289,10 @@ Brand colours: {colours}
 {keywords}
 ## Images
 
-All images live in `assets/`. Every one is a Pexels photograph, free for
-commercial use. None of them show the real place, so the outreach message must
-say the images are temporary and get replaced with the owner's own once they
-are interested.
+All images live in `assets/`. Each line below says where the photograph
+belongs on the page and where it came from.
+
+{image_rule}
 
 {photos}
 ## Options chosen
@@ -343,7 +410,8 @@ described in "Why this business".
         language=answers.get("language", "English"),
         sections=_bullet_list(answers.get("sections")),
         keywords=_bullet_list(answers.get("seo_keywords")),
-        photos=_photo_lines(stock_dir),
+        photos=_photo_lines(theirs, stock),
+        image_rule=_image_rule(theirs, stock),
         faq=yes_no(answers.get("faq", True)),
         careers=yes_no(answers.get("careers", True)),
         reviews=yes_no(answers.get("show_reviews", True)),
@@ -352,7 +420,7 @@ described in "Why this business".
     )
 
 
-def create(place_id, answers, stock_dir=None, target_root=None):
+def create(place_id, answers, stock_dirs=None, target_root=None):
     lead, source_file = find_lead(place_id)
     typed = {
         column: answers[column].strip()
@@ -372,10 +440,13 @@ def create(place_id, answers, stock_dir=None, target_root=None):
     (project / "site").mkdir(parents=True, exist_ok=True)
 
     copied = 0
-    if stock_dir and Path(stock_dir).is_dir():
+    for folder in stock_dirs or []:
+        if not Path(folder).expanduser().is_dir():
+            raise BriefError("{} is not a folder.".format(folder))
+
         import shutil
 
-        for item in Path(stock_dir).iterdir():
+        for item in Path(folder).expanduser().iterdir():
             destination = project / "assets" / item.name
             if item.is_dir():
                 shutil.copytree(item, destination, dirs_exist_ok=True)
@@ -383,7 +454,7 @@ def create(place_id, answers, stock_dir=None, target_root=None):
             else:
                 shutil.copy2(item, destination)
 
-    brief = render_brief(lead, answers, project / "assets")
+    brief = render_brief(lead, answers, project / "assets", settings)
     (project / "brief.md").write_text(brief, encoding="utf-8")
     (project / "CLAUDE.md").write_text(
         PROJECT_GUIDE.format(
@@ -405,7 +476,11 @@ def main():
     parser.add_argument("place_id", help="The place_id column from the leads CSV")
     parser.add_argument("--info", action="store_true", help="Print the lead as JSON and stop")
     parser.add_argument("--answers", help="JSON file holding the answers to the brief questions")
-    parser.add_argument("--stock", help="Folder of collected stock photos to copy into assets/")
+    parser.add_argument(
+        "--stock",
+        action="append",
+        help="Folder of photographs to copy into assets/, repeatable",
+    )
     parser.add_argument("--into", help="Where to create the project folder, overriding brief.output_dir")
     arguments = parser.parse_args()
 
