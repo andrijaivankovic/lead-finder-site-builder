@@ -58,8 +58,11 @@ Every version must carry four things:
 2. **The site already exists and costs nothing to look at.** Not an offer to
    build one. It is built.
 3. **Links to previous work**, all of `outreach.portfolio_links`.
-4. **That the photographs are temporary** and get swapped for their own as soon
-   as they say they are interested. Never let them think those are their rooms.
+4. **That the stock photographs are temporary** and get swapped for their own as
+   soon as they say they are interested. Never let them think a stock room is
+   theirs. `brief.md` marks every photograph as either stock or the client's
+   own: when the site uses their own, say that you used their pictures instead,
+   and drop this point altogether when none of the images are stock.
 
 Tone: a student who builds sites, writing to a person. Relaxed, direct, no
 corporate vocabulary, no "dear sir or madam", no "revolutionise your online

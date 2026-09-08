@@ -121,6 +121,27 @@ The trade in the `category` field picks a ready set of Pexels searches from
 
 Drop `--note` when they did not write one.
 
+If they have gathered the business's own photographs into a folder, sort that
+folder first and pass it as a second `--stock` in step 4:
+
+```
+{venv python} scripts/sort_assets.py {their folder}
+```
+
+That writes `assets.json` with an empty `category` for each image. Open the
+images, fill in the categories yourself from what is actually in them, and
+apply:
+
+```
+{venv python} scripts/sort_assets.py {their folder} --apply
+```
+
+`asset_sorting.purposes` in `config.yaml` decides where each category belongs on
+the page, and a photograph of theirs takes that place from the stock one. So
+their storefront becomes the hero and the stock hero is dropped, while stock
+keeps the backgrounds nobody photographs for themselves. An image categorised
+`logo` also fills `brand_colors`.
+
 Then read every `description` in the generated `sources.json` and check it
 against the trade. The script filters resolution and orientation only. It cannot
 see what is in a picture, so a search for a bright waiting room happily returns
@@ -155,7 +176,7 @@ Compose the remaining fields yourself:
 Write that JSON to a temporary file and run:
 
 ```
-{venv python} scripts/build_brief.py "$1" --answers {answers.json} --stock {stock folder}
+{venv python} scripts/build_brief.py "$1" --answers {answers.json} --stock {pexels folder} --stock {their folder}
 ```
 
 ## 5. Report
