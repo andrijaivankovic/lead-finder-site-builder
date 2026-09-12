@@ -10,8 +10,7 @@ PROMPT.md
 .claude/launch.json
 .claude/commands
 *.pyc
-assets/reference/
-assets/stock/
+assets/
 .vscode/
 .idea/
 .DS_Store

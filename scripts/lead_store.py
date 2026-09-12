@@ -50,10 +50,7 @@ def find_previous(root, query):
     if not folder.exists():
         return None
     current = output_path(root, query)
-    if current.exists():
-        return current
-    dated = sorted(folder.glob("leads_{}_*.csv".format(to_slug(query))))
-    return dated[-1] if dated else None
+    return current if current.exists() else None
 
 
 def list_files(root):
@@ -78,9 +75,15 @@ def load_rows(path):
         return [row for row in csv.DictReader(handle) if row.get("place_id")]
 
 
+def _as_number(value, fallback):
+    try:
+        return int(float(str(value).strip()))
+    except (TypeError, ValueError):
+        return fallback
+
+
 def _row_ranking_key(row):
-    website_score = str(row.get("website_score", "")).strip()
-    return -int(row["score"] or 0), int(website_score) if website_score else -1
+    return -_as_number(row.get("score"), 0), _as_number(row.get("website_score"), -1)
 
 
 def merge(new_leads, existing_rows):

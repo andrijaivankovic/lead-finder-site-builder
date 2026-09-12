@@ -46,7 +46,7 @@ outreach:
 stock_photos:
   per_purpose: 4
   max_total: 20
-  min_width: 1920
+  min_source_width: 1920
   purposes:
     - hero
     - gallery
