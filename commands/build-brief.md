@@ -71,7 +71,12 @@ animations were wanted:
   Astro or Vite, so the result still runs anywhere with no server.
 
 Say which you recommend and why in one sentence, then let them override it.
-Record the answer as `stack` and the one sentence as `stack_reason`.
+
+Record the answer as `stack`, written the way a person would read it, and the
+one sentence as `stack_reason`. Set `stack_needs_a_build` to true only when the
+chosen stack has an install and a build step; leave it out for plain HTML. That
+flag alone picks which set of technical constraints the brief carries, so
+getting it wrong hands a three file site instructions about `node_modules`.
 
 If step 1 reported the address, the phone or the opening hours as missing, ask
 for them now. You have the Maps listing open, so they are usually a copy and a
@@ -137,6 +142,11 @@ whoever builds the site. Then:
 {venv python} scripts/sort_assets.py {their_photos} --apply
 ```
 
+Do not pass the folder on to step 4 before this has run. `build_brief.py`
+refuses a folder whose categories are still empty, rather than filing every
+photograph under the gallery and quietly dropping the stock that belonged
+there.
+
 An image categorised `logo` fills `brand_colors`, so read them out of
 `assets.json` afterwards and use them in step 4 unless they already answered
 with colours of their own.
@@ -188,7 +198,8 @@ Compose the remaining fields yourself:
   if they skipped it.
 - `trade` and `city` in English, for the build prompt.
 - `language`, `faq`, `careers`, `show_reviews`, `animations`, `ai_media`,
-  `stack` and `stack_reason` are their answers from step 2.
+  `stack`, `stack_needs_a_build` and `stack_reason` are their answers from
+  step 2.
 
 Write that JSON to a temporary file and run:
 

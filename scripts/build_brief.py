@@ -48,21 +48,50 @@ def _bullet_list(items, empty="not provided"):
     return "".join("- {}\n".format(item) for item in items)
 
 
+def check_sorted(folder, settings):
+    manifest = Path(folder) / "assets.json"
+    if not manifest.exists():
+        return
+
+    images = json.loads(manifest.read_text(encoding="utf-8")).get("images", [])
+    categories = [(image.get("category") or "").strip().lower() for image in images]
+
+    blank = categories.count("")
+    if blank:
+        raise BriefError(
+            "{} of {} images in {} have no category yet, so nobody has said what is in "
+            "them. Run sort_assets.py on that folder, fill the categories in, then run "
+            "it again with --apply.".format(blank, len(images), folder)
+        )
+
+    purposes = settings["asset_sorting"].get("purposes", {})
+    unmapped = sorted({name for name in categories if name not in purposes})
+    if unmapped:
+        raise BriefError(
+            "asset_sorting.purposes in config.yaml has no entry for {}, so there is "
+            "nowhere on the page to put those photographs.".format(", ".join(unmapped))
+        )
+
+
 def _client_photos(assets_dir, settings):
     manifest = Path(assets_dir) / "assets.json"
     if not manifest.exists():
         return []
 
     purposes = settings["asset_sorting"].get("purposes", {})
+    images = json.loads(manifest.read_text(encoding="utf-8")).get("images", [])
+
+    check_sorted(manifest.parent, settings)
+
     photos = []
-    for image in json.loads(manifest.read_text(encoding="utf-8")).get("images", []):
-        category = (image.get("category") or "").strip().lower()
+    for image in images:
+        category = image["category"].strip().lower()
         photos.append(
             {
                 "file": image["file"],
                 "category": category,
-                "purpose": purposes.get(category, "gallery"),
-                "description": image.get("description") or category or "the client's photograph",
+                "purpose": purposes[category],
+                "description": image.get("description") or category,
                 "width": image.get("width", 0),
                 "height": image.get("height", 0),
             }
@@ -214,10 +243,13 @@ BUILT_STACK_RULES = """- Built with {stack}, set up inside `site/`.
 
 
 def _stack_rules(answers):
-    stack = (answers.get("stack") or "static").strip()
-    if stack.lower() in ("static", "plain", "html", "vanilla"):
+    if not answers.get("stack_needs_a_build"):
         return STATIC_STACK_RULES
-    return BUILT_STACK_RULES.format(stack=stack)
+    return BUILT_STACK_RULES.format(stack=_stack_name(answers))
+
+
+def _stack_name(answers):
+    return (answers.get("stack") or "").strip() or "Plain HTML, CSS and JavaScript"
 
 
 def _animation_rule(answers):
@@ -401,7 +433,7 @@ described in "Why this business".
         hours=lead.get("opening_hours") or "not listed",
         known_facts=_fact_split(lead)[0],
         unknown_facts=_fact_split(lead)[1],
-        stack=answers.get("stack", "static"),
+        stack=_stack_name(answers),
         stack_reason=answers.get("stack_reason", "Chosen as the default."),
         stack_rules=_stack_rules(answers),
         pitch=_pitch(lead, problems),
@@ -447,6 +479,7 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
     for folder in stock_dirs or []:
         if not Path(folder).expanduser().is_dir():
             raise BriefError("{} is not a folder.".format(folder))
+        check_sorted(Path(folder).expanduser(), settings)
 
         import shutil
 
