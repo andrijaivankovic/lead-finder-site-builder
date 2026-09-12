@@ -33,14 +33,20 @@ without mandatory attribution, so those images can go straight onto a client
 demo site.
 
 **Without it:** demo sites have no images, or you hunt for them by hand for
-every business. Google Place Photos cannot be used on the site — they belong to
-the owners and customers who took them, and are only a style reference.
+every business. Google's own photographs are not an alternative: they belong to
+the owners and the customers who took them, and this tool never fetches them at
+all. What it does give you is a link to the listing, to open and look at.
+
+The business's own photographs are the other way in, and the better one. Save a
+few from their Instagram or Facebook page into a folder and `/build-brief` will
+take them, falling back to Pexels only for what they did not supply.
 
 ### Cost
 
-Free, no card anywhere. Limits are 200 calls per hour and 20,000 per month;
-one business consumes five to eight. No paid tier exists, so accidental
-charges are not possible.
+Free, no card anywhere. Limits are 200 calls per hour and 20,000 per month.
+One business consumes four to eight: one search per purpose, and a second for
+any purpose the first did not fill. No paid tier exists, so accidental charges
+are not possible.
 
 ### Steps
 

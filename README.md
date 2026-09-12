@@ -69,10 +69,19 @@ you do want the images closer to one particular place, you can add a few words
 such as "modern, white, lots of glass" and the search narrows. Skipping that is
 the normal case.
 
-**5. Build.** It writes a folder, on your Desktop unless you point it
-somewhere else, containing everything the website needs: the business details, the visual direction, the list of sections,
-search keywords for that trade and city, the photographs, and a complete
-instruction for building the site. Then the site gets built into that folder.
+Stock is the floor, not the ceiling. A business with no website still has a
+Google Maps listing and usually an Instagram page, so you can save a few of
+their own photographs into a folder and hand it over as well. Those are sorted
+by what is in them, mapped to where they belong on the page, and they take that
+place from the stock ones: their storefront becomes the image at the top and
+the stock one is dropped, while stock keeps the backgrounds nobody photographs
+for themselves. A logo among them also sets the palette.
+
+**5. Build.** It writes a folder, on your Desktop unless you point it somewhere
+else, containing everything the website needs: the business details, the visual
+direction, the list of sections, search keywords for that trade and city, the
+photographs, and a complete instruction for building the site. Then the site
+gets built into that folder.
 
 **6. Write.** It drafts three versions of the outreach message, one for email,
 a shorter one for Viber or WhatsApp, and a very short one for an Instagram
@@ -93,7 +102,7 @@ python.org or Homebrew and build the `venv` with that one instead.
 
 ## Installing it
 
-Open a terminal and run these four commands. On macOS and Linux:
+Open a terminal and run these four commands, on macOS and Linux:
 
 ```bash
 git clone https://github.com/andrijaivankovic/lead-finder-site-builder.git
@@ -102,8 +111,9 @@ python3 -m venv venv
 venv/bin/python -m pip install -r requirements.txt
 ```
 
-On Windows the last two lines differ, because the launcher there is called
-`python` and the private copy lands in a different folder:
+On Windows the first two are the same and the last two differ, because the
+launcher there is called `python` and the private copy lands in a different
+folder:
 
 ```
 python -m venv venv
@@ -262,9 +272,11 @@ Code session opened inside this folder.
 /build-brief <place_id>
 ```
 
-Asks you a handful of questions about the business, collects the photographs,
-and creates a folder containing `brief.md`, an `assets` folder, and an empty
-`site` folder.
+Looks the business up on the map and on its social pages, asks you a handful of
+questions about it, including the colours it already uses and whether you have
+gathered any of its own photographs, collects what is missing from Pexels, and
+creates a folder containing `brief.md`, an `assets` folder, and an empty `site`
+folder.
 
 That folder lands on your Desktop. To keep client work somewhere else, set
 `brief.output_dir` in `config.yaml`, or in `config.local.yaml` if the path is
@@ -303,8 +315,10 @@ That file is the database. There is no database.
 
 A `.csv` file is a plain table that opens in Excel, in Google Sheets, or in any
 text editor. Run the same search again a month later and the tool updates the
-existing file rather than replacing it: business details are refreshed, but any
-status you typed by hand is left exactly as you wrote it.
+existing file rather than replacing it: business details are refreshed, and
+anything you typed by hand is left exactly as you wrote it. That covers the
+status, and the address, phone and opening hours where the source has none of
+its own to offer.
 
 ### What `place_id` is
 
@@ -319,10 +333,10 @@ month apart, because a volunteer corrected the map. Addresses are often missing
 altogether.
 
 The identifier is what lets the tool run the same search again next month and
-recognise that a row is the same business as before, so it can refresh the phone
-number and the score while leaving the status you typed by hand exactly as it
-was. Without it, a business whose name had been corrected would come back as a
-second row and you would contact the same owner twice.
+recognise that a row is the same business as before, so it can refresh the score
+while leaving what you typed by hand exactly as it was. Without it, a business
+whose name had been corrected would come back as a second row and you would
+contact the same owner twice.
 
 You never have to type it or read it. You only copy it when a command asks for
 one, and the "Create brief" button next to each row does that for you.
@@ -405,9 +419,9 @@ checking websites, downloading photographs, sorting images, the record of who
 you contacted, and the whole browser interface all run on their own. You can use
 them from a plain terminal with no assistant at all.
 
-What remains are the three places where judgement is needed: describing what a
-place looks like, writing the website, and writing the message. Those are the
-Claude Code commands.
+What remains are the places where judgement is needed: describing what a place
+looks like, saying what is in a photograph the owner took, writing the website,
+and writing the message. Those are the Claude Code commands.
 
 If you use a different assistant, `CLAUDE.md` in this folder holds the project
 rules, and the files under `commands` hold the three procedures. Both are plain

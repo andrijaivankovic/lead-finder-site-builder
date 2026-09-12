@@ -59,8 +59,8 @@ categories are filled in.
 ## Code conventions
 
 - No comments anywhere in the code, and no explanatory headers at the top of
-  files. Names carry the meaning. `ARHITEKTURA.md` is the only place code is
-  explained, one sentence per file.
+  files. Names carry the meaning. When a name cannot, that is the signal to
+  rename or to split the function, not to explain it.
 - Everything is written in English: identifiers, config keys, CSV columns,
   printed output, the browser interface, and the docs.
 - Every tunable number lives in `config.yaml`, never inline in a script.
@@ -77,12 +77,12 @@ categories are filled in.
 ## Data
 
 CSV files under `data/` are the database. `place_id` is the key that survives
-across searches, which is what lets a rerun refresh the data while keeping the
-`status` column the user typed by hand. Never reorder or rename CSV columns
-without migrating existing files.
+across searches, which is what lets a rerun refresh the data while keeping what
+the user typed by hand: the `status`, and the address, phone and opening hours
+where the source has none. An empty incoming value never overwrites one of
+those. Never reorder or rename CSV columns without migrating existing files.
 
-`data/`, `.env`, `config.local.yaml`, `assets/` and `ARHITEKTURA.md` never get
-committed.
+`data/`, `.env`, `config.local.yaml` and `assets/` never get committed.
 
 ## Building a website for a lead
 
