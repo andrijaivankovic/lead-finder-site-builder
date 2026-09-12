@@ -56,7 +56,7 @@ def _search(query, key, options):
 
 
 def _acceptable(photo, options):
-    if photo.get("width", 0) < options["min_width"]:
+    if photo.get("width", 0) < options["min_source_width"]:
         return False
     if not image_tools.is_landscape(photo.get("width", 0), photo.get("height", 1)):
         return False
