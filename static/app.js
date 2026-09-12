@@ -304,6 +304,11 @@ function buildRow(row, thresholds) {
   phone.textContent = row.phone || "—";
   tr.append(phone);
 
+  const hours = document.createElement("td");
+  hours.className = "hours";
+  hours.textContent = row.opening_hours || "—";
+  tr.append(hours);
+
   const links = document.createElement("td");
   links.className = "links";
   if (row.google_maps_link) {
