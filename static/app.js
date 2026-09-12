@@ -398,7 +398,7 @@ elements.form.addEventListener("submit", async (event) => {
       "Found " + data.found + " businesses, " + data.without_website + " without a website. " +
       "Source: " + data.source + ".";
     if (data.merged_with) {
-      message += " Merged with the earlier file, your statuses were kept.";
+      message += " Merged with the earlier file, what you typed by hand was kept.";
     }
     setMessage(message);
 

@@ -36,9 +36,13 @@ built. Never claim a site is ready when `site/` is empty.
 The brief marks each photograph as stock or the business's own. That decides
 what the message may say about them, so read it before writing point 4 below.
 
-Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`.
-If either is empty, say so and ask, rather than inventing a link or signing with
-a made up name.
+Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`,
+which a `config.local.yaml` may override. Those two are personal, so that is
+where they usually are, and `config.yaml` ships them empty. Read both files
+before deciding either is missing.
+
+If either really is empty, say so and ask, rather than inventing a link or
+signing with a made up name.
 
 Send every link in the list, in all three versions. Do not drop one for being
 off trade and do not hold any back.
