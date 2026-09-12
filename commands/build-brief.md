@@ -88,8 +88,8 @@ This matters more than it looks: the build prompt asks for JSON-LD
 phone. Without them the site ships with a hole where a customer would look for
 the phone number.
 
-Finally, two optional things, both drawn from what you saw when you opened the
-business:
+Finally, three optional things. The first two are drawn from what you saw when
+you opened the business:
 
 > Their colours, if the sign, the menu or the posts show any. Skip it and the
 > palette comes from the trade and the photographs.
@@ -97,8 +97,15 @@ business:
 > A few words about how the place looks, for example "modern, white, lots of
 > glass". Skip it and the trade alone decides.
 
-Ask both in the same language as the questions above, and offer what you saw as
-the suggestion rather than handing them an empty field.
+> Any photographs of the business they have already saved into a folder, and
+> where that folder is. Skip it and the site is built from stock alone.
+
+Ask all three in the same language as the questions above, and offer what you
+saw as the suggestion rather than handing them an empty field.
+
+Ask the third even when you expect a no. It is the one that decides whether the
+demo shows the owner their own place or somebody else's, and it is the easiest
+of the three to forget. The folder path goes in as `their_photos`.
 
 The colours go in as `brand_colors`, a list of hex codes. `build_brief.py` reads
 that straight from the answers, so it does not have to come from
@@ -112,6 +119,30 @@ must not be pushed.
 
 ## 3. Collect the photographs
 
+### Theirs first, when they gave a folder
+
+Skip this whole section when `their_photos` is empty.
+
+```
+{venv python} scripts/sort_assets.py {their_photos}
+```
+
+That writes `assets.json` with an empty `category` for each image. Open the
+images and fill the categories in from what is actually in them, one of
+`interior`, `food`, `team`, `logo`, `exterior`. Fill the descriptions too: only
+the category is required to sort, but the description is what the brief shows
+whoever builds the site. Then:
+
+```
+{venv python} scripts/sort_assets.py {their_photos} --apply
+```
+
+An image categorised `logo` fills `brand_colors`, so read them out of
+`assets.json` afterwards and use them in step 4 unless they already answered
+with colours of their own.
+
+### Then the stock that fills the rest
+
 The trade in the `category` field picks a ready set of Pexels searches from
 `config.yaml`, so nothing has to be invented:
 
@@ -121,26 +152,12 @@ The trade in the `category` field picks a ready set of Pexels searches from
 
 Drop `--note` when they did not write one.
 
-If they have gathered the business's own photographs into a folder, sort that
-folder first and pass it as a second `--stock` in step 4:
-
-```
-{venv python} scripts/sort_assets.py {their folder}
-```
-
-That writes `assets.json` with an empty `category` for each image. Open the
-images, fill in the categories yourself from what is actually in them, and
-apply:
-
-```
-{venv python} scripts/sort_assets.py {their folder} --apply
-```
-
-`asset_sorting.purposes` in `config.yaml` decides where each category belongs on
-the page, and a photograph of theirs takes that place from the stock one. So
-their storefront becomes the hero and the stock hero is dropped, while stock
-keeps the backgrounds nobody photographs for themselves. An image categorised
-`logo` also fills `brand_colors`.
+Collect the stock set even when they gave photographs of their own. It costs
+nothing to have it: `asset_sorting.purposes` in `config.yaml` says where each of
+their categories belongs on the page, and a photograph of theirs takes that
+place from the stock one. Their storefront becomes the hero and the stock hero
+is dropped, while stock keeps the backgrounds nobody photographs for
+themselves.
 
 Then read every `description` in the generated `sources.json` and check it
 against the trade. The script filters resolution and orientation only. It cannot
@@ -176,8 +193,10 @@ Compose the remaining fields yourself:
 Write that JSON to a temporary file and run:
 
 ```
-{venv python} scripts/build_brief.py "$1" --answers {answers.json} --stock {pexels folder} --stock {their folder}
+{venv python} scripts/build_brief.py "$1" --answers {answers.json} --stock {pexels folder} --stock {their_photos}
 ```
+
+Drop the second `--stock` when they gave no folder.
 
 ## 5. Report
 
