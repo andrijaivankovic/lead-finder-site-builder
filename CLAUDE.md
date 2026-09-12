@@ -92,7 +92,7 @@ those. Never reorder or rename CSV columns without migrating existing files.
 ```
 <Business>/
 ├── brief.md      the full instruction for the site, self contained
-├── assets/       licensed photographs, grouped by purpose
+├── assets/       the photographs, every one listed in brief.md
 └── site/         empty, this is where the website goes
 ```
 

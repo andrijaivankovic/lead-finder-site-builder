@@ -147,8 +147,10 @@ with the finished result.
 - `brief.md` — everything about the business and the full instruction for the
   site. Read it before writing a line. The section named **Build prompt** is the
   instruction and it stands on its own.
-- `assets/` — licensed photographs grouped by purpose. `assets/sources.json`
-  says what each one actually shows and who took it.
+- `assets/` — the photographs. Some are stock, some may be the business's own.
+  `brief.md` lists every one of them under **Images**, with where it belongs on
+  the page and which of the two it is. That list is the authority, not the
+  folder names.
 - `site/` — where the website goes. It is empty until someone builds it.
 
 ## What to do here
@@ -164,11 +166,13 @@ this folder gets edited.
 - Serve the site and look at it before saying it is finished. Never hand over a
   page nobody has opened.
 - Mobile first. Check 360px wide before anything else.
-- Image paths are relative: `../assets/<purpose>/<file>`. Use only filenames
-  that exist. Read `assets/sources.json` so a photograph lands in a section it
-  actually matches.
+- Image paths are relative: `../assets/` followed by the path **Images** gives
+  for that photograph, written exactly as it appears there. Do not guess a path
+  from a folder name: a photograph sitting in `exterior/` belongs at the top of
+  the page, and the brief is what says so.
 - Every visible word is in {language}.
-- The name, address and phone in `brief.md` are real. Never change them.
+- These are real and never change:
+  {known_facts}.
 - {unknown_facts} are unknown. Write an obvious
   placeholder in {language} and list every placeholder in an HTML comment at the
   bottom of `index.html`. Never invent a review or a person.
@@ -460,6 +464,7 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
         PROJECT_GUIDE.format(
             name=lead["name"],
             language=answers.get("language", "English"),
+            known_facts=_fact_split(lead)[0],
             unknown_facts=_fact_split(lead)[1],
         ),
         encoding="utf-8",

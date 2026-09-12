@@ -17,10 +17,13 @@ Read `$1/brief.md` in full before writing anything. The section named
 **Build prompt** is the instruction and it stands on its own — follow it
 literally rather than substituting your own preferences.
 
-List `$1/assets/` so you know the exact filenames available, and read
-`$1/assets/sources.json` for what each photograph actually shows. Use those
-descriptions to place images sensibly: do not put an oven photograph in a team
-section.
+The **Images** section of that brief lists every photograph: the path to use,
+where on the page it belongs, whether it is stock or the business's own, and
+what it shows. That list is the authority. Do not read a folder name and infer
+from it, and do not use a file the list does not mention.
+
+Use the descriptions to place images sensibly beyond that: do not put an oven
+photograph in a team section.
 
 ## 2. Build
 
@@ -31,7 +34,7 @@ Hard rules, repeated because they are the ones most often broken:
 - The stack is whatever `brief.md` says under **Build prompt**. Do not quietly
   swap it. Whatever it is, the production build must end up as a static bundle
   that runs on any host with no server behind it.
-- Image paths are relative, `../assets/<purpose>/<file>`.
+- Image paths are relative, `../assets/` followed by the path the brief gives.
 - Every visible word is in the language the brief names.
 - No lorem ipsum. Write real copy for this business.
 - Never invent reviews, staff names, prices or opening hours. Put a clear

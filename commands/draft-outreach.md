@@ -29,9 +29,12 @@ Report anyone waiting on a follow up before anything else, oldest first. If
 {venv python} scripts/build_brief.py "$1" --info
 ```
 
-Read the business folder if it exists: `brief.md` for the style and sections,
-`assets/sources.json` for what the photographs show, and `site/` to see whether
-the site is actually built. Never claim a site is ready when `site/` is empty.
+Read the business folder if it exists: `brief.md` for the style, the sections
+and what the photographs show, and `site/` to see whether the site is actually
+built. Never claim a site is ready when `site/` is empty.
+
+The brief marks each photograph as stock or the business's own. That decides
+what the message may say about them, so read it before writing point 4 below.
 
 Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`.
 If either is empty, say so and ask, rather than inventing a link or signing with
