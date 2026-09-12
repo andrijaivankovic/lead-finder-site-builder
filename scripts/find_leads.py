@@ -70,7 +70,7 @@ def main():
         else:
             print("Source: OpenStreetMap (free, no key)")
             print("Warning: OpenStreetMap has no ratings and no review counts.")
-            print("Only two of the five scoring rules apply, so ranking is coarse.\n")
+            print("Two of the five scoring rules go quiet, so ranking is coarse.\n")
 
         result = lead_search.run_search(
             arguments.query,
@@ -101,7 +101,7 @@ def main():
     if result.get("closed_dropped"):
         print("Dropped as closed: {}".format(result["closed_dropped"]))
     if result.get("previous"):
-        print("Merged with: {} (your statuses were kept)".format(result["previous"]))
+        print("Merged with: {} (what you typed by hand was kept)".format(result["previous"]))
     if result.get("stopped_at_limit"):
         print("Search stopped early because the monthly call limit was reached.")
     print("Saved to: {}\n".format(result["path"]))
