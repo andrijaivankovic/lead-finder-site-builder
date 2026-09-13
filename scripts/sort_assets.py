@@ -16,6 +16,16 @@ class AssetError(Exception):
     pass
 
 
+def _previous_manifest(folder):
+    path = Path(folder) / MANIFEST_NAME
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return {}
+
+
 def _images_in(folder):
     return sorted(
         path
@@ -32,6 +42,10 @@ def scan(folder, settings):
     images = _images_in(folder)
     if not images:
         raise AssetError("No images found in {}.".format(folder))
+
+    previous = _previous_manifest(folder)
+    earlier_entries = {entry.get("file"): entry for entry in previous.get("images", [])}
+    categories = settings["asset_sorting"]["categories"]
 
     entries = []
     skipped = []
@@ -51,14 +65,16 @@ def scan(folder, settings):
         except OSError:
             skipped.append({"file": relative, "reason": "it could not be opened as an image"})
             continue
+        earlier = earlier_entries.get(relative, {})
+        in_category_folder = path.parent.parent == folder and path.parent.name in categories
         entries.append(
             {
                 "file": relative,
                 "width": width,
                 "height": height,
                 "palette": palette,
-                "category": "",
-                "description": "",
+                "category": earlier.get("category") or (path.parent.name if in_category_folder else ""),
+                "description": earlier.get("description") or "",
             }
         )
 
@@ -72,7 +88,7 @@ def scan(folder, settings):
     manifest = {
         "folder": str(folder),
         "categories": settings["asset_sorting"]["categories"],
-        "brand_colors": [],
+        "brand_colors": previous.get("brand_colors") or [],
         "images": entries,
         "skipped": skipped,
     }
@@ -170,6 +186,10 @@ def main():
 
     for item in manifest["skipped"]:
         print("  skipped {}: {}".format(item["file"], item["reason"]))
+
+    kept = sum(1 for entry in manifest["images"] if entry["category"])
+    if kept:
+        print("\n{} of them keep the category they already had.".format(kept))
 
     print("\nWritten to {}".format(Path(manifest["folder"]) / MANIFEST_NAME))
     print("Fill in category and description for each image, then run the same command with --apply.")

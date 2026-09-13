@@ -140,7 +140,7 @@ def plan_for_category(category, settings, business="", note=""):
     matched = bool(queries)
 
     if not matched:
-        label = key or "local business"
+        label = key.replace("_", " ") or "local business"
         queries = {
             purpose: [text.format(category=label) for text in terms]
             for purpose, terms in plans["default"].items()
@@ -150,7 +150,7 @@ def plan_for_category(category, settings, business="", note=""):
 
     note = (note or "").strip()
     if note:
-        label = key or "local business"
+        label = key.replace("_", " ") or "local business"
         for purpose in ("hero", "interior"):
             if purpose in queries:
                 queries[purpose].insert(0, "{} {}".format(note, label))
