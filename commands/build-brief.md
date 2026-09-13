@@ -1,10 +1,12 @@
 ---
 description: Build the project folder and website brief for one lead
-argument-hint: <place_id>
+argument-hint: <place_id or business name>
 allowed-tools: Bash, Read, Write
 ---
 
-Build the website brief for the lead whose place_id is `$1`.
+Build the website brief for the lead that `$1` names, either by its place_id or
+by the business name. The name works as long as no other lead shares it; when
+one does, the script lists them with their place_ids, so ask which one.
 
 If `$1` is empty, list the top ten leads from the newest file in `data/` and ask
 which one, then continue with the place_id they pick.

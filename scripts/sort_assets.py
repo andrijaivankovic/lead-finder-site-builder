@@ -26,6 +26,13 @@ def _previous_manifest(folder):
         return {}
 
 
+def _logo_colours(entries, settings):
+    for entry in entries:
+        if (entry.get("category") or "").strip().lower() == "logo":
+            return entry["palette"][: settings["asset_sorting"]["logo_colors"]]
+    return []
+
+
 def _images_in(folder):
     return sorted(
         path
@@ -88,7 +95,7 @@ def scan(folder, settings):
     manifest = {
         "folder": str(folder),
         "categories": settings["asset_sorting"]["categories"],
-        "brand_colors": previous.get("brand_colors") or [],
+        "brand_colors": _logo_colours(entries, settings),
         "images": entries,
         "skipped": skipped,
     }
@@ -118,14 +125,21 @@ def apply(folder, settings, on_event=None):
             )
         )
 
+    wrong = sorted(
+        {entry["category"].strip().lower() for entry in manifest["images"]} - allowed
+    )
+    if wrong:
+        raise AssetError(
+            "{} {} not one of the allowed categories: {}. Nothing was moved.".format(
+                ", ".join("'{}'".format(name) for name in wrong),
+                "is" if len(wrong) == 1 else "are",
+                ", ".join(sorted(allowed)),
+            )
+        )
+
     moved = 0
     for entry in manifest["images"]:
         category = entry["category"].strip().lower()
-        if category not in allowed:
-            raise AssetError(
-                "'{}' is not one of the allowed categories: {}".format(category, ", ".join(sorted(allowed)))
-            )
-
         source = folder / entry["file"]
         if not source.exists():
             continue
@@ -141,9 +155,7 @@ def apply(folder, settings, on_event=None):
         if on_event:
             on_event("{} -> {}".format(source.name, category))
 
-        if category == "logo" and not manifest["brand_colors"]:
-            manifest["brand_colors"] = entry["palette"][: settings["asset_sorting"]["logo_colors"]]
-
+    manifest["brand_colors"] = _logo_colours(manifest["images"], settings)
     _write_manifest(folder, manifest)
     return manifest, moved
 

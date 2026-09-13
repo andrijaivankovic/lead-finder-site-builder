@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import re
 import unicodedata
 from pathlib import Path
@@ -24,17 +25,31 @@ COLUMNS = [
 
 STATUSES = ["", "contacted", "declined", "accepted"]
 
+CYRILLIC_TO_LATIN = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "ђ": "dj", "е": "e",
+    "ж": "z", "з": "z", "и": "i", "ј": "j", "к": "k", "л": "l", "љ": "lj",
+    "м": "m", "н": "n", "њ": "nj", "о": "o", "п": "p", "р": "r", "с": "s",
+    "т": "t", "ћ": "c", "у": "u", "ф": "f", "х": "h", "ц": "c", "ч": "c",
+    "џ": "dz", "ш": "s", "ѓ": "gj", "ќ": "kj", "ѕ": "dz", "й": "j", "ы": "y",
+    "э": "e", "ю": "ju", "я": "ja", "щ": "sc", "ъ": "", "ь": "", "ё": "e",
+    "є": "je", "і": "i", "ї": "ji", "ґ": "g", "ў": "u",
+}
+
 
 class FileLocked(Exception):
     pass
 
 
-def to_slug(text):
-    normalized = unicodedata.normalize("NFKD", text)
-    normalized = normalized.replace("đ", "dj").replace("Đ", "Dj")
-    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", normalized).strip("-").lower()
-    return slug or "search"
+def to_slug(text, fallback="search"):
+    lowered = unicodedata.normalize("NFC", text).lower().replace("đ", "dj")
+    transliterated = "".join(CYRILLIC_TO_LATIN.get(char, char) for char in lowered)
+    decomposed = unicodedata.normalize("NFKD", transliterated)
+    plain = "".join(char for char in decomposed if not unicodedata.combining(char))
+    slug = re.sub(r"[^a-z0-9]+", "-", plain).strip("-")
+    if any(char.isalnum() and not char.isascii() for char in plain):
+        digest = hashlib.sha1(lowered.strip().encode("utf-8")).hexdigest()[:8]
+        return "{}-{}".format(slug or fallback, digest)
+    return slug or fallback
 
 
 def data_dir(root):

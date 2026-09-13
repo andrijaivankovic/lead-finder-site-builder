@@ -296,7 +296,7 @@ copy commands\*.md .claude\commands\
 ```
 
 ```
-/build-brief <place_id>
+/build-brief <place_id or business name>
 ```
 
 Looks the business up on the map and on its social pages, asks you a handful of
@@ -366,7 +366,9 @@ The record lives in `data/outreach.csv`.
 ## Where your results are kept
 
 Every search writes a file into the `data` folder, named after what you
-searched for, for example `data/leads_bakery-novi-sad.csv`.
+searched for, for example `data/leads_bakery-novi-sad.csv`. Cyrillic is spelled
+out in Latin for the name, so `пекара Нови Сад` and `pekara Novi Sad` are the
+same search and share one file.
 
 That file is the database. There is no database.
 
