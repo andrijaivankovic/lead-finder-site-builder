@@ -5,8 +5,9 @@ written for someone opening the Google Cloud Console for the first time.
 
 Keys go into a `.env` file and nowhere else. That file never reaches GitHub.
 
-There are two accounts to make: Pexels and Google Cloud. Start with Pexels,
-which takes two minutes and carries no risk at all.
+There are two accounts to make, Pexels and Google Cloud, and then one file
+holding your own details. Start with Pexels, which takes two minutes and
+carries no risk at all.
 
 ---
 
@@ -224,4 +225,57 @@ PEXELS_API_KEY=563492ad6f91...
 
 The Google key is not required to start — without it the tool runs on
 OpenStreetMap.
+
+---
+
+## 3. Your own details
+
+The two keys above are what the tool needs. This last part is what it needs to
+write in your name.
+
+### What it is
+
+`config.yaml` holds the project's settings and is public. Two of them are
+yours rather than the project's: the name the outreach messages sign off with,
+and the links to work you have built. It ships with both empty.
+
+`config.local.yaml` is a file you create, in the project folder, next to
+`config.yaml`. Anything in it is laid over the public settings when the tool
+starts. It is in `.gitignore`, so it never leaves your computer.
+
+### What goes in it
+
+Only what you are changing. Everything else keeps the public value.
+
+```yaml
+outreach:
+  sender_name: "Your Name"
+  portfolio_links:
+    - url: "https://a-site-you-built.example/"
+      what: "cafe, warm and quiet, one page"
+    - url: "https://another.example/"
+      what: "grill house, dark, big photographs"
+
+brief:
+  default_language: "Serbian"
+  output_dir: "~/Sites"
+```
+
+The `what` line is read, not decoration: it orders the links so the closest
+trade goes first, and labels each one in the message.
+
+### Do you need it
+
+If you cloned this once and will never update it or share it, no. Put your
+details straight into `config.yaml` and nothing will go wrong.
+
+You want it the moment either of these becomes true:
+
+- **You run `git pull` to get improvements.** With your name inside
+  `config.yaml`, a pull that touches that file stops and asks you to deal with
+  your own edit first. With a local file, pulls never touch what is yours.
+- **You fork, push, or hand the folder to someone.** `config.yaml` is tracked
+  by Git, so your name, your links and your paths travel with it.
+
+Both files may exist at once. The local one wins wherever they overlap.
 
