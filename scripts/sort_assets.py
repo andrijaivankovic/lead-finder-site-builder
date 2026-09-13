@@ -9,7 +9,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import image_tools
 import lead_search
 
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tif", ".tiff"}
 MANIFEST_NAME = "assets.json"
 
 
@@ -21,7 +20,7 @@ def _images_in(folder):
     return sorted(
         path
         for path in folder.rglob("*")
-        if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES
+        if path.is_file() and path.suffix.lower() in image_tools.IMAGE_SUFFIXES
     )
 
 
@@ -35,15 +34,26 @@ def scan(folder, settings):
         raise AssetError("No images found in {}.".format(folder))
 
     entries = []
+    skipped = []
     for path in images:
+        relative = str(path.relative_to(folder)).replace("\\", "/")
+        if path.suffix.lower() in image_tools.BROWSER_UNSAFE_SUFFIXES:
+            skipped.append(
+                {
+                    "file": relative,
+                    "reason": "browsers other than Safari cannot show TIFF, so save it as JPEG or PNG first",
+                }
+            )
+            continue
         try:
             width, height = image_tools.dimensions(path)
             palette = image_tools.dominant_colours(path, settings["asset_sorting"]["logo_colors"])
         except OSError:
+            skipped.append({"file": relative, "reason": "it could not be opened as an image"})
             continue
         entries.append(
             {
-                "file": str(path.relative_to(folder)).replace("\\", "/"),
+                "file": relative,
                 "width": width,
                 "height": height,
                 "palette": palette,
@@ -52,11 +62,19 @@ def scan(folder, settings):
             }
         )
 
+    if not entries:
+        raise AssetError(
+            "None of the {} images in {} can be used: {}".format(
+                len(images), folder, "; ".join("{} ({})".format(item["file"], item["reason"]) for item in skipped)
+            )
+        )
+
     manifest = {
         "folder": str(folder),
         "categories": settings["asset_sorting"]["categories"],
         "brand_colors": [],
         "images": entries,
+        "skipped": skipped,
     }
     _write_manifest(folder, manifest)
     return manifest
@@ -149,6 +167,9 @@ def main():
         print("  {:<34} {:>5}x{:<5} {}".format(
             entry["file"], entry["width"], entry["height"], " ".join(entry["palette"][:3])
         ))
+
+    for item in manifest["skipped"]:
+        print("  skipped {}: {}".format(item["file"], item["reason"]))
 
     print("\nWritten to {}".format(Path(manifest["folder"]) / MANIFEST_NAME))
     print("Fill in category and description for each image, then run the same command with --apply.")
