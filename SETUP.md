@@ -128,10 +128,11 @@ Verification, wait two minutes, and refresh.
 
 **2. Create a project** (a drawer holding your key and quotas)
 - Top bar, project dropdown left of the search box → **"NEW PROJECT"**
-- **Project name:** `lead-finder-site-builder`, organization left as `No organization`
+- **Project name:** `lead-finder-site-builder`, organization left as
+  `No organization`
 - **"CREATE"**, wait 10–20 seconds
-- Reopen the dropdown and **select `lead-finder-site-builder`**. Confirm its name shows in
-  the top bar before continuing.
+- Reopen the dropdown and **select `lead-finder-site-builder`**. Confirm its name
+  shows in the top bar before continuing.
 
 **3. Link a card**
 - ☰ **Navigation menu** → **"Billing"** → **"LINK A BILLING ACCOUNT"** →
@@ -141,11 +142,19 @@ Verification, wait two minutes, and refresh.
   currency and releases it within days. It is not a charge.
 - **"START MY FREE TRIAL"** / **"SUBMIT AND ENABLE BILLING"**
 
-If you see *Cannot create another individual profile for the same country*, you
-already have a personal Google payments profile from Play, YouTube or similar.
-Do not fill in the Organization form. Cancel, refresh, and pick the existing
-profile from the dropdown above *Contact information*. If the dropdown does not
-appear, sign out of every other Google account in the browser and retry.
+If the payment step offers only *Profile type: Organization*, or shows *Cannot
+create another individual profile for the same country*, do not fill in the
+Organization form. An organization profile is a business profile, and Google
+does not let the type be changed once the profile exists.
+
+That screen can mean self-serve billing is not available for your country at
+all, and no browser, profile or account change gets past it. For Serbia, Google
+Cloud Support confirmed exactly this in September 2026: an account there has to
+be set up through an authorised Google Cloud partner or reseller, listed by
+region in the Google Cloud Partner Directory.
+
+Nothing in this tool stops working in the meantime. Leave `GOOGLE_MAPS_API_KEY`
+empty and searches run on OpenStreetMap.
 
 **4. Enable the API** — ⚠️ two similar names exist
 - ☰ → **"APIs & Services"** → **"Library"** → search `Places API`

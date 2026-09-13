@@ -29,9 +29,11 @@ Report anyone waiting on a follow up before anything else, oldest first. If
 {venv python} scripts/build_brief.py "$1" --info
 ```
 
-Read the business folder if it exists: `brief.md` for the style, the sections
-and what the photographs show, and `site/` to see whether the site is actually
-built. Never claim a site is ready when `site/` is empty.
+Read the business folder if it exists. It is named after the business and sits
+in `brief.output_dir` from `config.yaml`, which a `config.local.yaml` may
+override, or on the Desktop when that is empty. From it, read `brief.md` for the
+style, the sections and what the photographs show, and `site/` to see whether
+the site is actually built. Never claim a site is ready when `site/` is empty.
 
 The brief marks each photograph as stock or the business's own. That decides
 what the message may say about them, so read it before writing point 4 below.
