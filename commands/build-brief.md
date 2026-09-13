@@ -25,8 +25,8 @@ as it stands.
 ```
 
 Report the business name, its trade from the `category` field, the address, the
-phone, whether it has a website, and the website problems if any were found.
-Keep it to three lines.
+phone, the opening hours, whether it has a website, and the website problems if
+any were found. Keep it to three lines.
 
 ## 2. Ask the questions
 
@@ -55,7 +55,7 @@ accepts all defaults.
 5. Generate AI images and video? [yes]
 6. Language of the site? [the configured default]
 
-If the lead has no rating and no review count, say so and recommend "ne" for
+If the lead has no rating and no review count, say so and recommend "no" for
 question 3, because there is nothing to show.
 
 Then ask a seventh question about the stack, and give a recommendation rather
@@ -170,14 +170,19 @@ is dropped, while stock keeps the backgrounds nobody photographs for
 themselves.
 
 Then read every `description` in the generated `sources.json` and check it
-against the trade. The script filters resolution and orientation only. It cannot
-see what is in a picture, so a search for a bright waiting room happily returns
-living rooms and hair salons.
+against the trade. The script filters by resolution, orientation and a few words
+in each photographer's description. It cannot see what is in a picture, so a
+search for a bright waiting room happily returns living rooms and hair salons.
 
 If something obviously belongs to a different kind of business, delete the
-folder and run it again with better terms through `--query`, then say which ones
-you had to correct. If a whole trade keeps coming back wrong, that is a sign its
-entry in `config.yaml` under `stock_photos.plans` needs fixing, so say that too.
+folder and run it again with better terms, then say which ones you had to
+correct. Rerun it with `--plan`, pointing at a JSON file that holds `business`
+and `queries`, where `queries` maps each purpose to its list of search terms.
+`--query` will not do here: it takes one purpose per run and rewrites
+`sources.json` each time, so it cannot rebuild a whole set.
+
+If a whole trade keeps coming back wrong, that is a sign its entry in
+`config.yaml` under `stock_photos.plans` needs fixing, so say that too.
 
 Report how many photographs came back and where they went.
 

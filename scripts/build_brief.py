@@ -211,8 +211,9 @@ with the finished result.
 
 ## What to do here
 
-Write `index.html`, `style.css` and `script.js` into `site/`. Nothing else in
-this folder gets edited.
+Write the site into `site/`, in the stack `brief.md` names. For plain HTML that
+is `index.html`, `style.css` and `script.js`. Nothing else in this folder gets
+edited.
 
 ## Rules that are not negotiable
 
