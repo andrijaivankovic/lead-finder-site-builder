@@ -32,8 +32,11 @@ TEMPLATE_PLATFORMS = {
 
 VERSION_PATTERN = re.compile(r"(\d+)(?:\.(\d+))?")
 
-YEAR_PATTERN = re.compile(r"(?:©|\(c\)|copyright)\s*[^0-9]{0,12}(19|20)\d{2}", re.IGNORECASE)
-ANY_YEAR = re.compile(r"(19|20)\d{2}")
+YEAR_PATTERN = re.compile(
+    r"(?:©|\(c\)|copyright)\s*[^0-9]{0,12}((?:19|20)\d{2})"
+    r"(?:\s*[-–—]\s*(?:((?:19|20)\d{2})|(present|today|danas)))?",
+    re.IGNORECASE,
+)
 
 
 def normalise_url(url):
@@ -47,7 +50,7 @@ def normalise_url(url):
 
 def _attempts(url):
     if (url or "").strip().startswith(("http://", "https://")):
-        return [url, url]
+        return [url]
     secure = normalise_url(url)
     return [secure, secure.replace("https://", "http://", 1)]
 
@@ -77,9 +80,11 @@ def _footer_year(soup):
     footer = soup.find("footer")
     text = footer.get_text(" ", strip=True) if footer else soup.get_text(" ", strip=True)[-2000:]
     match = YEAR_PATTERN.search(text)
-    if match:
-        return int(ANY_YEAR.search(match.group(0)).group(0))
-    return None
+    if not match:
+        return None
+    if match.group(3):
+        return datetime.now(timezone.utc).year
+    return int(match.group(2) or match.group(1))
 
 
 def _header_year(response):
