@@ -32,9 +32,9 @@ def main():
 
     parser = argparse.ArgumentParser(description="Keeps the record of who was contacted, when and through what.")
     parser.add_argument("--due", action="store_true", help="List who is waiting on a follow up")
-    parser.add_argument("--sent", help="Record a message as sent, takes a place_id")
-    parser.add_argument("--channel", help="email, viber or instagram")
-    parser.add_argument("--answered", help="Record a reply, takes a place_id")
+    parser.add_argument("--sent", help="Record a message as sent, takes a place_id or a business name")
+    parser.add_argument("--channel", help="One of outreach.channels in config.yaml")
+    parser.add_argument("--answered", help="Record a reply, takes a place_id or a business name")
     parser.add_argument("--response", help="interested, declined or 'no answer'")
     parser.add_argument("--notes", default="", help="Anything worth remembering")
     arguments = parser.parse_args()
@@ -47,7 +47,7 @@ def main():
                 raise outreach_log.OutreachError("--sent needs --channel as well.")
             lead, _ = build_brief.find_lead(arguments.sent)
             row = outreach_log.record_send(
-                ROOT, arguments.sent, lead["name"], arguments.channel, settings, notes=arguments.notes
+                ROOT, lead["place_id"], lead["name"], arguments.channel, settings, notes=arguments.notes
             )
             print("\nLogged: {} over {} on {}. Follow up due {}.\n".format(
                 row["name"], row["channel"], row["sent_at"], row["follow_up_due"]
@@ -57,7 +57,13 @@ def main():
         if arguments.answered:
             if not arguments.response:
                 raise outreach_log.OutreachError("--answered needs --response as well.")
-            touched = outreach_log.record_response(ROOT, arguments.answered, arguments.response, arguments.notes)
+            try:
+                place_id = build_brief.find_lead(arguments.answered)[0]["place_id"]
+            except build_brief.AmbiguousLead:
+                raise
+            except build_brief.BriefError:
+                place_id = arguments.answered
+            touched = outreach_log.record_response(ROOT, place_id, arguments.response, arguments.notes)
             print("\nRecorded '{}' for {}.\n".format(arguments.response, touched[0]["name"]))
             return
 
