@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import image_tools
 import lead_search
 import lead_store
 
@@ -513,9 +514,11 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
             destination = project / "assets" / item.name
             if item.is_dir():
                 shutil.copytree(item, destination, dirs_exist_ok=True)
-                copied += len(list(destination.rglob("*.jpg")))
+                copied += sum(1 for path in item.rglob("*") if path.suffix.lower() in image_tools.IMAGE_SUFFIXES)
             else:
                 shutil.copy2(item, destination)
+                if item.suffix.lower() in image_tools.IMAGE_SUFFIXES:
+                    copied += 1
 
     brief = render_brief(lead, answers, project / "assets", settings)
     (project / "brief.md").write_text(brief, encoding="utf-8")

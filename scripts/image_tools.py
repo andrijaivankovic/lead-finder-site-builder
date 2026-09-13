@@ -4,6 +4,8 @@ from PIL import Image
 
 NEUTRAL_SATURATION = 24
 SAMPLE_SIZE = 160
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tif", ".tiff"}
+BROWSER_UNSAFE_SUFFIXES = {".tif", ".tiff"}
 
 
 def _to_hex(colour):

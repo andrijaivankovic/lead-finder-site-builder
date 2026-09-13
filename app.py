@@ -59,8 +59,16 @@ def search():
     if not query:
         return jsonify({"error": "Enter a search first."}), 400
 
+    if limit is not None:
+        try:
+            limit = int(limit)
+        except (TypeError, ValueError):
+            return jsonify({"error": "The limit has to be a whole number."}), 400
+        if limit < 1:
+            return jsonify({"error": "The limit has to be at least 1."}), 400
+
     try:
-        result = lead_search.run_search(query, limit=int(limit) if limit else None)
+        result = lead_search.run_search(query, limit=limit)
     except lead_search.SearchError as error:
         return jsonify({"error": str(error)}), 400
     except Exception as error:
