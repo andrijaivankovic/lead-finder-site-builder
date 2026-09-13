@@ -219,9 +219,15 @@ Every link in that list goes into every message. The `what` line decides the
 order they appear in, so a grill owner reads the grill site before the bakery,
 and it doubles as the label next to each link.
 
-If you plan to pull future updates of this project, put those values in a file
-called `config.local.yaml` instead, using the same shape. That file is ignored
-by Git, so updates will never conflict with your details.
+Those two are yours rather than the project's, so there is a second place for
+them: create `config.local.yaml` next to `config.yaml` and put them there
+instead. It is laid over the public settings when the tool starts and is
+ignored by Git, so a `git pull` never collides with your name and a push never
+carries it.
+
+If you will never update this project or share the folder, `config.yaml` is
+fine and this file is not needed. [SETUP.md](SETUP.md#3-your-own-details)
+covers it in full.
 
 ## Using it
 
@@ -279,8 +285,8 @@ creates a folder containing `brief.md`, an `assets` folder, and an empty `site`
 folder.
 
 That folder lands on your Desktop. To keep client work somewhere else, set
-`brief.output_dir` in `config.yaml`, or in `config.local.yaml` if the path is
-personal to you:
+`brief.output_dir`, in `config.local.yaml` if the path is personal to you, as
+[SETUP.md](SETUP.md#3-your-own-details) explains:
 
 ```yaml
 brief:
