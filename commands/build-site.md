@@ -27,7 +27,9 @@ photograph in a team section.
 
 ## 2. Build
 
-Write `index.html`, `style.css` and `script.js` into `$1/site/`.
+Write the site into `$1/site/`, in the stack the brief names. For plain HTML
+that is `index.html`, `style.css` and `script.js`; for a stack with a build step
+it is whatever that stack needs, set up inside `site/`.
 
 Hard rules, repeated because they are the ones most often broken:
 
@@ -37,9 +39,11 @@ Hard rules, repeated because they are the ones most often broken:
 - Image paths are relative, `../assets/` followed by the path the brief gives.
 - Every visible word is in the language the brief names.
 - No lorem ipsum. Write real copy for this business.
-- Never invent reviews, staff names, prices or opening hours. Put a clear
-  placeholder in the site language and list every placeholder in an HTML
-  comment at the bottom of `index.html`.
+- Never invent reviews, staff names or prices. The address, phone and opening
+  hours are real wherever the brief's table gives them, so use them exactly;
+  where it says "not listed", treat that one as unknown too. Put a clear
+  placeholder in the site language for everything unknown, and list every
+  placeholder in an HTML comment at the bottom of `index.html`.
 - `<title>`, `<meta name="description">` and `<meta name="viewport">` are
   mandatory.
 
@@ -48,10 +52,10 @@ Hard rules, repeated because they are the ones most often broken:
 This step is not optional. Never say a site is finished without having opened
 it.
 
-Add an entry to `.claude/launch.json` for this site and start it with the
-preview tool. For a plain HTML site that is a static file server rooted at the
-brief folder, so `../assets/` resolves; for a framework it is that stack's dev
-command.
+Serve it through whatever local preview your tools offer. In Claude Code that
+is an entry in `.claude/launch.json` started with the preview tool. For a plain
+HTML site it is a static file server rooted at the brief folder, so `../assets/`
+resolves; for a framework it is that stack's dev command.
 
 Then look at it at 360px wide before anything else, then at desktop width. Read
 the browser console for errors. Confirm every image actually loads rather than

@@ -274,6 +274,27 @@ a company register search for finding the owner.
 The three commands below are Claude Code commands. You type them in a Claude
 Code session opened inside this folder.
 
+They live in `commands/`, which Claude Code does not read on its own, so link
+them into `.claude/commands/` once after cloning. From the project folder on
+macOS and Linux:
+
+```bash
+mkdir -p .claude/commands
+for f in commands/*.md; do ln -s "../../$f" .claude/commands/; done
+```
+
+That folder is ignored by Git. Because these are links and not copies, an
+update that changes a command changes it here too. Open a new session
+afterwards so the commands are picked up.
+
+On Windows a link needs Developer Mode or an administrator prompt. Without
+either, copy the three files instead, and copy them again after each update:
+
+```
+mkdir .claude\commands
+copy commands\*.md .claude\commands\
+```
+
 ```
 /build-brief <place_id>
 ```
@@ -467,6 +488,7 @@ English. Hand them to your assistant and it can follow them.
 
 MIT. See [LICENSE](LICENSE).
 
-Photographs downloaded through this tool stay under the Pexels licence. Each
-folder of images ships a `sources.json` naming the photographer and linking the
-page the photograph came from.
+Photographs downloaded from Pexels through this tool stay under the Pexels
+licence. Each such folder ships a `sources.json` naming the photographer and
+linking the page the photograph came from. Photographs a business supplies
+remain theirs.

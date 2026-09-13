@@ -54,9 +54,11 @@ are not possible.
 1. Open **https://www.pexels.com/join/** and register.
 2. Open **https://www.pexels.com/api/** and click **"Get Started"**.
 3. Fill the short form:
-   - **Project Category** → *Personal Use / Just for Fun*
+   - **Project Category** → whichever honestly describes your use. Demo sites
+     sent to businesses you hope to win as clients are commercial work, not
+     personal use.
    - **Explain briefly how and where you want to integrate our photos** →
-     `Personal tool that finds stock photos for small business website mockups.`
+     `Finds stock photos for demo websites I build for local businesses.`
    - **URL** → optional, leave it empty if you have no site yet
 4. Tick the terms checkbox and click **"Generate API Key"**.
 5. The key appears immediately and stays available at
@@ -64,7 +66,9 @@ are not possible.
 
 ### Where it goes
 
-In `.env`, on the line `PEXELS_API_KEY=`
+In `.env`, on the line `PEXELS_API_KEY=`. If that file does not exist yet,
+[Creating the `.env` file](#creating-the-env-file) at the end of section 2 shows
+how.
 
 ---
 
@@ -75,9 +79,9 @@ before clicking.
 
 ### What it does
 
-Places API is the source of business data: name, address, rating, review count,
-phone, and most importantly **whether the business has a website**. The whole
-ranking depends on it.
+Places API is the richer source of business data: name, address, rating, review
+count, phone, and most importantly **whether the business has a website**. The
+ratings and review counts are what make the ranking fine grained.
 
 **Without it:** the tool falls back to OpenStreetMap, which is free and needs
 no key, but has no ratings and no review counts. Two of the five scoring rules
@@ -218,13 +222,8 @@ GOOGLE_MAPS_API_KEY=AIzaSyC3xK9...
 PEXELS_API_KEY=563492ad6f91...
 ```
 
-`.env` is already in `.gitignore`.
-
----
-
-
-The Google key is not required to start — without it the tool runs on
-OpenStreetMap.
+`.env` is already in `.gitignore`. The Google key is not required to start;
+without it the tool runs on OpenStreetMap.
 
 ---
 
