@@ -1,9 +1,7 @@
 import argparse
 import json
 import os
-import re
 import sys
-import unicodedata
 from pathlib import Path
 
 import requests
@@ -13,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import image_tools
 import lead_search
+import lead_store
 
 PEXELS_SEARCH = "https://api.pexels.com/v1/search"
 ROOT = lead_search.ROOT
@@ -20,12 +19,6 @@ ROOT = lead_search.ROOT
 
 class StockPhotoError(Exception):
     pass
-
-
-def _slug(text):
-    normalised = unicodedata.normalize("NFKD", text).replace("đ", "dj").replace("Đ", "Dj")
-    normalised = "".join(char for char in normalised if not unicodedata.combining(char))
-    return re.sub(r"[^a-zA-Z0-9]+", "-", normalised).strip("-").lower() or "business"
 
 
 def _api_key():
@@ -196,7 +189,7 @@ def main():
         settings = lead_search.load_settings()
         plan = _plan_from_arguments(arguments, settings)
         business = plan.get("business") or "stock"
-        out_dir = Path(arguments.out) if arguments.out else ROOT / "assets" / "stock" / _slug(business)
+        out_dir = Path(arguments.out) if arguments.out else ROOT / "assets" / "stock" / lead_store.to_slug(business, "business")
 
         print("\nBusiness: {}".format(business or "not given"))
         if plan.get("category"):

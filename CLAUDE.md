@@ -86,8 +86,8 @@ those. Never reorder or rename CSV columns without migrating existing files.
 
 ## Building a website for a lead
 
-`/build-brief <place_id>` prepares a folder in `brief.output_dir` from
-`config.yaml`, or on the Desktop when that is empty:
+`/build-brief <place_id or business name>` prepares a folder in
+`brief.output_dir` from `config.yaml`, or on the Desktop when that is empty:
 
 ```
 <Business>/
