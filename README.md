@@ -303,7 +303,7 @@ Reads that brief, builds the website into `site`, then serves it and checks it
 at phone width and desktop width before telling you it is done.
 
 ```
-/draft-outreach <place_id>
+/draft-outreach <place_id or name>
 ```
 
 Shows you who is overdue a follow up, then writes the three versions of the
@@ -311,6 +311,36 @@ message for the business you named.
 
 The button labelled "Create brief" next to each row in the browser copies the
 first command for you, already filled in with the right business.
+
+### Keeping track of who you contacted
+
+Nothing is recorded when a message is drafted, because drafting is not sending.
+Once you have actually sent one, record it:
+
+```bash
+./run scripts/outreach.py --sent "Business Name" --channel email
+```
+
+The business can be given by its name or by its `place_id`. If two businesses
+share the name, the command says so and asks for the `place_id` instead.
+`--channel` is one of `email`, `viber`, `whatsapp` or `instagram`, the list kept
+in `outreach.channels` in `config.yaml`.
+
+When a reply comes in:
+
+```bash
+./run scripts/outreach.py --answered "Business Name" --response interested
+```
+
+`--response` is `interested`, `declined` or `"no answer"`. To list everyone who
+has not replied within `outreach.follow_up_days` of being contacted, four days
+by default:
+
+```bash
+./run scripts/outreach.py --due
+```
+
+The record lives in `data/outreach.csv`.
 
 ## Where your results are kept
 

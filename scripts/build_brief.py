@@ -17,6 +17,10 @@ class BriefError(Exception):
     pass
 
 
+class AmbiguousLead(BriefError):
+    pass
+
+
 def output_dir(settings):
     configured = (settings["brief"].get("output_dir") or "").strip()
     if configured:
@@ -33,13 +37,35 @@ def folder_name(business):
     return cleaned or "Business"
 
 
-def find_lead(place_id):
-    for name in lead_store.list_files(ROOT):
-        path = lead_store.data_dir(ROOT) / name
+def find_lead(identifier):
+    wanted = (identifier or "").strip()
+    if not wanted:
+        raise BriefError("Name a business by its place_id or its name.")
+
+    by_name = {}
+    for file_name in lead_store.list_files(ROOT):
+        path = lead_store.data_dir(ROOT) / file_name
         for row in lead_store.load_rows(path):
-            if row["place_id"] == place_id:
+            if row["place_id"] == wanted:
                 return row, path.name
-    raise BriefError("No lead with place_id {} in any file under data/.".format(place_id))
+            if (row.get("name") or "").strip().lower() == wanted.lower():
+                by_name.setdefault(row["place_id"], (row, path.name))
+
+    if len(by_name) == 1:
+        return next(iter(by_name.values()))
+    if len(by_name) > 1:
+        raise AmbiguousLead(
+            "{} businesses are called {}, so the name does not say which one: {}. Use the "
+            "place_id instead.".format(
+                len(by_name),
+                wanted,
+                "; ".join(
+                    "{} ({})".format(place_id, row.get("address") or file_name)
+                    for place_id, (row, file_name) in by_name.items()
+                ),
+            )
+        )
+    raise BriefError("No lead with the place_id or name {} in any file under data/.".format(wanted))
 
 
 def _bullet_list(items, empty="not provided"):
@@ -465,7 +491,7 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
     }
     if typed:
         lead.update(typed)
-        lead_store.update_fields(lead_store.data_dir(ROOT) / source_file, place_id, typed)
+        lead_store.update_fields(lead_store.data_dir(ROOT) / source_file, lead["place_id"], typed)
 
     settings = lead_search.load_settings()
     answers.setdefault("language", settings["brief"]["default_language"])

@@ -104,6 +104,10 @@ follow up:
 {venv python} scripts/outreach.py --sent "{place_id}" --channel email
 ```
 
+`--channel` is one of `outreach.channels` in `config.yaml`, which by default is
+`email`, `viber`, `whatsapp` and `instagram`. The business can be given by its
+name instead of its place_id, as long as no other business shares that name.
+
 And when a reply arrives:
 
 ```
