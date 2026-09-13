@@ -3,6 +3,8 @@ import time
 
 import requests
 
+import lead_store
+
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 OVERPASS_SERVERS = [
     "https://overpass-api.de/api/interpreter",
@@ -76,6 +78,14 @@ def _name_conditions(term):
         for element_type in ELEMENT_TYPES:
             parts.append('  {}["{}"]["name"~"{}",i](area.searchArea);'.format(element_type, key, pattern))
     return "\n".join(parts)
+
+
+def category_filters(term, categories):
+    wanted = lead_store.to_slug(term, "")
+    for name, filters in categories.items():
+        if lead_store.to_slug(name, "") == wanted:
+            return filters
+    return None
 
 
 def _build_query(area_id, conditions):
@@ -179,8 +189,7 @@ def search(query, limit, settings, on_event=None):
             "a place, for example \"pizzeria Novi Sad\".".format(query)
         )
 
-    categories = settings.get("osm_categories", {})
-    filters = categories.get(term.lower())
+    filters = category_filters(term, settings.get("osm_categories", {}))
 
     if filters:
         conditions = _tag_conditions(filters)

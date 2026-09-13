@@ -7,7 +7,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import image_tools
 import lead_search
 import lead_store
 
@@ -515,8 +514,121 @@ described in "Why this business".
     )
 
 
+def _folder_contents(folder, settings):
+    folder = Path(folder).expanduser()
+    if not folder.is_dir():
+        raise BriefError("{} is not a folder.".format(folder))
+
+    manifest_path = folder / "assets.json"
+    sources_path = folder / "sources.json"
+    if not manifest_path.exists() and not sources_path.exists():
+        raise BriefError(
+            "{} has neither assets.json nor sources.json, so nothing says what the "
+            "photographs in it are. Run sort_assets.py on the business's own photographs, "
+            "or find_stock_photos.py for stock.".format(folder)
+        )
+
+    contents = {"folder": folder, "theirs": [], "stock": [], "brand_colors": []}
+    if manifest_path.exists():
+        check_sorted(folder, settings)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        contents["theirs"] = [image for image in manifest.get("images", []) if (folder / image["file"]).is_file()]
+        contents["brand_colors"] = manifest.get("brand_colors") or []
+    if sources_path.exists():
+        payload = json.loads(sources_path.read_text(encoding="utf-8"))
+        contents["stock"] = [photo for photo in payload.get("photos", []) if (folder / photo["file"]).is_file()]
+    return contents
+
+
+def _inside(assets_dir, relative):
+    root = Path(assets_dir).resolve()
+    return root in (root / relative).resolve().parents
+
+
+def _copied_last_time(assets_dir):
+    files = set()
+    for name, key in (("assets.json", "images"), ("sources.json", "photos")):
+        path = Path(assets_dir) / name
+        if not path.exists():
+            continue
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8")).get(key, [])
+        except ValueError:
+            continue
+        files.update(entry["file"] for entry in entries if entry.get("file"))
+    return files
+
+
+def _write_or_remove(path, payload):
+    if payload is None:
+        if path.exists():
+            path.unlink()
+        return
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _fill_assets(assets_dir, folders, business, settings):
+    purposes = settings["asset_sorting"]["purposes"]
+    theirs = [(item["folder"], image) for item in folders for image in item["theirs"]]
+    covered = {purposes[image["category"].strip().lower()] for _, image in theirs}
+    stock = [
+        (item["folder"], photo)
+        for item in folders
+        for photo in item["stock"]
+        if photo.get("purpose") not in covered
+    ]
+
+    planned = {}
+    for folder, entry in theirs + stock:
+        relative = entry["file"]
+        source = folder / relative
+        if not _inside(assets_dir, relative):
+            raise BriefError("{} points outside the folder it is listed in.".format(relative))
+        if relative in planned and planned[relative] != source:
+            raise BriefError(
+                "{} and {} would both be copied to assets/{}. Rename one of them.".format(
+                    planned[relative], source, relative
+                )
+            )
+        planned[relative] = source
+
+    assets_dir.mkdir(parents=True, exist_ok=True)
+    for relative in _copied_last_time(assets_dir) - set(planned):
+        stale = assets_dir / relative
+        if _inside(assets_dir, relative) and stale.is_file():
+            stale.unlink()
+            if stale.parent != assets_dir and not any(stale.parent.iterdir()):
+                stale.parent.rmdir()
+
+    for relative, source in planned.items():
+        target = assets_dir / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if source.resolve() != target.resolve():
+            shutil.copy2(source, target)
+
+    colours = next((item["brand_colors"] for item in folders if item["theirs"] and item["brand_colors"]), [])
+    _write_or_remove(
+        assets_dir / "assets.json",
+        {
+            "categories": settings["asset_sorting"]["categories"],
+            "brand_colors": colours,
+            "images": [image for _, image in theirs],
+        }
+        if theirs
+        else None,
+    )
+    _write_or_remove(
+        assets_dir / "sources.json",
+        {"business": business, "source": "Pexels", "photos": [photo for _, photo in stock]} if stock else None,
+    )
+    return len(planned)
+
+
 def create(place_id, answers, stock_dirs=None, target_root=None):
     lead, source_file = find_lead(place_id)
+    settings = lead_search.load_settings()
+    folders = [_folder_contents(folder, settings) for folder in stock_dirs or []]
+
     typed = {
         column: answers[column].strip()
         for column in lead_store.TYPED_FIELDS
@@ -526,7 +638,6 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
         lead.update(typed)
         lead_store.update_fields(lead_store.data_dir(ROOT) / source_file, lead["place_id"], typed)
 
-    settings = lead_search.load_settings()
     answers.setdefault("language", settings["brief"]["default_language"])
     base = Path(target_root).expanduser() if target_root else output_dir(settings)
     project = base / folder_name(lead["name"])
@@ -534,21 +645,7 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
     (project / "assets").mkdir(parents=True, exist_ok=True)
     (project / "site").mkdir(parents=True, exist_ok=True)
 
-    copied = 0
-    for folder in stock_dirs or []:
-        if not Path(folder).expanduser().is_dir():
-            raise BriefError("{} is not a folder.".format(folder))
-        check_sorted(Path(folder).expanduser(), settings)
-
-        for item in Path(folder).expanduser().iterdir():
-            destination = project / "assets" / item.name
-            if item.is_dir():
-                shutil.copytree(item, destination, dirs_exist_ok=True)
-                copied += sum(1 for path in item.rglob("*") if path.suffix.lower() in image_tools.IMAGE_SUFFIXES)
-            else:
-                shutil.copy2(item, destination)
-                if item.suffix.lower() in image_tools.IMAGE_SUFFIXES:
-                    copied += 1
+    copied = _fill_assets(project / "assets", folders, lead["name"], settings) if folders else 0
 
     brief = render_brief(lead, answers, project / "assets", settings)
     (project / "brief.md").write_text(brief, encoding="utf-8")
@@ -576,7 +673,10 @@ def main():
     parser.add_argument(
         "--stock",
         action="append",
-        help="Folder of photographs to copy into assets/, repeatable",
+        help=(
+            "Folder of photographs to copy into assets/, repeatable. Without it, assets/ is "
+            "left as it is and the brief lists what is already there"
+        ),
     )
     parser.add_argument("--into", help="Where to create the project folder, overriding brief.output_dir")
     arguments = parser.parse_args()

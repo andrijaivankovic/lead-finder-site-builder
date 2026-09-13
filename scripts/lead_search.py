@@ -113,7 +113,10 @@ def run_search(query, limit=None, source="auto", on_event=None, audit=None):
         raise SearchError("The search is empty.")
 
     settings = load_settings()
-    limit = limit or settings["search"]["default_limit"]
+    if limit is None:
+        limit = settings["search"]["default_limit"]
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise SearchError("The limit has to be a whole number of at least 1, not {}.".format(limit))
     api_key = google_key()
 
     if source == "google" and not api_key:

@@ -241,6 +241,12 @@ covers it in full.
 Add `--no-audit` to skip checking existing websites, which makes a search much
 faster when you only want to see whether a place is worth searching at all.
 
+The first words name the kind of business and the last ones the place. Without
+a Google key, the kind is looked up in `osm_categories` in `config.yaml`, and it
+does not matter whether you type it in Latin or Cyrillic, or with or without
+č, ć, š, ž and đ: `pekara`, `пекара` and `kafić` each find every bakery or cafe
+in that place. A word that is not on the list searches business names instead.
+
 ### Checking one website on its own
 
 ```bash
