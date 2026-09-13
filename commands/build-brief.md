@@ -145,9 +145,12 @@ whoever builds the site. Then:
 ```
 
 Do not pass the folder on to step 4 before this has run. `build_brief.py`
-refuses a folder whose categories are still empty, rather than filing every
-photograph under the gallery and quietly dropping the stock that belonged
-there.
+refuses a folder that was never scanned, and one whose categories are still
+empty, because nothing would say where on the page those photographs belong.
+
+If the scan lists a file as skipped, tell them which one and why. A skipped
+file never reaches the site. A TIFF only needs saving again as JPEG or PNG, and
+a file that could not be opened is usually not an image at all.
 
 An image categorised `logo` fills `brand_colors` in `assets.json`, and
 `build_brief.py` takes those whenever the answers carry no colours of their own.
@@ -214,6 +217,12 @@ Write that JSON to a temporary file and run:
 ```
 
 Drop the second `--stock` when they gave no folder.
+
+Only what the brief lists is copied into `assets/`: nothing the scan skipped,
+and no stock photograph whose place one of theirs took. Running it again for
+the same business replaces what the previous run copied and leaves anything
+else in `assets/` alone. Without `--stock` it only rewrites the brief and does
+not touch `assets/` at all.
 
 ## 5. Report
 

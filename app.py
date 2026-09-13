@@ -54,12 +54,14 @@ def leads():
 def search():
     payload = request.get_json(silent=True) or {}
     query = (payload.get("query") or "").strip()
-    limit = payload.get("limit") or None
+    limit = payload.get("limit")
 
     if not query:
         return jsonify({"error": "Enter a search first."}), 400
 
-    if limit is not None:
+    if limit in (None, ""):
+        limit = None
+    else:
         try:
             limit = int(limit)
         except (TypeError, ValueError):

@@ -49,13 +49,23 @@ def _report_progress(message):
     print("  {}".format(message))
 
 
+def _limit(text):
+    try:
+        number = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError("has to be a whole number, not {}".format(text))
+    if number < 1:
+        raise argparse.ArgumentTypeError("has to be at least 1, not {}".format(number))
+    return number
+
+
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     parser = argparse.ArgumentParser(description="Finds local businesses and ranks them as website candidates.")
     parser.add_argument("query", help='For example: "pizzeria Novi Sad"')
-    parser.add_argument("--limit", type=int, default=None, help="Maximum number of results")
+    parser.add_argument("--limit", type=_limit, default=None, help="Maximum number of results, at least 1")
     parser.add_argument("--source", choices=["auto", "google", "osm"], default="auto")
     parser.add_argument("--no-audit", action="store_true", help="Skip checking the existing websites")
     arguments = parser.parse_args()
