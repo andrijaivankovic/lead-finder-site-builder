@@ -147,9 +147,8 @@ refuses a folder whose categories are still empty, rather than filing every
 photograph under the gallery and quietly dropping the stock that belonged
 there.
 
-An image categorised `logo` fills `brand_colors`, so read them out of
-`assets.json` afterwards and use them in step 4 unless they already answered
-with colours of their own.
+An image categorised `logo` fills `brand_colors` in `assets.json`, and
+`build_brief.py` takes those whenever the answers carry no colours of their own.
 
 ### Then the stock that fills the rest
 
@@ -196,9 +195,9 @@ Compose the remaining fields yourself:
 - `seo_keywords` is eight to twelve phrases that someone in that city would
   actually type, in the site language, mixing the trade, the city and the
   neighbourhood.
-- `brand_colors` is what they answered above, or what `assets.json` from
-  `sort_assets.py` holds once a client has sent their own images. Empty when
-  there is neither.
+- `brand_colors` is what they answered above. Leave it out when they gave none:
+  `build_brief.py` then takes the logo's colours from `assets.json`, if a logo
+  was among their photographs.
 - `style` is their optional note tidied up, or a plain description of the trade
   if they skipped it.
 - `trade` and `city` in English, for the build prompt.

@@ -1,6 +1,7 @@
 import argparse
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -126,6 +127,13 @@ def _client_photos(assets_dir, settings):
     return photos
 
 
+def _client_brand_colours(assets_dir):
+    manifest = Path(assets_dir) / "assets.json"
+    if not manifest.exists():
+        return []
+    return json.loads(manifest.read_text(encoding="utf-8")).get("brand_colors") or []
+
+
 def _stock_photos(assets_dir, covered):
     sources = Path(assets_dir) / "sources.json"
     if not sources.exists():
@@ -228,11 +236,10 @@ edited.
   from a folder name: a photograph sitting in `exterior/` belongs at the top of
   the page, and the brief is what says so.
 - Every visible word is in {language}.
-- These are real and never change:
-  {known_facts}.
-- {unknown_facts} are unknown. Write an obvious
-  placeholder in {language} and list every placeholder in an HTML comment at the
-  bottom of `index.html`. Never invent a review or a person.
+- Real, from `brief.md`, and never changed: {known_facts}.
+- Not known: {unknown_facts}. Write an obvious placeholder in {language} for
+  each and list every placeholder in an HTML comment at the bottom of
+  `index.html`. Never invent a review or a person.
 - No lorem ipsum anywhere.
 """
 
@@ -247,9 +254,24 @@ def _pitch(lead, problems):
         return "The business already has {}, and it fails on this: {}".format(
             lead["website"], " ".join(problems)
         )
+    if not str(lead.get("website_score") or "").strip():
+        return "The business has {}, which has not been audited, so this site has to win on looks and clarity.".format(
+            lead["website"]
+        )
     return "The business has {}, and it is not obviously broken, so this site has to win on looks and clarity.".format(
         lead["website"]
     )
+
+
+def _why(lead, problems):
+    if problems:
+        return _bullet_list(problems)
+    website = (lead.get("website") or "").strip()
+    if not website:
+        return "- The business has no website at all.\n"
+    if not str(lead.get("website_score") or "").strip():
+        return "- It has a website at {}, which has not been audited.\n".format(website)
+    return "- It has a website at {}, and the audit found nothing wrong with it.\n".format(website)
 
 
 STATIC_STACK_RULES = """- Plain HTML, CSS and JavaScript only. No framework, no build step, no package
@@ -294,22 +316,29 @@ def _animation_rule(answers):
     )
 
 
+def _listed(items):
+    if len(items) == 1:
+        return items[0]
+    return "{} and {}".format(", ".join(items[:-1]), items[-1])
+
+
 def _fact_split(lead):
-    if (lead.get("opening_hours") or "").strip():
-        return (
-            "Address, phone, opening hours and the business name",
-            "Prices, staff names and reviews",
-        )
-    return (
-        "Address, phone and the business name",
-        "Opening hours, prices, staff names and reviews",
+    known = ["the business name"]
+    unknown = []
+    facts = (
+        ("address", "the address"),
+        ("phone", "the phone number"),
+        ("opening_hours", "the opening hours"),
     )
+    for column, label in facts:
+        (known if (lead.get(column) or "").strip() else unknown).append(label)
+    return _listed(known), _listed(unknown + ["prices", "staff names", "reviews"])
 
 
 def render_brief(lead, answers, assets_dir, settings):
     yes_no = lambda flag: "yes" if flag else "no"
     problems = [item for item in (lead.get("website_problems") or "").split("; ") if item]
-    colours = answers.get("brand_colors") or []
+    colours = answers.get("brand_colors") or _client_brand_colours(assets_dir)
     theirs = _client_photos(assets_dir, settings)
     stock = _stock_photos(assets_dir, {photo["purpose"] for photo in theirs})
 
@@ -400,7 +429,8 @@ job.
   mandatory. Those three are exactly what the audit judges a site on, so a site
   built here must not fail its own test.
 - Include Open Graph tags, a favicon, and JSON-LD `LocalBusiness` structured
-  data filled in with the real name, address and phone from the table above.
+  data filled in with {known_facts}, exactly as the table above gives them.
+  Leave out of it anything the table does not give.
 - Semantic HTML: one `<h1>`, sections in `<section>`, navigation in `<nav>`,
   contact details in a `<footer>`. Every image needs a real `alt` in
   {language}.
@@ -412,11 +442,12 @@ job.
 languages. Do not leave lorem ipsum anywhere — write real copy for this
 business, in the voice of a {trade} that wants local customers.
 
-**What to invent and what not to.** {known_facts} are
-real, take them from the table above and never change them. {unknown_facts} are not known. Where a section needs them,
-write an obvious placeholder in {language} that the owner can fill in, and mark
-those spots in a `<!-- -->` comment list at the bottom of `index.html` so they
-are easy to find. Never invent a fake review or a fake person.
+**What to invent and what not to.** Real, taken from the table above and never
+changed: {known_facts}. Not known: {unknown_facts}. Where a section needs
+something not known, write an obvious placeholder in {language} that the owner
+can fill in, and mark those spots in a `<!-- -->` comment list at the bottom of
+`index.html` so they are easy to find. Never invent a fake review or a fake
+person.
 
 **Sections, in this order.**
 
@@ -453,7 +484,7 @@ described in "Why this business".
         score=lead["score"],
         maps=lead["google_maps_link"],
         place_id=lead["place_id"],
-        why=_bullet_list(problems, "The business has no website at all."),
+        why=_why(lead, problems),
         style=answers.get("style") or "not described",
         colours=" ".join(colours) or "not known yet",
         trade=answers.get("trade", "local business"),
@@ -509,8 +540,6 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
             raise BriefError("{} is not a folder.".format(folder))
         check_sorted(Path(folder).expanduser(), settings)
 
-        import shutil
-
         for item in Path(folder).expanduser().iterdir():
             destination = project / "assets" / item.name
             if item.is_dir():
@@ -541,7 +570,7 @@ def main():
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     parser = argparse.ArgumentParser(description="Builds the project folder and brief for one lead.")
-    parser.add_argument("place_id", help="The place_id column from the leads CSV")
+    parser.add_argument("place_id", help="The place_id from the leads CSV, or the business name")
     parser.add_argument("--info", action="store_true", help="Print the lead as JSON and stop")
     parser.add_argument("--answers", help="JSON file holding the answers to the brief questions")
     parser.add_argument(
