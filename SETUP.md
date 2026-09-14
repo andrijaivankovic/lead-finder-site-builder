@@ -185,15 +185,16 @@ a bill if code loops and fires 50,000 calls.
 - **API** dropdown → **"Places API (New)"**
 - **"Quotas"** tab → find a row containing **"per day"**, preferring one that
   mentions **Text Search**
-- Tick it, click the **pencil**, enter **`50`**, **"SAVE"**
+- Tick it, click the **pencil**, enter **`29`**, **"SAVE"**
 
-50 per day still allows 16 fully paginated searches daily and cannot overrun
-900 in a month.
+29 per day allows 9 fully paginated searches daily. Even in a 31 day month that
+is at most 899 calls, below the tool's own 900 and below Google's free 1,000, so
+the quota holds on its own even if the counter in this tool is lost or bypassed.
 
 **8. If that screen will not let you edit**
 - ☰ → **"APIs & Services"** → **"Enabled APIs & services"** →
   **"Places API (New)"** → **"Quotas & System Limits"**
-- Filter for `per day`, tick the row, pencil, `50`, **SAVE**
+- Filter for `per day`, tick the row, pencil, `29`, **SAVE**
 
 **9. Budget alert**
 - ☰ → **"Billing"** → **"Budgets & alerts"** → **"CREATE BUDGET"**

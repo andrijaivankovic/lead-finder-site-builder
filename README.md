@@ -113,11 +113,11 @@ venv/bin/python -m pip install -r requirements.txt
 
 On Windows the first two are the same and the last two differ, because the
 launcher there is called `python` and the private copy lands in a different
-folder:
+folder. These two work in both Command Prompt and PowerShell:
 
 ```
 python -m venv venv
-venv/Scripts/python.exe -m pip install -r requirements.txt
+venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
 ### What `venv` is, and why every command starts with it
@@ -162,9 +162,18 @@ not have to write that path out every time. You can now run a search:
 ./run scripts/find_leads.py "bakery Novi Sad"
 ```
 
-Windows drops the `./`, because it looks in the current folder for programs and
-macOS and Linux deliberately do not. That is the only difference between the
-two. If you would rather see what is happening, this is the same command:
+On Windows the launcher is `run.bat`. Command Prompt finds it in the current
+folder on its own. PowerShell, like macOS and Linux, deliberately does not, so
+there it needs `.\` in front:
+
+```
+run.bat scripts/find_leads.py "bakery Novi Sad"
+.\run.bat scripts/find_leads.py "bakery Novi Sad"
+```
+
+The first line is for Command Prompt, the second for PowerShell, and every
+`./run` command further down changes the same way. If you would rather see what
+is happening, this is the same command on macOS and Linux:
 
 ```
 venv/bin/python scripts/find_leads.py "bakery Novi Sad"

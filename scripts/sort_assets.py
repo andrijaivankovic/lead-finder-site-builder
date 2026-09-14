@@ -33,6 +33,15 @@ def _logo_colours(entries, settings):
     return []
 
 
+def _free_target(target):
+    candidate = target
+    number = 2
+    while candidate.exists():
+        candidate = target.with_name("{}-{}{}".format(target.stem, number, target.suffix))
+        number += 1
+    return candidate
+
+
 def _images_in(folder):
     return sorted(
         path
@@ -138,25 +147,27 @@ def apply(folder, settings, on_event=None):
         )
 
     moved = 0
-    for entry in manifest["images"]:
-        category = entry["category"].strip().lower()
-        source = folder / entry["file"]
-        if not source.exists():
-            continue
+    try:
+        for entry in manifest["images"]:
+            category = entry["category"].strip().lower()
+            source = folder / entry["file"]
+            if not source.exists():
+                continue
 
-        target = folder / category / source.name
-        if source.resolve() == target.resolve():
-            continue
+            target = folder / category / source.name
+            if source.resolve() == target.resolve():
+                continue
 
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(source), str(target))
-        entry["file"] = "{}/{}".format(category, source.name)
-        moved += 1
-        if on_event:
-            on_event("{} -> {}".format(source.name, category))
-
-    manifest["brand_colors"] = _logo_colours(manifest["images"], settings)
-    _write_manifest(folder, manifest)
+            target = _free_target(target)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source), str(target))
+            entry["file"] = "{}/{}".format(category, target.name)
+            moved += 1
+            if on_event:
+                on_event("{} -> {}".format(source.name, entry["file"]))
+    finally:
+        manifest["brand_colors"] = _logo_colours(manifest["images"], settings)
+        _write_manifest(folder, manifest)
     return manifest, moved
 
 

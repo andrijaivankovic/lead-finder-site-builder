@@ -35,8 +35,9 @@ exist. Braces cannot do that, which is why they are the ones used here.
 
 `run` and `run.bat` in the project root do that same resolution for a person
 typing by hand: `./run scripts/find_leads.py "picerija Novi Sad"` on macOS and
-Linux, the same without the `./` on Windows. That is the form the README
-documents, because a person types it thirty times a day.
+Linux, `run.bat` in its place on Windows, written `.\run.bat` in PowerShell.
+That is the form the README documents, because a person types it thirty times a
+day.
 
 Keep using `{venv python}` in instructions like these. A ZIP download of the
 repository loses the flag that makes `run` executable, and an interpreter path
