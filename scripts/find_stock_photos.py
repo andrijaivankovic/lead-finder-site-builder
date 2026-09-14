@@ -126,10 +126,18 @@ def collect(plan, out_dir, settings, on_event=None):
     return collected
 
 
+def _plan_named(plans, category):
+    wanted = lead_store.to_slug(category or "", "")
+    for name, queries in plans.items():
+        if wanted and name != "default" and lead_store.to_slug(name, "") == wanted:
+            return queries
+    return None
+
+
 def plan_for_category(category, settings, business="", note=""):
     plans = settings["stock_photos"]["plans"]
     key = (category or "").strip().lower()
-    queries = plans.get(key)
+    queries = _plan_named(plans, category)
     matched = bool(queries)
 
     if not matched:

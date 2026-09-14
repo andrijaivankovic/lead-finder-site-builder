@@ -139,6 +139,22 @@ function linkElement(href, label) {
   return anchor;
 }
 
+function websiteHref(value) {
+  const text = (value || "").trim();
+  if (!text) {
+    return null;
+  }
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(text) ? text : "https://" + text;
+  try {
+    const url = new URL(candidate);
+    const webScheme = url.protocol === "http:" || url.protocol === "https:";
+    const realHost = /^[^.]+(\.[^.]+)+$/.test(url.hostname);
+    return webScheme && realHost ? url.href : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 function statusSelect(row) {
   const select = document.createElement("select");
   Object.entries(STATUS_LABELS).forEach(([value, label]) => {
@@ -317,8 +333,9 @@ function buildRow(row, thresholds) {
   if (row.map_pin) {
     links.append(linkElement(row.map_pin, "pin"));
   }
-  if (hasWebsite) {
-    links.append(linkElement(row.website, "site"));
+  const websiteLink = websiteHref(row.website);
+  if (websiteLink) {
+    links.append(linkElement(websiteLink, "site"));
   }
   if (row.contact_search) {
     links.append(linkElement(row.contact_search, "contact"));
