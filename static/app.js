@@ -12,6 +12,7 @@ const state = {
   rows: [],
   sortColumn: "score",
   sortAscending: false,
+  poorWebsiteBelow: null,
 };
 
 const elements = {
@@ -52,10 +53,16 @@ async function loadUsage() {
     const source = data.has_google_key ? "Google Places" : "OpenStreetMap (no key)";
     elements.usage.innerHTML =
       "Source: <strong>" + source + "</strong><br>" +
-      "Searches this month: <strong>" + data.used + "</strong> of " + data.limit;
+      "Google calls this month: <strong>" + data.used + "</strong> of " + data.limit;
   } catch (error) {
     elements.usage.textContent = "";
   }
+}
+
+async function loadSettings() {
+  const data = await requestJson("/api/settings");
+  state.poorWebsiteBelow = data.poor_website_below;
+  elements.limit.placeholder = String(data.default_limit);
 }
 
 async function loadFiles(preferred) {
@@ -307,7 +314,9 @@ function buildRow(row, thresholds) {
   } else {
     const value = parseInt(row.website_score, 10);
     siteScore.textContent = value;
-    siteScore.classList.add(value < 60 ? "poor" : "fine");
+    if (state.poorWebsiteBelow !== null) {
+      siteScore.classList.add(value < state.poorWebsiteBelow ? "poor" : "fine");
+    }
     if (row.website_problems) {
       siteScore.title = row.website_problems.split("; ").join("\n");
       siteScore.classList.add("has-detail");
@@ -462,4 +471,7 @@ elements.exportButton.addEventListener("click", () => {
 });
 
 loadUsage();
-loadFiles().catch((error) => setMessage(error.message, true));
+loadSettings()
+  .catch((error) => setMessage(error.message, true))
+  .then(() => loadFiles())
+  .catch((error) => setMessage(error.message, true));

@@ -37,6 +37,17 @@ def usage():
     return jsonify(summary)
 
 
+@app.get("/api/settings")
+def page_settings():
+    settings = lead_search.load_settings()
+    return jsonify(
+        {
+            "default_limit": settings["search"]["default_limit"],
+            "poor_website_below": settings["audit"]["poor_website_below"],
+        }
+    )
+
+
 @app.get("/api/files")
 def files():
     return jsonify({"files": lead_store.list_files(ROOT)})
