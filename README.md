@@ -29,9 +29,9 @@ OpenStreetMap and brings back local businesses, including the one thing that
 matters most: whether they have a website.
 
 **2. Rank.** Every business gets a score. No website is worth 50 points. A
-website that exists but is in bad shape is worth 30. A good rating adds 20, a
-healthy number of reviews adds 20, having a phone number adds 10, and almost no
-reviews takes 30 away.
+website that exists but is in bad shape is worth 30. A rating of 4.3 or more
+adds 20. Fifty or more reviews add 20, twenty or more add 10, and fewer than ten
+take 30 away. Having a phone number adds 10.
 
 The idea behind those numbers: a business with 200 reviews and a 4.6 rating that
 has no website is clearly doing well but is invisible online, and that is the
@@ -92,12 +92,12 @@ It does not send anything. See "Things it will not do" below.
 
 ## Requirements
 
-Python 3.11 or newer. Nothing else. There is no database to install, no server
+Python 3.9 or newer. Nothing else. There is no database to install, no server
 to configure, and no account you must have before you can try it.
 
-It also runs on Python 3.9, which is what macOS still ships, with one cosmetic
-cost: `requests` prints a `urllib3 ... LibreSSL` warning above every command.
-The warning is harmless, and it disappears if you install a current Python from
+Python 3.9 is what macOS still ships, and it works with one cosmetic cost:
+`requests` prints a `urllib3 ... LibreSSL` warning above every command. The
+warning is harmless, and it disappears if you install a current Python from
 python.org or Homebrew and build the `venv` with that one instead.
 
 ## Installing it
@@ -282,7 +282,8 @@ The page shows your results as a table you can sort by clicking any column. You
 can filter to businesses without a website, set a minimum rating or review
 count, and set a status on each row, which is saved the moment you choose it.
 Each row links to the business on the map, to its website if it has one, and to
-a company register search for finding the owner.
+a search for its owner: the CompanyWall register for a business in Serbia, a
+plain web search anywhere else. `contact_search` in `config.yaml` holds both.
 
 ### Preparing a website
 
@@ -309,6 +310,11 @@ either, copy the three files instead, and copy them again after each update:
 mkdir .claude\commands
 copy commands\*.md .claude\commands\
 ```
+
+`.claude-plugin/plugin.json` describes the same folder as a Claude Code plugin:
+its name, version, author and licence. Nothing above depends on it. It only
+matters if the project is ever installed as a plugin, in which case Claude Code
+reads the commands from `commands/` itself and the link step is not needed.
 
 ```
 /build-brief <place_id or business name>

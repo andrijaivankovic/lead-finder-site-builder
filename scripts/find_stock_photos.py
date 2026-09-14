@@ -190,14 +190,16 @@ def main():
     parser.add_argument("--query", action="append", help="A single search term, repeatable")
     parser.add_argument("--purpose", default="gallery", help="Where the --query photos belong on the site")
     parser.add_argument("--business", help="Business name, used for the output folder")
-    parser.add_argument("--out", help="Output folder, defaults to assets/stock/<business>")
+    parser.add_argument(
+        "--out", help="Output folder, defaults to assets/stock/<business>, or assets/stock/unnamed without --business"
+    )
     arguments = parser.parse_args()
 
     try:
         settings = lead_search.load_settings()
         plan = _plan_from_arguments(arguments, settings)
-        business = plan.get("business") or "stock"
-        out_dir = Path(arguments.out) if arguments.out else ROOT / "assets" / "stock" / lead_store.to_slug(business, "business")
+        business = (plan.get("business") or "").strip()
+        out_dir = Path(arguments.out) if arguments.out else ROOT / "assets" / "stock" / lead_store.to_slug(business, "unnamed")
 
         print("\nBusiness: {}".format(business or "not given"))
         if plan.get("category"):
