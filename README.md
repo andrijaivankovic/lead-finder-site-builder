@@ -65,9 +65,17 @@ they can go straight onto a demo site. Every folder gets a `sources.json` naming
 the photographer and linking the original.
 
 Nothing has to be described and no account is needed beyond the Pexels key. If
-you do want the images closer to one particular place, you can add a few words
-such as "modern, white, lots of glass" and the search narrows. Skipping that is
-the normal case.
+you do want the images closer to one particular place, you can add a few search
+words such as "exposed brick industrial", which run as one more search, after
+the ready ones, for the image at the top and the interior. A whole sentence is
+refused, because it
+matches pictures by stray words and loses the trade. Skipping that is the
+normal case.
+
+The searches for each spot on the page take turns: the first photograph comes
+from the first search, the second from the second, and round again. Every search
+lands in the set, and one that brings back the wrong kind of place costs one
+photograph instead of all of them.
 
 Stock is the floor, not the ceiling. A business with no website still has a
 Google Maps listing and usually an Instagram page, so you can save a few of
@@ -397,8 +405,8 @@ A `.csv` file is a plain table that opens in Excel, in Google Sheets, or in any
 text editor. Run the same search again a month later and the tool updates the
 existing file rather than replacing it: business details are refreshed, and
 anything you typed by hand is left exactly as you wrote it. That covers the
-status, and the address, phone and opening hours where the source has none of
-its own to offer.
+status, and the address, phone, opening hours, rating and review count where
+the source has none of its own to offer.
 
 ### What `place_id` is
 

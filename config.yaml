@@ -47,6 +47,7 @@ outreach:
 stock_photos:
   per_purpose: 4
   max_total: 20
+  note_max_words: 4
   min_source_width: 1920
   purposes:
     - hero

@@ -117,8 +117,8 @@ def merge(new_leads, existing_rows):
                 "name": lead.get("name", ""),
                 "category": lead.get("category", ""),
                 "address": lead.get("address") or row.get("address", ""),
-                "rating": "" if lead.get("rating") is None else lead["rating"],
-                "review_count": "" if lead.get("review_count") is None else lead["review_count"],
+                "rating": row.get("rating", "") if lead.get("rating") is None else lead["rating"],
+                "review_count": row.get("review_count", "") if lead.get("review_count") is None else lead["review_count"],
                 "website": lead.get("website", ""),
                 "phone": lead.get("phone") or row.get("phone", ""),
                 "opening_hours": lead.get("opening_hours") or row.get("opening_hours", ""),
@@ -159,7 +159,7 @@ def save(path, rows):
     return path
 
 
-TYPED_FIELDS = ["address", "phone", "opening_hours"]
+TYPED_FIELDS = ["address", "phone", "opening_hours", "rating", "review_count"]
 
 
 def update_fields(path, place_id, fields):

@@ -65,6 +65,38 @@ def _download(photo, destination):
     return destination
 
 
+def _room_left(taken_for_purpose, collected, options):
+    return taken_for_purpose < options["per_purpose"] and len(collected) < options["max_total"]
+
+
+def _take_next(candidates, query, purpose, out_dir, seen_ids, options):
+    for photo in candidates:
+        if photo["id"] in seen_ids or not _acceptable(photo, options):
+            continue
+
+        target = out_dir / purpose / "{}_{}.jpg".format(purpose, photo["id"])
+        try:
+            _download(photo, target)
+        except requests.RequestException:
+            continue
+
+        width, height = image_tools.dimensions(target)
+        seen_ids.add(photo["id"])
+        return {
+            "file": str(target.relative_to(out_dir)).replace("\\", "/"),
+            "purpose": purpose,
+            "query": query,
+            "width": width,
+            "height": height,
+            "description": photo.get("alt") or "",
+            "pexels_url": photo["url"],
+            "photographer": photo["photographer"],
+            "photographer_url": photo["photographer_url"],
+            "licence": "Pexels licence, free for commercial use, attribution appreciated",
+        }
+    return None
+
+
 def collect(plan, out_dir, settings, on_event=None):
     options = settings["stock_photos"]
     key = _api_key()
@@ -74,45 +106,28 @@ def collect(plan, out_dir, settings, on_event=None):
     seen_ids = set()
 
     for purpose, queries in plan["queries"].items():
-        folder = out_dir / purpose
-        folder.mkdir(parents=True, exist_ok=True)
+        (out_dir / purpose).mkdir(parents=True, exist_ok=True)
         taken_for_purpose = 0
+        candidates = {}
+        exhausted = set()
 
-        for query in queries:
-            if taken_for_purpose >= options["per_purpose"] or len(collected) >= options["max_total"]:
-                break
-            if on_event:
-                on_event('searching "{}" for {}'.format(query, purpose))
-
-            for photo in _search(query, key, options):
-                if taken_for_purpose >= options["per_purpose"] or len(collected) >= options["max_total"]:
+        while _room_left(taken_for_purpose, collected, options) and len(exhausted) < len(set(queries)):
+            for query in queries:
+                if not _room_left(taken_for_purpose, collected, options):
                     break
-                if photo["id"] in seen_ids or not _acceptable(photo, options):
+                if query in exhausted:
                     continue
+                if query not in candidates:
+                    if on_event:
+                        on_event('searching "{}" for {}'.format(query, purpose))
+                    candidates[query] = iter(_search(query, key, options))
 
-                target = folder / "{}_{}.jpg".format(purpose, photo["id"])
-                try:
-                    _download(photo, target)
-                except requests.RequestException:
+                photo = _take_next(candidates[query], query, purpose, out_dir, seen_ids, options)
+                if photo is None:
+                    exhausted.add(query)
                     continue
-
-                width, height = image_tools.dimensions(target)
-                seen_ids.add(photo["id"])
+                collected.append(photo)
                 taken_for_purpose += 1
-                collected.append(
-                    {
-                        "file": str(target.relative_to(out_dir)).replace("\\", "/"),
-                        "purpose": purpose,
-                        "query": query,
-                        "width": width,
-                        "height": height,
-                        "description": photo.get("alt") or "",
-                        "pexels_url": photo["url"],
-                        "photographer": photo["photographer"],
-                        "photographer_url": photo["photographer_url"],
-                        "licence": "Pexels licence, free for commercial use, attribution appreciated",
-                    }
-                )
 
     sources = {
         "business": plan.get("business", ""),
@@ -149,12 +164,21 @@ def plan_for_category(category, settings, business="", note=""):
     else:
         queries = {purpose: list(terms) for purpose, terms in queries.items()}
 
-    note = (note or "").strip()
-    if note:
+    words = (note or "").replace(",", " ").split()
+    if words:
+        most = settings["stock_photos"]["note_max_words"]
+        if len(words) > most:
+            raise StockPhotoError(
+                "--note is searched as one more term for hero and interior, so it takes at most {} "
+                "words and got {}. A long sentence matches pictures by stray words and loses the "
+                "trade. Keep what a photo search would use, such as \"exposed brick industrial\".".format(
+                    most, len(words)
+                )
+            )
         label = key.replace("_", " ") or "local business"
         for purpose in ("hero", "interior"):
             if purpose in queries:
-                queries[purpose].insert(0, "{} {}".format(note, label))
+                queries[purpose].append("{} {}".format(" ".join(words), label))
 
     return {"business": business, "category": category, "matched": matched, "queries": queries}
 
@@ -186,7 +210,13 @@ def main():
     )
     parser.add_argument("--plan", help="JSON file holding the business name and one query list per purpose")
     parser.add_argument("--category", help="Trade of the business, which picks a ready query plan from config.yaml")
-    parser.add_argument("--note", help="Optional words about how the place looks, to sharpen the search")
+    parser.add_argument(
+        "--note",
+        help=(
+            "A few English words about how the place looks, at most stock_photos.note_max_words, "
+            "searched as one more term for hero and interior"
+        ),
+    )
     parser.add_argument("--query", action="append", help="A single search term, repeatable")
     parser.add_argument("--purpose", default="gallery", help="Where the --query photos belong on the site")
     parser.add_argument("--business", help="Business name, used for the output folder")

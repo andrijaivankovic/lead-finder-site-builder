@@ -79,8 +79,8 @@ categories are filled in.
 
 CSV files under `data/` are the database. `place_id` is the key that survives
 across searches, which is what lets a rerun refresh the data while keeping what
-the user typed by hand: the `status`, and the address, phone and opening hours
-where the source has none. An empty incoming value never overwrites one of
+the user typed by hand: the `status`, and the address, phone, opening hours,
+rating and review count where the source has none. An empty incoming value never overwrites one of
 those. Never reorder or rename CSV columns without migrating existing files.
 
 `data/`, `.env`, `config.local.yaml` and `assets/` never get committed.
@@ -123,4 +123,6 @@ in English. Do not add co-author trailers.
   from `stock_photos.plans` in `config.yaml`, or from the client.
 - The monthly Google call limit in `config.yaml` stays below the free tier.
 - Nothing scrapes Google Maps or CompanyWall. The tool generates links a human
-  clicks.
+  clicks. During `/build-brief` the assistant may open the listing of the one
+  lead being built and read it the way a person would, never the listings of a
+  whole search.
