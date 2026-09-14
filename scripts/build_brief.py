@@ -331,7 +331,15 @@ def _fact_split(lead):
     )
     for column, label in facts:
         (known if (lead.get(column) or "").strip() else unknown).append(label)
-    return _listed(known), _listed(unknown + ["prices", "staff names", "reviews"])
+    return _listed(known), _listed(unknown + ["prices", "staff names", "what any reviewer wrote"])
+
+
+def _rating_cell(lead, answers):
+    rating = str(lead.get("rating") or "").strip()
+    if not rating:
+        return "not available"
+    source = (answers.get("rating_source") or "").strip()
+    return "{} ({})".format(rating, source) if source else rating
 
 
 def render_brief(lead, answers, assets_dir, settings):
@@ -476,7 +484,7 @@ described in "Why this business".
         name=lead["name"],
         address=lead["address"] or "not listed",
         phone=lead["phone"] or "not listed",
-        rating=lead["rating"] or "not available",
+        rating=_rating_cell(lead, answers),
         review_count=lead["review_count"] or "not available",
         website=lead["website"] or "none",
         website_score=lead["website_score"] or "not checked",
@@ -624,16 +632,42 @@ def _fill_assets(assets_dir, folders, business, settings):
     return len(planned)
 
 
+def _check_typed_rating(typed):
+    if "rating" in typed:
+        try:
+            rating = float(typed["rating"])
+        except ValueError:
+            rating = None
+        if rating is None or not 0 <= rating <= 5:
+            raise BriefError(
+                "rating in the answers has to be a number from 0 to 5 written with a dot, such as "
+                "4.8, and it is {}.".format(typed["rating"])
+            )
+    if "review_count" in typed and not typed["review_count"].isdigit():
+        raise BriefError(
+            "review_count in the answers has to be a whole number, such as 354, and it is {}.".format(
+                typed["review_count"]
+            )
+        )
+
+
+def _typed_answers(answers, lead):
+    typed = {}
+    for column in lead_store.TYPED_FIELDS:
+        value = answers.get(column)
+        value = "" if value is None else str(value).strip()
+        if value and not str(lead.get(column) or "").strip():
+            typed[column] = value
+    _check_typed_rating(typed)
+    return typed
+
+
 def create(place_id, answers, stock_dirs=None, target_root=None):
     lead, source_file = find_lead(place_id)
     settings = lead_search.load_settings()
     folders = [_folder_contents(folder, settings) for folder in stock_dirs or []]
 
-    typed = {
-        column: answers[column].strip()
-        for column in lead_store.TYPED_FIELDS
-        if (answers.get(column) or "").strip() and not (lead.get(column) or "").strip()
-    }
+    typed = _typed_answers(answers, lead)
     if typed:
         lead.update(typed)
         lead_store.update_fields(lead_store.data_dir(ROOT) / source_file, lead["place_id"], typed)

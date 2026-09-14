@@ -38,6 +38,10 @@ Facebook page. Two minutes of that changes every answer below: you see what the
 place actually looks like, and often what colours are already on their sign,
 their menu or their posts.
 
+That is one listing, for the one lead being built, looked at the way a person
+would look at it. Never open the listings of a whole search to collect what is
+on them: nothing in this project scrapes Google Maps.
+
 Read `brief.default_language` from `config.yaml`, which a `config.local.yaml`
 may override. That is the language the sites are written in, and it is also the
 language to ask these questions in. Translate them; do not ask in English out of
@@ -57,8 +61,10 @@ accepts all defaults.
 5. Generate AI images and video? [yes]
 6. Language of the site? [the configured default]
 
-If the lead has no rating and no review count, say so and recommend "no" for
-question 3, because there is nothing to show.
+If the lead has no rating and no review count, read them off the Maps listing
+you have open and offer them as the suggestion, the same way as a missing
+address below. Recommend "no" for question 3 only when the listing shows no
+rating either, because then there is nothing to show.
 
 Then ask a seventh question about the stack, and give a recommendation rather
 than a blank choice. Judge it from the trade, the sections chosen and whether
@@ -83,12 +89,18 @@ getting it wrong hands a three file site instructions about `node_modules`.
 If step 1 reported the address, the phone or the opening hours as missing, ask
 for them now. You have the Maps listing open, so they are usually a copy and a
 paste away. Ask only for the ones that are actually missing, and let each be
-skipped.
+skipped. When something came from a page other than the Maps listing, such as
+opening hours from a restaurant directory, say which page, because those go
+stale.
 
-They go in as `address`, `phone` and `opening_hours`. `build_brief.py` fills
-them into the brief and writes them back into the CSV row, so the browser
-table, `/draft-outreach` and every later run see them too. A value already in
-the row is never overwritten.
+They go in as `address`, `phone` and `opening_hours`, and the rating from above
+as `rating` and `review_count`, written as `4.8` and `354`. Add `rating_source`
+saying where and when you read the rating, such as `Google Maps, 2026-09-14`,
+and the brief prints it next to the number. `build_brief.py` fills all of them
+into the brief and writes them back into the CSV row, so the browser table,
+`/draft-outreach` and every later run see them too. A value already in the row
+is never overwritten, and a later search whose source has none leaves them in
+place.
 
 This matters more than it looks: the build prompt asks for JSON-LD
 `LocalBusiness` data and a contact section built from the real name, address and
@@ -120,9 +132,14 @@ that straight from the answers, so it does not have to come from
 business already uses instead of inventing one, which is most of what separates
 a demo that looks made for them from a demo that looks like a template.
 
-The words go in as `note`, translated into English first, because Pexels only
-searches in English. An empty answer to either is a perfectly good answer and
-must not be pushed.
+The description of how the place looks goes into the brief as `style`. For the
+photo search, boil it down to `note`: the few English words a photo search would
+use, such as `exposed brick industrial`, because Pexels only searches in
+English. `find_stock_photos.py` runs the note as one more hero and interior
+search after the ready ones, and refuses more words than
+`stock_photos.note_max_words` in `config.yaml`, because a whole sentence matches
+pictures by stray words like brick or plants and loses the trade. An empty
+answer to either is a perfectly good answer and must not be pushed.
 
 ## 3. Collect the photographs
 
@@ -185,10 +202,24 @@ and `queries`, where `queries` maps each purpose to its list of search terms.
 `--query` will not do here: it takes one purpose per run and rewrites
 `sources.json` each time, so it cannot rebuild a whole set.
 
+The terms for a purpose take turns: its first photograph comes from the first
+term, the second from the second, and round again. Every term lands in the set,
+so a bad one costs one photograph, and a good term has to be good on its own
+rather than merely first in the list.
+
 If a whole trade keeps coming back wrong, that is a sign its entry in
 `config.yaml` under `stock_photos.plans` needs fixing, so say that too.
 
-Report how many photographs came back and where they went.
+Then open every hero and interior photograph and look at it. Those show a real
+business somewhere else, and a description never mentions the name on its
+window, the logo on its cups or the prices on its board. Delete any file that
+shows another business's name or logo: a demo that puts somebody else's name in
+front of the owner is worse than one photograph fewer. `build_brief.py` skips a
+photograph listed in `sources.json` whose file is gone, and searching again with
+the same terms would only bring the same picture back.
+
+Report how many photographs came back, how many you deleted and why, and where
+they went.
 
 ## 4. Write the brief
 
@@ -203,12 +234,13 @@ Compose the remaining fields yourself:
 - `brand_colors` is what they answered above. Leave it out when they gave none:
   `build_brief.py` then takes the logo's colours from `assets.json`, if a logo
   was among their photographs.
-- `style` is their optional note tidied up, or a plain description of the trade
-  if they skipped it.
+- `style` is their description of how the place looks, tidied up, or a plain
+  description of the trade if they skipped it.
 - `trade` and `city` in English, for the build prompt.
 - `language`, `faq`, `careers`, `show_reviews`, `animations`, `ai_media`,
   `stack`, `stack_needs_a_build` and `stack_reason` are their answers from
-  step 2.
+  step 2, and so are `address`, `phone`, `opening_hours`, `rating`,
+  `review_count` and `rating_source` when they gave them.
 
 Write that JSON to a temporary file and run:
 
