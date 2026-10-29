@@ -228,6 +228,114 @@ asset_sorting:
     team: gallery
     logo: logo
 
+autopilot:
+  sites_per_run: 3
+  search_limit: 150
+  only_without_website: true
+  require_phone: true
+  cities_from: us
+  trades:
+    - pizzeria
+    - restaurant
+    - cafe
+    - bakery
+    - hairdresser
+    - beauty salon
+    - florist
+    - car repair
+  site:
+    language: city
+    faq: true
+    careers: true
+    show_reviews: true
+    animations: true
+    ai_media: true
+    stack: plain
+    style: ""
+  builder:
+    command: ""
+    model: ""
+    timeout_minutes: 45
+    check_timeout_seconds: 120
+  cities:
+    - {name: New York, country: United States, code: us, language: English, region: north_america}
+    - {name: Los Angeles, country: United States, code: us, language: English, region: north_america}
+    - {name: Chicago, country: United States, code: us, language: English, region: north_america}
+    - {name: Houston, country: United States, code: us, language: English, region: north_america}
+    - {name: Phoenix, country: United States, code: us, language: English, region: north_america}
+    - {name: Philadelphia, country: United States, code: us, language: English, region: north_america}
+    - {name: San Antonio, country: United States, code: us, language: English, region: north_america}
+    - {name: San Diego, country: United States, code: us, language: English, region: north_america}
+    - {name: Dallas, country: United States, code: us, language: English, region: north_america}
+    - {name: Toronto, country: Canada, code: ca, language: English, region: north_america}
+    - {name: Montreal, country: Canada, code: ca, language: French, region: north_america, aliases: [Montréal]}
+    - {name: Calgary, country: Canada, code: ca, language: English, region: north_america}
+    - {name: Ottawa, country: Canada, code: ca, language: English, region: north_america}
+    - {name: Edmonton, country: Canada, code: ca, language: English, region: north_america}
+    - {name: Mexico City, country: Mexico, code: mx, language: Spanish, region: latin_america, aliases: [Ciudad de México]}
+    - {name: Guadalajara, country: Mexico, code: mx, language: Spanish, region: latin_america}
+    - {name: Monterrey, country: Mexico, code: mx, language: Spanish, region: latin_america}
+    - {name: São Paulo, country: Brazil, code: br, language: Portuguese, region: latin_america}
+    - {name: Rio de Janeiro, country: Brazil, code: br, language: Portuguese, region: latin_america}
+    - {name: Buenos Aires, country: Argentina, code: ar, language: Spanish, region: latin_america}
+    - {name: Bogotá, country: Colombia, code: co, language: Spanish, region: latin_america}
+    - {name: Lima, country: Peru, code: pe, language: Spanish, region: latin_america}
+    - {name: Santiago de Chile, country: Chile, code: cl, area: Santiago, language: Spanish, region: latin_america, aliases: [Santiago]}
+    - {name: London, country: United Kingdom, code: gb, language: English, region: europe}
+    - {name: Birmingham, country: United Kingdom, code: gb, language: English, region: europe}
+    - {name: Manchester, country: United Kingdom, code: gb, language: English, region: europe}
+    - {name: Dublin, country: Ireland, code: ie, language: English, region: europe}
+    - {name: Berlin, country: Germany, code: de, language: German, region: europe}
+    - {name: Hamburg, country: Germany, code: de, language: German, region: europe}
+    - {name: Munich, country: Germany, code: de, language: German, region: europe, aliases: [München]}
+    - {name: Cologne, country: Germany, code: de, language: German, region: europe, aliases: [Köln]}
+    - {name: Vienna, country: Austria, code: at, language: German, region: europe, aliases: [Wien]}
+    - {name: Zurich, country: Switzerland, code: ch, language: German, region: europe, aliases: [Zürich]}
+    - {name: Paris, country: France, code: fr, language: French, region: europe}
+    - {name: Lyon, country: France, code: fr, language: French, region: europe}
+    - {name: Marseille, country: France, code: fr, language: French, region: europe}
+    - {name: Brussels, country: Belgium, code: be, language: French, region: europe, aliases: [Bruxelles, Brussel]}
+    - {name: Amsterdam, country: Netherlands, code: nl, language: Dutch, region: europe}
+    - {name: Madrid, country: Spain, code: es, language: Spanish, region: europe}
+    - {name: Barcelona, country: Spain, code: es, language: Spanish, region: europe}
+    - {name: Valencia, country: Spain, code: es, language: Spanish, region: europe}
+    - {name: Seville, country: Spain, code: es, language: Spanish, region: europe, aliases: [Sevilla]}
+    - {name: Lisbon, country: Portugal, code: pt, language: Portuguese, region: europe, aliases: [Lisboa]}
+    - {name: Porto, country: Portugal, code: pt, language: Portuguese, region: europe}
+    - {name: Rome, country: Italy, code: it, language: Italian, region: europe, aliases: [Roma]}
+    - {name: Milan, country: Italy, code: it, language: Italian, region: europe, aliases: [Milano]}
+    - {name: Naples, country: Italy, code: it, language: Italian, region: europe, aliases: [Napoli]}
+    - {name: Turin, country: Italy, code: it, language: Italian, region: europe, aliases: [Torino]}
+    - {name: Warsaw, country: Poland, code: pl, language: Polish, region: europe, aliases: [Warszawa]}
+    - {name: Prague, country: Czechia, code: cz, language: Czech, region: europe, aliases: [Praha]}
+    - {name: Budapest, country: Hungary, code: hu, language: Hungarian, region: europe}
+    - {name: Bucharest, country: Romania, code: ro, language: Romanian, region: europe, aliases: [București]}
+    - {name: Sofia, country: Bulgaria, code: bg, language: Bulgarian, region: europe, aliases: [София]}
+    - {name: Belgrade, country: Serbia, code: rs, language: Serbian, region: europe, aliases: [Beograd, Београд]}
+    - {name: Zagreb, country: Croatia, code: hr, language: Croatian, region: europe}
+    - {name: Athens, country: Greece, code: gr, area: Municipality of Athens, language: Greek, region: europe, aliases: [Athína, Αθήνα]}
+    - {name: Istanbul, country: Turkey, code: tr, language: Turkish, region: europe, aliases: [İstanbul]}
+    - {name: Stockholm, country: Sweden, code: se, language: Swedish, region: europe}
+    - {name: Copenhagen, country: Denmark, code: dk, area: Københavns Kommune, language: Danish, region: europe, aliases: [København]}
+    - {name: Helsinki, country: Finland, code: fi, language: Finnish, region: europe}
+    - {name: Oslo, country: Norway, code: "no", language: Norwegian, region: europe}
+    - {name: Sydney, country: Australia, code: au, language: English, region: oceania}
+    - {name: Melbourne, country: Australia, code: au, language: English, region: oceania}
+    - {name: Brisbane, country: Australia, code: au, language: English, region: oceania}
+    - {name: Perth, country: Australia, code: au, language: English, region: oceania}
+    - {name: Adelaide, country: Australia, code: au, language: English, region: oceania}
+    - {name: Auckland, country: New Zealand, code: nz, language: English, region: oceania}
+    - {name: Singapore, country: Singapore, code: sg, language: English, region: asia}
+    - {name: Tokyo, country: Japan, code: jp, language: Japanese, region: asia}
+    - {name: Osaka, country: Japan, code: jp, language: Japanese, region: asia}
+    - {name: Seoul, country: South Korea, code: kr, language: Korean, region: asia}
+    - {name: Mumbai, country: India, code: in, area: Mumbai Suburban, language: English, region: asia}
+    - {name: Bangalore, country: India, code: in, language: English, region: asia, aliases: [Bengaluru]}
+    - {name: Dubai, country: United Arab Emirates, code: ae, language: English, region: middle_east}
+    - {name: Johannesburg, country: South Africa, code: za, area: City of Johannesburg Metropolitan Municipality, language: English, region: africa}
+    - {name: Cape Town, country: South Africa, code: za, area: City of Cape Town, language: English, region: africa}
+    - {name: Nairobi, country: Kenya, code: ke, language: English, region: africa}
+
 audit:
   enabled: true
   timeout_seconds: 12

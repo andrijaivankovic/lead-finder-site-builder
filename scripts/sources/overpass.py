@@ -14,35 +14,34 @@ OVERPASS_SERVERS = [
 USER_AGENT = "lead-finder-site-builder/0.1 (https://github.com/andrijaivankovic/lead-finder-site-builder)"
 ELEMENT_TYPES = ("node", "way", "relation")
 BUSINESS_KEYS = ("amenity", "shop", "office", "craft", "tourism", "leisure", "healthcare")
+AREA_CLASSES = ("boundary", "place")
+AREA_OFFSETS = {"relation": 3600000000, "way": 2400000000}
+GEOCODE_CANDIDATES = 5
 
 
 class SourceError(Exception):
     pass
 
 
-def _geocode(place):
+def _geocode(place, country_code=""):
+    params = {"q": place, "format": "json", "limit": GEOCODE_CANDIDATES, "addressdetails": 1}
+    if country_code:
+        params["countrycodes"] = country_code
     try:
-        response = requests.get(
-            NOMINATIM_URL,
-            params={"q": place, "format": "json", "limit": 1, "addressdetails": 1},
-            headers={"User-Agent": USER_AGENT},
-            timeout=30,
-        )
+        response = requests.get(NOMINATIM_URL, params=params, headers={"User-Agent": USER_AGENT}, timeout=30)
         response.raise_for_status()
         results = response.json()
     except requests.RequestException as error:
         raise SourceError("Could not reach the OpenStreetMap place lookup: {}".format(error))
 
-    if not results:
-        return None
-
-    first = results[0]
-    osm_id = int(first["osm_id"])
-    country = (first.get("address") or {}).get("country_code", "")
-    if first["osm_type"] == "relation":
-        return {"area_id": 3600000000 + osm_id, "name": first["display_name"], "country": country}
-    if first["osm_type"] == "way":
-        return {"area_id": 2400000000 + osm_id, "name": first["display_name"], "country": country}
+    for result in results:
+        if result.get("class") not in AREA_CLASSES or result.get("osm_type") not in AREA_OFFSETS:
+            continue
+        return {
+            "area_id": AREA_OFFSETS[result["osm_type"]] + int(result["osm_id"]),
+            "name": result["display_name"],
+            "country": (result.get("address") or {}).get("country_code", ""),
+        }
     return None
 
 
@@ -181,8 +180,15 @@ def _lead_from_element(element, place):
     }
 
 
-def search(query, limit, settings, on_event=None):
-    term, place, area = split_term_and_place(query)
+def search(query, limit, settings, on_event=None, place=None):
+    if place:
+        term, area = place["term"], _geocode(place.get("lookup") or place["name"], place.get("country_code", ""))
+        place = place["name"]
+        time.sleep(1)
+        if not area:
+            raise SourceError("Could not find {} as an area on OpenStreetMap.".format(place))
+    else:
+        term, place, area = split_term_and_place(query)
     if not area:
         raise SourceError(
             "Could not recognise a place in '{}'. Write the search as a category followed by "

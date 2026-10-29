@@ -69,6 +69,9 @@ categories are filled in.
   belongs in `config.local.yaml`. That file is gitignored and merged over
   `config.yaml` when settings load, so `config.yaml` can stay public and ship
   with those fields empty.
+- The autopilot settings the browser saves go to `data/autopilot_settings.json`
+  and are laid over `autopilot` in `config.yaml` and `config.local.yaml`. Read
+  them through `scripts/autopilot.py settings`, never by opening one file.
 - Secrets come from `.env` through `python-dotenv` and are never printed.
 - No heavy dependencies. `requests`, `beautifulsoup4`, `python-dotenv`,
   `flask`, `PyYAML` and `Pillow` are the whole list.
@@ -100,6 +103,16 @@ those. Never reorder or rename CSV columns without migrating existing files.
 When asked to build the site, read that folder's `brief.md` and follow the
 "Build prompt" section in it literally. `/build-site <folder>` does this.
 
+`/autopilot <place_id or business name>` does both, then drafts the messages
+into `outreach.md` in the same folder, without asking anything: the answers come
+from the autopilot settings. The Autopilot tab in the browser starts it for each
+business it picks, as Claude Code in print mode with an allow-list of reading
+files, writing in the output folder and `data/autopilot`, and running
+`scripts/*.py`. Keep `commands/autopilot.md` working inside that list: no other
+shell command, no web access, and `scripts/autopilot.py drop-photo` instead of
+deleting files by hand. `scripts/check_site.py` is the check it runs when no
+browser is there to look with.
+
 The stack is decided per business and written into the brief. Plain HTML, CSS
 and JavaScript is the default and the right answer for most one page local
 business sites, because the folder can be sent as is and opened by double
@@ -118,7 +131,8 @@ in English. Do not add co-author trailers.
 ## Boundaries that are deliberate, do not remove them
 
 - The tool never sends a message anywhere and holds no credentials for any
-  messaging account. It only drafts.
+  messaging account. It only drafts. The autopilot included: a message is
+  logged as sent only when the person presses the button that says so.
 - Site images come from Pexels, chosen by trade
   from `stock_photos.plans` in `config.yaml`, or from the client.
 - The monthly Google call limit in `config.yaml` stays below the free tier.

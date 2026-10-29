@@ -493,6 +493,274 @@ td button.copied {
   }
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs .tab {
+  margin-bottom: -1px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius) var(--radius) 0 0;
+  color: var(--dim);
+  font-weight: 500;
+}
+
+.tabs .tab:hover {
+  color: var(--text);
+  filter: none;
+}
+
+.tabs .tab.active {
+  background: var(--surface);
+  border-color: var(--line);
+  border-bottom-color: var(--surface);
+  color: var(--text);
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.hint code,
+.candidate-links code {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--raised);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.autopilot-form {
+  flex-wrap: wrap;
+}
+
+#autopilot-city,
+#autopilot-trade {
+  flex: 1;
+  min-width: 180px;
+}
+
+.run-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.run-head .hint {
+  margin-top: 0;
+}
+
+.candidates {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.candidate {
+  padding: 12px 14px;
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.candidate.state-done {
+  border-left-color: var(--green);
+}
+
+.candidate.state-attention,
+.candidate.state-failed {
+  border-left-color: var(--red);
+}
+
+.candidate.state-building,
+.candidate.state-photos,
+.candidate.state-paste {
+  border-left-color: var(--blue);
+}
+
+.candidate-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.candidate-facts {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.state-tag {
+  background: var(--line-strong);
+  color: var(--muted);
+}
+
+.state-done .state-tag {
+  background: var(--green-quiet);
+  color: var(--green);
+}
+
+.state-attention .state-tag,
+.state-failed .state-tag {
+  background: var(--red-quiet);
+  color: var(--red);
+}
+
+.state-building .state-tag,
+.state-photos .state-tag,
+.state-paste .state-tag {
+  background: var(--blue-quiet);
+  color: var(--blue);
+}
+
+.problems {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--red);
+}
+
+.command-row,
+.sent-row,
+.candidate-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.command-row .command-field {
+  flex: 1;
+  margin-left: 0;
+  width: auto;
+}
+
+.candidate-links a {
+  color: var(--blue);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.candidate-links a:hover {
+  text-decoration: underline;
+}
+
+.message {
+  margin-top: 12px;
+}
+
+.message-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.message-head button,
+.command-row button,
+.sent-row button,
+.sent-row select {
+  padding: 4px 10px;
+  font-size: 12.5px;
+}
+
+.message-head button.copied,
+.command-row button.copied {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.message textarea {
+  display: block;
+  width: 100%;
+  padding: 9px 11px;
+  font: 13px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  resize: vertical;
+}
+
+.sent-row .hint {
+  margin: 0;
+}
+
+#settings-form {
+  display: block;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.field-row .control.grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.field-row .control input[type="text"] {
+  width: 100%;
+}
+
+.field-label {
+  margin: 14px 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.trade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 2px 14px;
+}
+
+.trade-grid .control.checkbox {
+  padding-bottom: 4px;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-actions .status-line {
+  margin-top: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation-duration: 3s;
@@ -515,5 +783,10 @@ td button.copied {
 
   #export-button {
     margin-left: 0;
+  }
+
+  .run-head,
+  .candidate-head {
+    flex-direction: column;
   }
 }

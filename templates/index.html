@@ -16,6 +16,14 @@
   <div class="usage" id="usage"></div>
 </header>
 
+<nav class="tabs" aria-label="Views">
+  <button type="button" class="tab" data-view="leads">Leads</button>
+  <button type="button" class="tab" data-view="autopilot">Autopilot</button>
+  <button type="button" class="tab" data-view="settings">Settings</button>
+</nav>
+
+<div class="view" id="view-leads">
+
 <section class="panel">
   <form id="search-form">
     <input type="text" id="query" placeholder="pizzeria Novi Sad" autocomplete="off" spellcheck="false">
@@ -73,11 +81,141 @@
   <p class="empty" id="empty-message">Search a trade and a city to start.</p>
 </section>
 
+</div>
+
+<div class="view" id="view-autopilot" hidden>
+
+<section class="panel">
+  <form id="autopilot-form" class="autopilot-form">
+    <input type="text" id="autopilot-city" list="autopilot-cities" placeholder="A city, such as Chicago" autocomplete="off" spellcheck="false">
+    <button type="button" id="autopilot-random" class="secondary">Random city</button>
+    <input type="text" id="autopilot-trade" list="autopilot-trades" placeholder="Trade, or empty for a random one" autocomplete="off" spellcheck="false">
+    <button type="submit" id="autopilot-start">Start</button>
+  </form>
+  <datalist id="autopilot-cities"></datalist>
+  <datalist id="autopilot-trades"></datalist>
+  <div class="status-line" id="autopilot-status"></div>
+  <p class="hint" id="autopilot-builder"></p>
+</section>
+
+<section class="panel" id="run-panel" hidden>
+  <div class="run-head">
+    <div>
+      <h2 id="run-title"></h2>
+      <p class="hint" id="run-message"></p>
+    </div>
+    <button type="button" id="run-stop" class="secondary">Stop</button>
+  </div>
+  <div class="candidates" id="run-candidates"></div>
+</section>
+
+<section class="panel controls">
+  <label class="control">
+    <span>Runs</span>
+    <select id="run-select"></select>
+  </label>
+</section>
+
+</div>
+
+<div class="view" id="view-settings" hidden>
+
+<form id="settings-form">
+  <section class="panel">
+    <h2>What it searches</h2>
+    <div class="field-row">
+      <label class="control">
+        <span>Random cities from</span>
+        <select id="set-cities-from"></select>
+      </label>
+      <label class="control">
+        <span>Sites per run</span>
+        <input type="number" id="set-sites" min="1" max="10">
+      </label>
+      <label class="control">
+        <span>Businesses to look through</span>
+        <input type="number" id="set-search-limit" min="10" max="500">
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="control checkbox">
+        <input type="checkbox" id="set-no-website">
+        <span>Only businesses without a website</span>
+      </label>
+      <label class="control checkbox">
+        <input type="checkbox" id="set-phone">
+        <span>Only businesses with a phone number</span>
+      </label>
+    </div>
+    <p class="field-label">Trades a random run picks from</p>
+    <div class="trade-grid" id="set-trades"></div>
+  </section>
+
+  <section class="panel">
+    <h2>How every site is built</h2>
+    <p class="hint">The questions <code>/build-brief</code> asks, answered once for every autopilot site. The manual way on the Leads tab still asks them each time.</p>
+    <div class="field-row">
+      <label class="control checkbox"><input type="checkbox" id="set-faq"><span>FAQ section</span></label>
+      <label class="control checkbox"><input type="checkbox" id="set-careers"><span>Careers section</span></label>
+      <label class="control checkbox"><input type="checkbox" id="set-reviews"><span>Show the rating and review count</span></label>
+      <label class="control checkbox"><input type="checkbox" id="set-animations"><span>GSAP and ScrollTrigger animations</span></label>
+      <label class="control checkbox"><input type="checkbox" id="set-ai"><span>AI images and video</span></label>
+    </div>
+    <div class="field-row">
+      <label class="control">
+        <span>Site language</span>
+        <select id="set-language"></select>
+      </label>
+      <label class="control">
+        <span>Stack</span>
+        <select id="set-stack"></select>
+      </label>
+      <label class="control grow">
+        <span>Look of the sites, optional</span>
+        <input type="text" id="set-style" maxlength="300" placeholder="Empty lets each trade decide its own look">
+      </label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Claude Code</h2>
+    <p class="hint" id="builder-state"></p>
+    <div class="field-row">
+      <label class="control grow">
+        <span>Command, empty to find it on its own</span>
+        <input type="text" id="set-command" spellcheck="false">
+      </label>
+      <label class="control">
+        <span>Model, empty for its default</span>
+        <input type="text" id="set-model" spellcheck="false">
+      </label>
+      <label class="control">
+        <span>Minutes per site, at most</span>
+        <input type="number" id="set-timeout" min="5" max="240">
+      </label>
+      <button type="button" id="builder-check" class="secondary">Check Claude Code</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Your details</h2>
+    <p class="hint" id="sender-state"></p>
+  </section>
+
+  <div class="settings-actions">
+    <button type="submit" id="settings-save">Save settings</button>
+    <span class="status-line" id="settings-status"></span>
+  </div>
+</form>
+
+</div>
+
 <div class="overlay" id="overlay" hidden>
   <div class="spinner"></div>
   <p>Searching. The free OpenStreetMap servers can take up to a minute.</p>
 </div>
 
 <script src="/static/app.js"></script>
+<script src="/static/autopilot.js"></script>
 </body>
 </html>

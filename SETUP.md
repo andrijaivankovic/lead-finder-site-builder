@@ -5,9 +5,9 @@ written for someone opening the Google Cloud Console for the first time.
 
 Keys go into a `.env` file and nowhere else. That file never reaches GitHub.
 
-There are two accounts to make, Pexels and Google Cloud, and then one file
-holding your own details. Start with Pexels, which takes two minutes and
-carries no risk at all.
+There are two accounts to make, Pexels and Google Cloud, then one file holding
+your own details, and one optional login for the autopilot. Start with Pexels,
+which takes two minutes and carries no risk at all.
 
 ---
 
@@ -287,4 +287,42 @@ You want it the moment either of these becomes true:
   by Git, so your name, your links and your paths travel with it.
 
 Both files may exist at once. The local one wins wherever they overlap.
+
+---
+
+## 4. Claude Code for the autopilot
+
+Optional. Skip it and the autopilot still searches, picks the businesses and
+downloads the photographs, then hands you one command per business to paste into
+Claude Code.
+
+### What it is for
+
+The autopilot in the browser builds each site by starting Claude Code in the
+background, with no window and nobody answering questions. That works only when
+Claude Code on this computer is logged in to your Claude account. The Claude
+desktop app being logged in is not enough: the copy the autopilot starts keeps
+its own login.
+
+### Steps
+
+1. Open the browser page, go to **Settings**, and look under **Claude Code**. It
+   says where Claude Code was found. On a Mac with the Claude desktop app it
+   usually finds the copy inside the app, with a long path ending in
+   `claude.app/Contents/MacOS/claude`.
+2. If nothing was found, install Claude Code for the terminal from
+   **https://claude.com/claude-code**, then reload the page.
+3. Open Terminal and run that path in quotes, or just `claude` if you installed
+   it. It opens an interactive session.
+4. Type `/login` and follow the browser that opens. Then type `/exit`.
+5. Back on the Settings page, press **Check Claude Code**. It asks Claude Code
+   for one word, which uses a very small part of your Claude usage, and says
+   whether it is ready.
+
+### Cost
+
+Nothing extra to sign up for. Every site the autopilot builds is a full Claude
+Code session counted against your Claude plan, the same as typing the commands
+yourself, so **Sites per run** on the Settings page is the number to keep an
+eye on.
 

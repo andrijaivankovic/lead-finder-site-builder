@@ -21,10 +21,10 @@ class SearchError(Exception):
     pass
 
 
-def _merge(base, override):
+def merge_settings(base, override):
     for key, value in (override or {}).items():
         if isinstance(value, dict) and isinstance(base.get(key), dict):
-            _merge(base[key], value)
+            merge_settings(base[key], value)
         else:
             base[key] = value
     return base
@@ -39,7 +39,7 @@ def load_settings():
 
     personal = ROOT / "config.local.yaml"
     if personal.exists():
-        _merge(settings, yaml.safe_load(personal.read_text(encoding="utf-8")))
+        merge_settings(settings, yaml.safe_load(personal.read_text(encoding="utf-8")))
 
     return settings
 
@@ -107,7 +107,7 @@ def _call_guard(monthly_limit):
     return before_call
 
 
-def run_search(query, limit=None, source="auto", on_event=None, audit=None):
+def run_search(query, limit=None, source="auto", on_event=None, audit=None, place=None):
     query = (query or "").strip()
     if not query:
         raise SearchError("The search is empty.")
@@ -138,7 +138,7 @@ def run_search(query, limit=None, source="auto", on_event=None, audit=None):
         result["source"] = "google"
     else:
         try:
-            result = overpass.search(query, limit, settings, on_event)
+            result = overpass.search(query, limit, settings, on_event, place)
         except overpass.SourceError as error:
             raise SearchError(str(error))
         result["source"] = "openstreetmap"
