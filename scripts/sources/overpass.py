@@ -97,6 +97,7 @@ def _send_query(query_text, on_event=None):
     last_error = None
 
     for server in OVERPASS_SERVERS:
+        host = server.split("/")[2]
         try:
             response = requests.post(
                 server,
@@ -105,15 +106,24 @@ def _send_query(query_text, on_event=None):
                 timeout=120,
             )
             response.raise_for_status()
-            return response.json()
+            data = response.json()
         except (requests.RequestException, ValueError) as error:
             last_error = error
             if on_event:
-                on_event("{} did not respond, trying the next server".format(server.split("/")[2]))
+                on_event("{} did not respond, trying the next server".format(host))
             time.sleep(2)
+            continue
+
+        remark = str(data.get("remark") or "")
+        if "runtime error" not in remark.lower():
+            return data
+        last_error = remark
+        if on_event:
+            on_event("{} gave up before finishing the search, trying the next server".format(host))
+        time.sleep(2)
 
     raise SourceError(
-        "No OpenStreetMap server responded. Last error: {}. These servers are free and "
+        "No OpenStreetMap server finished the search. Last error: {}. These servers are free and "
         "frequently overloaded, so try again in a few minutes.".format(last_error)
     )
 
