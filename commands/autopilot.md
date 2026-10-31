@@ -68,6 +68,16 @@ Then:
 Follow steps 1 and 2 of `commands/build-site.md` for the project folder: read
 `brief.md` and build exactly what its **Build prompt** asks for.
 
+When the brief asks for GSAP and ScrollTrigger, get the local copies first:
+
+```
+{venv python} scripts/add_gsap.py {project_folder}
+```
+
+It puts `gsap.min.js` and `ScrollTrigger.min.js` in `site/vendor/` and prints
+the two script tags to load them with. Load them from there and never open
+those files: they are minified and only fill the session.
+
 For a stack with a build step, install and build from the project folder with
 `npm --prefix {project_folder}/site install` and
 `npm --prefix {project_folder}/site run build`, so the finished bundle lands in

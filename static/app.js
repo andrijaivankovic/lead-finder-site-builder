@@ -162,6 +162,15 @@ function websiteHref(value) {
   }
 }
 
+function profileHref(value, site) {
+  const text = (value || "").trim();
+  if (!text) return null;
+  if (/^https?:\/\//i.test(text) || text.toLowerCase().includes(site + ".com")) {
+    return websiteHref(text);
+  }
+  return "https://www." + site + ".com/" + encodeURIComponent(text.replace(/^@/, "").replace(/\/+$/, "")) + "/";
+}
+
 function statusSelect(row) {
   const select = document.createElement("select");
   Object.entries(STATUS_LABELS).forEach(([value, label]) => {
@@ -346,6 +355,16 @@ function buildRow(row, thresholds) {
   if (websiteLink) {
     links.append(linkElement(websiteLink, "site"));
   }
+  const email = (row.email || "").split(/[;,]/)[0].trim();
+  if (email) {
+    const mail = linkElement("mailto:" + email, "mail");
+    mail.removeAttribute("target");
+    links.append(mail);
+  }
+  [["instagram", row.instagram], ["facebook", row.facebook]].forEach(([site, value]) => {
+    const href = profileHref(value, site);
+    if (href) links.append(linkElement(href, site));
+  });
   if (row.contact_search) {
     links.append(linkElement(row.contact_search, "contact"));
   }

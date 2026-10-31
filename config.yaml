@@ -64,7 +64,7 @@ stock_photos:
     - brand
   plans:
     default:
-      hero: ["{category} interior modern", "{category} storefront"]
+      hero: ["{category} interior modern", "{category} interior warm light"]
       gallery: ["{category} close up", "{category} detail"]
       background: ["clean minimal light texture", "soft neutral surface"]
       interior: ["{category} interior bright daylight"]
@@ -230,6 +230,7 @@ asset_sorting:
 
 autopilot:
   sites_per_run: 3
+  keep_awake: true
   search_limit: 150
   only_without_website: true
   require_phone: true
@@ -256,6 +257,7 @@ autopilot:
     command: ""
     model: ""
     timeout_minutes: 45
+    parallel: 3
     check_timeout_seconds: 120
   cities:
     - {name: New York, country: United States, code: us, language: English, region: north_america}
@@ -335,6 +337,58 @@ autopilot:
     - {name: Johannesburg, country: South Africa, code: za, area: City of Johannesburg Metropolitan Municipality, language: English, region: africa}
     - {name: Cape Town, country: South Africa, code: za, area: City of Cape Town, language: English, region: africa}
     - {name: Nairobi, country: Kenya, code: ke, language: English, region: africa}
+
+contact_links:
+  keep_leading_zero: [it]
+  calling_codes:
+    us: "1"
+    ca: "1"
+    mx: "52"
+    br: "55"
+    ar: "54"
+    co: "57"
+    pe: "51"
+    cl: "56"
+    gb: "44"
+    ie: "353"
+    de: "49"
+    at: "43"
+    ch: "41"
+    fr: "33"
+    be: "32"
+    nl: "31"
+    es: "34"
+    pt: "351"
+    it: "39"
+    pl: "48"
+    cz: "420"
+    hu: "36"
+    ro: "40"
+    bg: "359"
+    rs: "381"
+    hr: "385"
+    gr: "30"
+    tr: "90"
+    se: "46"
+    dk: "45"
+    fi: "358"
+    "no": "47"
+    au: "61"
+    nz: "64"
+    sg: "65"
+    jp: "81"
+    kr: "82"
+    in: "91"
+    ae: "971"
+    za: "27"
+    ke: "254"
+
+gsap:
+  version: "3.15.0"
+  url: "https://cdnjs.cloudflare.com/ajax/libs/gsap/{version}/{file}"
+  files:
+    - gsap.min.js
+    - ScrollTrigger.min.js
 
 audit:
   enabled: true

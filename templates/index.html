@@ -103,6 +103,7 @@
     <div>
       <h2 id="run-title"></h2>
       <p class="hint" id="run-message"></p>
+      <p class="hint" id="run-usage"></p>
     </div>
     <button type="button" id="run-stop" class="secondary">Stop</button>
   </div>
@@ -192,6 +193,10 @@
       <label class="control">
         <span>Minutes per site, at most</span>
         <input type="number" id="set-timeout" min="5" max="240">
+      </label>
+      <label class="control">
+        <span>Sites built at the same time</span>
+        <input type="number" id="set-parallel" min="1" max="5">
       </label>
       <button type="button" id="builder-check" class="secondary">Check Claude Code</button>
     </div>

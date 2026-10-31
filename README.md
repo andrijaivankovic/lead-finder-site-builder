@@ -393,12 +393,17 @@ The **Autopilot** tab does the whole job for a city:
    website and with a phone number to send the message to.
 3. For each one it downloads stock photographs, then has Claude Code write the
    brief, build the site, check it, and draft the three messages, all with the
-   answers from the **Settings** tab instead of questions.
+   answers from the **Settings** tab instead of questions. Several businesses
+   are built at the same time, three by default.
 4. Each business then shows a link that opens its site, the folder it is in,
-   and the three messages with a copy button each.
+   the three messages with a copy button each, and the ways to reach it.
 5. You read the message, send it from your own account, and press **I sent it**
    with the channel you used. That logs it exactly as `outreach.py --sent` does,
    so the follow up reminder works the same.
+
+**Stop** ends a run at any point, the search included. A search already sent
+to the map server still finishes on its own, and its businesses appear on the
+Leads tab.
 
 The manual way stays exactly as it was. The Leads tab, the questions
 `/build-brief` asks and the other commands are untouched by any of this.
@@ -412,10 +417,11 @@ does not know gets its site language decided while the brief is written.
 
 **The Settings tab** holds the answers `/build-brief` would otherwise ask for:
 the FAQ and careers sections, the rating, the animations, AI images, the site
-language and the stack, plus how many sites a run makes and what counts as a
-fit. They are saved to `data/autopilot_settings.json` on your computer and laid
-over the defaults in `config.yaml`. The page shows your sender name and how many
-portfolio links the messages carry, which still come from `config.local.yaml`.
+language and the stack, plus how many sites a run makes, how many of them are
+built at the same time, and what counts as a fit. They are saved to
+`data/autopilot_settings.json` on your computer and laid over the defaults in
+`config.yaml`. The page shows your sender name and how many portfolio links the
+messages carry, which still come from `config.local.yaml`.
 
 **Claude Code has to be logged in for the building.** The searching and the
 photographs are plain Python, but the brief, the site and the messages need
@@ -434,14 +440,39 @@ up the site and the messages when it is done.
 What Claude Code may do while it runs on its own is fixed in advance: read
 files, write inside the folder the sites go into and inside `data/autopilot`,
 and run this project's Python scripts. Everything else is refused, and it has
-no web access. Each site it builds goes through `scripts/check_site.py`, which
-checks the title, the description, the viewport, one `<h1>`, the structured
-data, every image path and alt text, and that no lorem ipsum is left.
+no web access. That is why `scripts/add_gsap.py` brings in a local copy of GSAP
+when the animations are on. Each site it builds goes through
+`scripts/check_site.py`, which checks the title, the description, the viewport,
+one `<h1>`, the structured data, every image path and alt text, and that no
+lorem ipsum is left.
+
+**Watching it work.** While a site is being built, its card shows what Claude
+Code is doing at that moment, the step count and the model. Once it is done,
+the card says which model built it, how many minutes of work it took, and gives
+the command that opens that Claude Code session in a terminal, so you can keep
+working on the site there, for example to change the colours. These sessions do
+not show in the Claude desktop app's sidebar, which only lists sessions the app
+started itself. The run also shows how much of your Claude plan's five-hour and
+weekly limits is used.
+
+**Reaching the business.** Under the messages, each business lists every way
+to contact it that is known: a phone call, WhatsApp with the short message
+already typed in, Viber, an email link with the subject and text filled in, and
+its Instagram, Facebook, website and Google Maps listing. The email, Instagram
+and Facebook come from OpenStreetMap, which has them for some businesses. Where
+one is missing, a link searches the web for it. Every link only opens the app;
+nothing is sent until you press send there yourself.
+
+While a run is going on a Mac, the computer is kept awake, so a locked screen
+does not stall it. Closing the lid still puts it to sleep.
 
 **What a run costs.** Each site is one full Claude Code session, which comes
 out of your Claude plan's usage the same way typing the commands yourself
-would, and takes several minutes. **Sites per run** on the Settings page keeps
-that in hand. Pexels costs four to eight calls per business, as always.
+would, and takes several minutes. Building several at once uses no more in
+total, it only uses it sooner, so a plan near its five-hour limit can run out
+in the middle of a run. **Sites per run** and **Sites built at the same time**
+on the Settings page keep that in hand. Pexels costs four to eight calls per
+business, as always.
 
 The same runs from a terminal:
 
@@ -491,6 +522,10 @@ Every search writes a file into the `data` folder, named after what you
 searched for, for example `data/leads_bakery-novi-sad.csv`. Cyrillic is spelled
 out in Latin for the name, so `пекара Нови Сад` and `pekara Novi Sad` are the
 same search and share one file.
+
+The last three columns, `email`, `instagram` and `facebook`, are filled from
+OpenStreetMap where the map has them. Files from before those columns existed
+still open, and gain them the next time they are saved.
 
 That file is the database. There is no database.
 

@@ -53,6 +53,13 @@ Hard rules, repeated because they are the ones most often broken:
   placeholder in an HTML comment at the bottom of `index.html`.
 - `<title>`, `<meta name="description">` and `<meta name="viewport">` are
   mandatory.
+- When the brief asks for GSAP, get local copies of `gsap.min.js` and
+  `ScrollTrigger.min.js` into `site/vendor/` and load them from there, never
+  from a CDN:
+
+  ```
+  {venv python} scripts/add_gsap.py "{brief folder}"
+  ```
 
 ## 3. Serve it and look at it
 

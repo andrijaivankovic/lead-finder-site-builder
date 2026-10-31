@@ -83,8 +83,10 @@ categories are filled in.
 CSV files under `data/` are the database. `place_id` is the key that survives
 across searches, which is what lets a rerun refresh the data while keeping what
 the user typed by hand: the `status`, and the address, phone, opening hours,
-rating and review count where the source has none. An empty incoming value never overwrites one of
-those. Never reorder or rename CSV columns without migrating existing files.
+rating and review count where the source has none. An empty incoming value
+never overwrites one of those, nor an email, Instagram or Facebook an earlier
+search found. Never reorder or rename CSV columns without migrating existing
+files; a new column goes at the end, where older files simply lack it.
 
 `data/`, `.env`, `config.local.yaml` and `assets/` never get committed.
 
@@ -109,9 +111,12 @@ from the autopilot settings. The Autopilot tab in the browser starts it for each
 business it picks, as Claude Code in print mode with an allow-list of reading
 files, writing in the output folder and `data/autopilot`, and running
 `scripts/*.py`. Keep `commands/autopilot.md` working inside that list: no other
-shell command, no web access, and `scripts/autopilot.py drop-photo` instead of
-deleting files by hand. `scripts/check_site.py` is the check it runs when no
-browser is there to look with.
+shell command, no web access, `scripts/autopilot.py drop-photo` instead of
+deleting files by hand, and `scripts/add_gsap.py` instead of fetching GSAP.
+`scripts/check_site.py` is the check it runs when no browser is there to look
+with. Several businesses build at once, `autopilot.builder.parallel` of them,
+so anything a run writes outside its own business folder goes through
+`Run.change` in `scripts/autopilot.py`, which holds the lock.
 
 The stack is decided per business and written into the brief. Plain HTML, CSS
 and JavaScript is the default and the right answer for most one page local

@@ -1,14 +1,17 @@
 import argparse
 import json
+import os
 import random
+import re
 import shutil
 import subprocess
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, quote_plus, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -27,6 +30,8 @@ MESSAGE_HEADINGS = ["Email", "Viber or WhatsApp", "Instagram"]
 CHECK_PROMPT = "Reply with the single word OK."
 DESKTOP_COPIES = "Library/Application Support/Claude/claude-code"
 POLL_SECONDS = 1.0
+STOP_POLL_SECONDS = 0.3
+SKIPPED_EVENT = '{"type":"user"'
 
 REGIONS = {
     "us": "United States",
@@ -43,7 +48,7 @@ STACKS = {
 
 SITE_FLAGS = ["faq", "careers", "show_reviews", "animations", "ai_media"]
 SEARCH_FLAGS = ["only_without_website", "require_phone"]
-BUILDER_FIELDS = ["command", "model", "timeout_minutes"]
+BUILDER_FIELDS = ["command", "model", "timeout_minutes", "parallel"]
 ACTIVE_STATES = {"searching", "building"}
 
 UNATTENDED = """You are running unattended. The autopilot in the lead-finder browser page
@@ -168,6 +173,8 @@ def clean(payload, current):
         result["builder"]["model"] = _text(builder["model"], 100, "The model")
     if "timeout_minutes" in builder:
         result["builder"]["timeout_minutes"] = _whole(builder["timeout_minutes"], 5, 240, "The time limit")
+    if "parallel" in builder:
+        result["builder"]["parallel"] = _whole(builder["parallel"], 1, 5, "Sites built at the same time")
 
     return result
 
@@ -296,8 +303,8 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
 
     folder = stock_folder(lead["name"])
     if not (folder / "sources.json").exists():
-        plan = find_stock_photos.plan_for_category(lead.get("category") or trade, settings, lead["name"])
         try:
+            plan = _photo_plan(lead.get("category") or "", trade, lead["name"], settings)
             (collect or find_stock_photos.collect)(plan, folder, settings, on_event)
         except find_stock_photos.StockPhotoError as error:
             raise AutopilotError(str(error))
@@ -338,6 +345,16 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         "sender_name": settings["outreach"]["sender_name"],
         "portfolio_links": settings["outreach"]["portfolio_links"],
     }
+
+
+def _photo_plan(category, trade, name, settings):
+    plan = find_stock_photos.plan_for_category(category or trade, settings, name)
+    if plan["matched"] or not trade:
+        return plan
+    words = category.replace("_", " ").replace(";", " ").split()
+    note = " ".join(words) if len(words) <= settings["stock_photos"]["note_max_words"] else ""
+    fallback = find_stock_photos.plan_for_category(trade, settings, name, note)
+    return fallback if fallback["matched"] else plan
 
 
 def drop_photos(place_id, files):
@@ -423,7 +440,7 @@ def builder_command(executable, prompt, opts, settings, needs_a_build=False, roo
     if needs_a_build:
         allowed += ["Bash(npm *)", "Bash(npx *)"]
     command = [executable, "-p", prompt, "--permission-mode", "dontAsk", "--allowedTools"] + allowed
-    command += ["--add-dir", str(Path(output).resolve()), "--output-format", "json", "--no-session-persistence"]
+    command += ["--add-dir", str(Path(output).resolve()), "--output-format", "stream-json", "--verbose"]
     model = (opts["builder"]["model"] or "").strip()
     if model:
         command += ["--model", model]
@@ -432,14 +449,96 @@ def builder_command(executable, prompt, opts, settings, needs_a_build=False, roo
 
 def _parse_reply(text):
     text = (text or "").strip()
-    for candidate in [text] + text.splitlines()[::-1]:
+    try:
+        whole = json.loads(text)
+    except ValueError:
+        whole = None
+    if isinstance(whole, dict):
+        return whole
+    final = None
+    for line in text.splitlines():
+        if line.startswith(SKIPPED_EVENT):
+            continue
         try:
-            reply = json.loads(candidate)
+            event = json.loads(line)
         except ValueError:
             continue
-        if isinstance(reply, dict):
-            return reply
-    return {"is_error": True, "result": text[-500:] or "Claude Code printed nothing."}
+        if isinstance(event, dict) and (event.get("type") == "result" or "is_error" in event):
+            final = event
+    return final or {"is_error": True, "result": text[-500:] or "Claude Code printed nothing."}
+
+
+def _reply_facts(reply):
+    return {
+        "models": sorted((reply.get("modelUsage") or {}).keys()),
+        "session_id": reply.get("session_id") or "",
+        "turns": reply.get("num_turns") or 0,
+        "minutes": round((reply.get("duration_ms") or 0) / 60000, 1),
+    }
+
+
+def stream_path(log_path):
+    return Path(log_path).with_suffix(".jsonl")
+
+
+def _step_text(block):
+    name = block.get("name", "")
+    given = block.get("input") or {}
+    if given.get("description"):
+        return str(given["description"])
+    target = Path(str(given.get("file_path") or given.get("path") or "")).name
+    if name in ("Write", "Edit") and target:
+        return "Writing {}".format(target)
+    if name == "Read" and target:
+        return "Reading {}".format(target)
+    if name == "Bash":
+        return "Running {}".format(str(given.get("command", ""))[:80])
+    return name
+
+
+def activity(log_path):
+    found = {"model": "", "now": "", "steps": 0, "limits": None}
+    path = stream_path(log_path)
+    if not path.exists():
+        return found
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            if line.startswith(SKIPPED_EVENT):
+                continue
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            kind, subtype = event.get("type"), event.get("subtype")
+            if kind == "system" and subtype == "init":
+                found["model"] = event.get("model") or found["model"]
+            elif kind == "system" and subtype == "task_summary" and event.get("detail"):
+                found["now"] = str(event["detail"])
+            elif kind == "rate_limit_event":
+                found["limits"] = event.get("rate_limit_info")
+            elif kind == "assistant":
+                for block in (event.get("message") or {}).get("content") or []:
+                    if isinstance(block, dict) and block.get("type") == "tool_use":
+                        found["steps"] += 1
+                        found["now"] = _step_text(block)
+    return found
+
+
+PLAN_WINDOWS = [("five_hour", "five-hour"), ("seven_day", "weekly")]
+
+
+def plan_usage(limits):
+    windows = (limits or {}).get("unifiedWindows") or {}
+    parts = []
+    for key, label in PLAN_WINDOWS:
+        window = windows.get(key) or {}
+        if window.get("utilization") is None:
+            continue
+        text = "{}% of the {} limit".format(round(window["utilization"] * 100), label)
+        if key == "five_hour" and window.get("resetsAt"):
+            text += ", which resets at {}".format(datetime.fromtimestamp(window["resetsAt"]).strftime("%H:%M"))
+        parts.append(text)
+    return "Claude plan used: {}.".format("; ".join(parts)) if parts else ""
 
 
 def _not_logged_in(reply):
@@ -459,7 +558,7 @@ def _end(process):
 def run_builder(command, log_path, timeout_seconds, stop_event=None, cwd=None):
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    reply_path = log_path.with_suffix(".json")
+    reply_path = stream_path(log_path)
     started = time.monotonic()
     ending = ""
 
@@ -487,13 +586,15 @@ def run_builder(command, log_path, timeout_seconds, stop_event=None, cwd=None):
             time.sleep(POLL_SECONDS)
 
     reply = _parse_reply(reply_path.read_text(encoding="utf-8", errors="replace"))
-    return {
+    outcome = {
         "ok": not ending and process.returncode == 0 and not reply.get("is_error"),
         "result": str(reply.get("result") or ""),
         "not_logged_in": _not_logged_in(reply),
         "timed_out": ending == "timed_out",
         "stopped": ending == "stopped",
     }
+    outcome.update(_reply_facts(reply))
+    return outcome
 
 
 def check_builder(opts, settings=None):
@@ -528,7 +629,14 @@ def check_builder(opts, settings=None):
     if reply.get("is_error") or finished.returncode:
         detail = str(reply.get("result") or finished.stderr or "no reply").strip()[-300:]
         return {"state": "error", "path": executable, "message": "Claude Code answered with an error: {}".format(detail)}
-    return {"state": "ready", "path": executable, "message": "Claude Code is logged in and answering."}
+    models = _reply_facts(reply)["models"]
+    answered = " with {}".format(", ".join(models)) if models else ""
+    return {
+        "state": "ready",
+        "path": executable,
+        "models": models,
+        "message": "Claude Code is logged in and answering{}.".format(answered),
+    }
 
 
 def messages(folder):
@@ -568,14 +676,26 @@ class Run:
     def __init__(self, state, root=None):
         self.state = state
         self.path = runs_folder(root) / "{}.json".format(state["id"])
+        self.lock = threading.RLock()
 
     def save(self):
-        _write_json(self.path, self.state)
+        with self.lock:
+            _write_json(self.path, self.state)
 
     def update(self, **fields):
-        self.state.update(fields)
-        self.save()
-        return self.state
+        with self.lock:
+            self.state.update(fields)
+            self.save()
+            return self.state
+
+    def change(self, candidate, **fields):
+        with self.lock:
+            candidate.update(fields)
+            self.save()
+
+    def snapshot(self):
+        with self.lock:
+            return json.loads(json.dumps(self.state))
 
 
 def new_run(city, trade, root=None):
@@ -607,12 +727,18 @@ def new_run(city, trade, root=None):
     return run
 
 
-def _candidate(row):
+CONTACT_COLUMNS = ["phone", "email", "instagram", "facebook", "website", "google_maps_link", "contact_search"]
+
+
+def _candidate(row, city=None):
+    city = city or {}
     return {
         "place_id": row["place_id"],
         "name": row.get("name", ""),
         "address": row.get("address", ""),
-        "phone": row.get("phone", ""),
+        "city": city.get("name", ""),
+        "country_code": city.get("code", ""),
+        **{column: row.get(column, "") for column in CONTACT_COLUMNS},
         "score": row.get("score", ""),
         "state": "waiting",
         "folder": "",
@@ -627,8 +753,7 @@ def _candidate(row):
 
 def _build_one(candidate, run, settings, opts, stop_event, build):
     log = runs_folder() / run.state["id"] / "{}.log".format(lead_store.to_slug(candidate["place_id"], "lead"))
-    candidate.update(state="building", log=str(log), started=_now())
-    run.save()
+    run.change(candidate, state="building", log=str(log), started=_now())
     build_brief.output_dir(settings).mkdir(parents=True, exist_ok=True)
 
     prompt = render_prompt(candidate["place_id"], settings)
@@ -636,11 +761,21 @@ def _build_one(candidate, run, settings, opts, stop_event, build):
     command = builder_command(run.state["builder"], prompt, opts, settings, needs_a_build)
     outcome = build(command, log, opts["builder"]["timeout_minutes"] * 60, stop_event)
 
+    found = activity(log)
+    facts = {
+        "models": outcome.get("models") or ([found["model"]] if found["model"] else []),
+        "session_id": outcome.get("session_id") or "",
+        "turns": outcome.get("turns") or 0,
+        "minutes": outcome.get("minutes") or 0,
+        "steps": found["steps"],
+        "limits": found["limits"],
+        "finished": _now(),
+    }
     if outcome["not_logged_in"]:
-        run.state["builder_problem"] = "Claude Code is not logged in, so this run stopped building."
-        candidate["state"] = "paste"
+        run.update(builder_problem="Claude Code is not logged in, so this run stopped building.")
+        run.change(candidate, state="paste", **facts)
     elif outcome["stopped"]:
-        candidate["state"] = "stopped"
+        run.change(candidate, state="stopped", **facts)
     else:
         problems = verify_project(candidate["folder"])
         if outcome["timed_out"]:
@@ -648,40 +783,100 @@ def _build_one(candidate, run, settings, opts, stop_event, build):
             problems.insert(0, "Claude Code ran past the {} minute limit and was stopped.".format(minutes))
         elif not outcome["ok"]:
             problems.insert(0, "Claude Code ended with an error: {}".format(outcome["result"][:300]))
-        candidate.update(state="attention" if problems else "done", problems=problems)
-        candidate["summary"] = outcome["result"][:800]
-    candidate["finished"] = _now()
-    run.save()
+        run.change(
+            candidate,
+            state="attention" if problems else "done",
+            problems=problems,
+            summary=outcome["result"][:800],
+            **facts
+        )
 
 
-def _work_on(candidate, run, settings, opts, stop_event, collect, build, building):
-    candidate["state"] = "photos"
-    run.save()
+def _work_on(candidate, run, settings, opts, stop_event, collect, build, building, say):
+    if stop_event.is_set():
+        run.change(candidate, state="stopped")
+        return
+    run.change(candidate, state="photos")
+    say("{}: downloading photographs".format(candidate["name"]))
     try:
         prepared = prepare(candidate["place_id"], run.state["city"], run.state["trade"], settings, collect)
     except (AutopilotError, build_brief.BriefError) as error:
-        candidate.update(state="failed", problems=[str(error)])
-        run.save()
+        run.change(candidate, state="failed", problems=[str(error)])
+        say("{}: failed".format(candidate["name"]))
         return
-    candidate.update(folder=prepared["project_folder"], photos=prepared["stock_photos"])
+    run.change(candidate, folder=prepared["project_folder"], photos=prepared["stock_photos"])
 
-    if not building or not run.state["builder"] or run.state["builder_problem"]:
-        candidate["state"] = "paste"
-        run.save()
-        return
-    _build_one(candidate, run, settings, opts, stop_event, build)
+    if stop_event.is_set():
+        run.change(candidate, state="stopped")
+    elif not building or not run.state["builder"] or run.state["builder_problem"]:
+        run.change(candidate, state="paste")
+    else:
+        say("{}: building".format(candidate["name"]))
+        _build_one(candidate, run, settings, opts, stop_event, build)
+    say("{}: {}".format(candidate["name"], candidate["state"]))
+
+
+def _guarded_work(candidate, run, *arguments):
+    try:
+        _work_on(candidate, run, *arguments)
+    except Exception as error:
+        run.change(candidate, state="failed", problems=["Unexpected failure: {}".format(error)])
+
+
+def _search_or_stop(call, stop_event):
+    outcome = {}
+
+    def work():
+        try:
+            outcome["result"] = call()
+        except lead_search.SearchError as error:
+            outcome["error"] = str(error)
+        except Exception as error:
+            outcome["error"] = "Unexpected failure while searching: {}".format(error)
+
+    worker = threading.Thread(target=work, daemon=True)
+    worker.start()
+    while worker.is_alive():
+        if stop_event.wait(STOP_POLL_SECONDS):
+            return None
+    return outcome
+
+
+def _keep_awake(opts):
+    tool = shutil.which("caffeinate") if opts.get("keep_awake") else None
+    if not tool:
+        return None
+    try:
+        return subprocess.Popen(
+            [tool, "-i", "-w", str(os.getpid())],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError:
+        return None
 
 
 def execute(run, settings, stop_event, search=None, collect=None, build=None, building=True, report=None):
     opts = options(settings)
-    state = run.state
-    say = report or (lambda text: None)
-
-    run.update(state="searching", message="Searching for {} in {}.".format(state["trade"], state["city"]["name"]))
-    say(state["message"])
-    city = state["city"]
+    awake = _keep_awake(opts)
     try:
-        result = (search or lead_search.run_search)(
+        return _execute(
+            run, settings, opts, stop_event, search, collect, build or run_builder, building, report or (lambda text: None)
+        )
+    finally:
+        if awake is not None:
+            awake.terminate()
+
+
+def _execute(run, settings, opts, stop_event, search, collect, build, building, say):
+    state = run.state
+    city = state["city"]
+    run.update(state="searching", message="Searching for {} in {}.".format(state["trade"], city["name"]))
+    say(state["message"])
+
+    def call():
+        return (search or lead_search.run_search)(
             state["query"],
             limit=opts["search_limit"],
             audit=not opts["only_without_website"],
@@ -692,10 +887,20 @@ def execute(run, settings, stop_event, search=None, collect=None, build=None, bu
                 "country_code": city.get("code", ""),
             },
         )
-    except lead_search.SearchError as error:
-        say(str(error))
-        return run.update(state="failed", message=str(error), finished=_now())
 
+    found = _search_or_stop(call, stop_event)
+    if found is None:
+        message = (
+            "Stopped during the search. A search already sent to the server still finishes on its own, "
+            "and its businesses appear on the Leads tab."
+        )
+        say(message)
+        return run.update(state="stopped", message=message, finished=_now())
+    if "error" in found:
+        say(found["error"])
+        return run.update(state="failed", message=found["error"], finished=_now())
+
+    result = found["result"]
     rows = result.get("rows") or []
     chosen = choose_candidates(rows, opts, settings)
     builder = (find_builder(opts) or "") if building else ""
@@ -703,7 +908,7 @@ def execute(run, settings, stop_event, search=None, collect=None, build=None, bu
         leads_file=result["path"].name if result.get("path") else "",
         found=len(rows),
         builder=builder,
-        candidates=[_candidate(row) for row in chosen],
+        candidates=[_candidate(row, city) for row in chosen],
     )
     if not chosen:
         message = (
@@ -718,18 +923,23 @@ def execute(run, settings, stop_event, search=None, collect=None, build=None, bu
         say(message)
         return run.update(state="done", message=message, finished=_now())
 
-    run.update(state="building", message="Picked {} of {} businesses.".format(len(chosen), len(rows)))
+    workers = max(1, min(opts["builder"]["parallel"], len(chosen)))
+    run.update(
+        state="building",
+        message="Picked {} of {} businesses, building {} at a time.".format(len(chosen), len(rows), workers),
+    )
     say(state["message"])
-    for candidate in state["candidates"]:
-        if stop_event.is_set():
-            break
-        say("{}: preparing".format(candidate["name"]))
-        _work_on(candidate, run, settings, opts, stop_event, collect, build or run_builder, building)
-        say("{}: {}".format(candidate["name"], candidate["state"]))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        jobs = [
+            pool.submit(_guarded_work, candidate, run, settings, opts, stop_event, collect, build, building, say)
+            for candidate in state["candidates"]
+        ]
+        for job in jobs:
+            job.result()
 
     for candidate in state["candidates"]:
-        if candidate["state"] == "waiting":
-            candidate["state"] = "stopped"
+        if candidate["state"] in ("waiting", "photos", "building"):
+            run.change(candidate, state="stopped")
     stopped = stop_event.is_set()
     return run.update(
         state="stopped" if stopped else "done",
@@ -762,6 +972,7 @@ class Runner:
         self.thread = None
         self.stop_event = threading.Event()
         self.run_id = ""
+        self.run = None
 
     def busy(self):
         return self.thread is not None and self.thread.is_alive()
@@ -776,6 +987,7 @@ class Runner:
             run = new_run(city, pick_trade(trade_text, opts))
             self.stop_event = threading.Event()
             self.run_id = run.state["id"]
+            self.run = run
             self.thread = threading.Thread(target=self._guarded, args=(run, settings, hooks), daemon=True)
             self.thread.start()
             return run.state
@@ -796,16 +1008,23 @@ class Runner:
         if self.thread is not None:
             self.thread.join(seconds)
 
+    def live(self, run_id):
+        if self.busy() and self.run_id == run_id:
+            return self.run
+        return None
+
 
 def load_run(run_id, runner=None, root=None):
     if not run_id or "/" in run_id or "\\" in run_id or run_id.startswith("."):
         return None
+    live = runner.live(run_id) if runner is not None else None
+    if live is not None:
+        return live
     run = Run({"id": run_id}, root)
     if not run.path.exists():
         return None
     run.state = _read_json(run.path)
-    alive = runner is not None and runner.busy() and runner.run_id == run_id
-    if run.state.get("state") in ACTIVE_STATES and not alive:
+    if run.state.get("state") in ACTIVE_STATES:
         for candidate in run.state.get("candidates", []):
             if candidate["state"] in ("waiting", "photos", "building"):
                 candidate["state"] = "stopped"
@@ -834,9 +1053,130 @@ def _site_url(page, settings):
     return "/sites/" + quote(relative)
 
 
+def _phone_parts(phone):
+    return re.split(r"[;,/]", phone or "")[0].strip()
+
+
+def phone_digits(phone, country_code, settings):
+    options = settings["contact_links"]
+    first = _phone_parts(phone)
+    digits = re.sub(r"\D", "", first)
+    if not digits:
+        return ""
+    if first.startswith("+"):
+        return digits
+    if first.startswith("00"):
+        return digits[2:]
+    calling = options["calling_codes"].get(country_code or "")
+    if not calling:
+        return ""
+    if calling == "1" and len(digits) == 11 and digits.startswith("1"):
+        return digits
+    national = digits if country_code in options["keep_leading_zero"] else digits.lstrip("0")
+    return calling + national
+
+
+def _profile(value, site):
+    value = (value or "").strip()
+    if not value:
+        return "", ""
+    if value.lower().startswith(("http://", "https://")) or "{}.com".format(site) in value.lower():
+        url = value if value.lower().startswith("http") else "https://" + value
+        handle = urlparse(url).path.strip("/").split("/")[0]
+        return url, handle
+    handle = value.lstrip("@").strip("/")
+    return "https://www.{}.com/{}/".format(site, quote(handle)), handle
+
+
+def _email_parts(text):
+    lines = (text or "").splitlines()
+    if lines and lines[0].lower().startswith("subject:"):
+        return lines[0].split(":", 1)[1].strip(), "\n".join(lines[1:]).strip()
+    return "", (text or "").strip()
+
+
+def _web_address(value):
+    value = (value or "").strip()
+    if not value:
+        return ""
+    url = value if re.match(r"^[a-z][a-z0-9+.-]*:", value, re.IGNORECASE) else "https://" + value
+    parsed = urlparse(url)
+    return url if parsed.scheme in ("http", "https") and "." in parsed.netloc else ""
+
+
+def _search_link(name, city, words):
+    query = '"{}" {} {}'.format(name, city, words).replace("  ", " ")
+    return "https://www.google.com/search?q=" + quote_plus(query)
+
+
+def contact_links(candidate, found, settings):
+    texts = {item["title"].lower(): item["text"] for item in found}
+    links = []
+    phone = _phone_parts(candidate.get("phone"))
+    digits = phone_digits(phone, candidate.get("country_code"), settings)
+    if phone:
+        dial = "+" + digits if digits else re.sub(r"[^\d+]", "", phone)
+        links.append(("call", "Call {}".format(phone), "tel:" + dial))
+    if digits:
+        chat = texts.get("viber or whatsapp", "")
+        links.append(("message", "WhatsApp", "https://wa.me/{}{}".format(digits, "?text=" + quote(chat, safe="") if chat else "")))
+        links.append(("message", "Viber", "viber://chat?number=%2B{}".format(digits)))
+
+    email = re.split(r"[;,]", candidate.get("email") or "")[0].strip()
+    if email:
+        subject, body = _email_parts(texts.get("email", ""))
+        query = "subject={}&body={}".format(quote(subject, safe=""), quote(body, safe="")) if subject or body else ""
+        links.append(("email", "Email {}".format(email), "mailto:{}{}".format(email, "?" + query if query else "")))
+
+    instagram, handle = _profile(candidate.get("instagram"), "instagram")
+    if instagram:
+        links.append(("social", "Instagram", instagram))
+        if handle:
+            links.append(("message", "Instagram DM", "https://ig.me/m/{}".format(quote(handle))))
+    facebook, _ = _profile(candidate.get("facebook"), "facebook")
+    if facebook:
+        links.append(("social", "Facebook", facebook))
+    website = _web_address(candidate.get("website"))
+    if website:
+        links.append(("web", "Website", website))
+    if candidate.get("google_maps_link"):
+        links.append(("web", "Google Maps", candidate["google_maps_link"]))
+
+    name, city = candidate.get("name", ""), candidate.get("city", "")
+    if not email:
+        links.append(("search", "Find their email", _search_link(name, city, "email")))
+    if not instagram:
+        links.append(("search", "Find their Instagram", _search_link(name, city, "instagram")))
+    if not facebook:
+        links.append(("search", "Find their Facebook", _search_link(name, city, "facebook")))
+    if candidate.get("contact_search"):
+        links.append(("search", "Owner search", candidate["contact_search"]))
+    return [{"kind": kind, "label": label, "href": href} for kind, label, href in links]
+
+
+def _refresh_contacts(candidate):
+    try:
+        row, _ = build_brief.find_lead(candidate["place_id"])
+    except build_brief.BriefError:
+        return
+    for column in CONTACT_COLUMNS:
+        if (row.get(column) or "").strip():
+            candidate[column] = row[column]
+
+
+def _resume_command(session_id, opts):
+    if not session_id:
+        return ""
+    on_path = shutil.which("claude") or (Path.home() / ".local" / "bin" / "claude").is_file()
+    program = "claude" if on_path else '"{}"'.format(find_builder(opts) or "claude")
+    return 'cd "{}" && {} --resume {}'.format(CODE, program, session_id)
+
+
 def view(run, settings=None):
     settings = settings or lead_search.load_settings()
-    state = json.loads(json.dumps(run.state))
+    opts = options(settings)
+    state = run.snapshot()
+    latest = (None, "")
     for candidate in state.get("candidates", []):
         folder = Path(candidate["folder"]) if candidate["folder"] else None
         found = messages(folder) if folder else []
@@ -846,6 +1186,16 @@ def view(run, settings=None):
         if candidate["state"] in ("paste", "stopped") and found and page:
             candidate["problems"] = verify_project(folder)
             candidate["state"] = "attention" if candidate["problems"] else "done"
+        if candidate["state"] == "building" and candidate.get("log"):
+            candidate["activity"] = activity(candidate["log"])
+            if candidate["activity"]["limits"]:
+                latest = (candidate["activity"]["limits"], "9999")
+        elif candidate.get("limits") and candidate.get("finished", "") > latest[1]:
+            latest = (candidate["limits"], candidate["finished"])
+        _refresh_contacts(candidate)
+        candidate["contacts"] = contact_links(candidate, found, settings)
+        candidate["resume"] = _resume_command(candidate.get("session_id"), opts)
+    state["plan_usage"] = plan_usage(latest[0])
     return state
 
 
@@ -858,8 +1208,7 @@ def mark_sent(run, place_id, channel, settings=None):
         row = outreach_log.record_send(ROOT, place_id, candidate["name"], channel, settings)
     except outreach_log.OutreachError as error:
         raise AutopilotError(str(error))
-    candidate.setdefault("sent", []).append({"channel": channel, "on": row["sent_at"]})
-    run.save()
+    run.change(candidate, sent=candidate.get("sent", []) + [{"channel": channel, "on": row["sent_at"]}])
     return row
 
 

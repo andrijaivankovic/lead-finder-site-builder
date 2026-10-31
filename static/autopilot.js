@@ -6,13 +6,15 @@ const POLL_WAITING_MS = 10000;
 const CANDIDATE_TEXT = {
   waiting: "Waiting its turn.",
   photos: "Downloading stock photographs.",
-  building: "Claude Code is writing the brief, the site and the messages. This takes several minutes.",
+  building: "Claude Code is writing the brief, the site and the messages.",
   paste: "Photographs are ready. Paste this into Claude Code: it builds the site and writes the messages without asking anything, and this page shows them once it is done.",
   done: "Built and checked. Read the messages, send one, then mark it here.",
   attention: "Built, with problems to look at before sending anything:",
   failed: "Could not be prepared:",
   stopped: "Stopped before it was built.",
 };
+
+const LINKS_IN_PLACE = ["call", "email"];
 
 const STATE_TAGS = {
   paste: "to paste",
@@ -39,6 +41,7 @@ const parts = {
   runPanel: document.getElementById("run-panel"),
   runTitle: document.getElementById("run-title"),
   runMessage: document.getElementById("run-message"),
+  runUsage: document.getElementById("run-usage"),
   runStop: document.getElementById("run-stop"),
   runCandidates: document.getElementById("run-candidates"),
   runSelect: document.getElementById("run-select"),
@@ -60,6 +63,7 @@ const parts = {
   command: document.getElementById("set-command"),
   model: document.getElementById("set-model"),
   timeout: document.getElementById("set-timeout"),
+  parallel: document.getElementById("set-parallel"),
   builderState: document.getElementById("builder-state"),
   builderCheck: document.getElementById("builder-check"),
   senderState: document.getElementById("sender-state"),
@@ -175,6 +179,7 @@ function renderSettings(data) {
   parts.command.value = settings.builder.command;
   parts.model.value = settings.builder.model;
   parts.timeout.value = settings.builder.timeout_minutes;
+  parts.parallel.value = settings.builder.parallel;
   parts.builderState.textContent = data.builder ? "Found at " + data.builder + "." : "Not found on this computer.";
   parts.senderState.textContent = senderNote(data);
 }
@@ -331,15 +336,38 @@ function renderRun(run) {
   const builderProblem = run.builder_problem ? " " + run.builder_problem + " Check it on the Settings page." : "";
   const label = run.state.charAt(0).toUpperCase() + run.state.slice(1);
   parts.runMessage.textContent = label + " · " + (run.message || "") + builderProblem;
+  parts.runUsage.textContent = run.plan_usage || "";
   parts.runStop.hidden = !ACTIVE_RUN_STATES.includes(run.state);
+  if (parts.runStop.hidden) {
+    parts.runStop.disabled = false;
+    parts.runStop.textContent = "Stop";
+  }
   const listed = [...parts.runSelect.options].find((option) => option.value === run.id);
   if (listed) listed.textContent = runLabel(run);
-  parts.runCandidates.innerHTML = "";
-  run.candidates.forEach((candidate) => parts.runCandidates.append(candidateCard(run, candidate)));
+  renderCards(run);
+}
+
+function renderCards(run) {
+  const shown = [...parts.runCandidates.children];
+  const sameList =
+    shown.length === run.candidates.length &&
+    shown.every((node, index) => node.dataset.key === run.id + " " + run.candidates[index].place_id);
+  if (!sameList) {
+    parts.runCandidates.innerHTML = "";
+    run.candidates.forEach((candidate) => parts.runCandidates.append(candidateCard(run, candidate)));
+    return;
+  }
+  run.candidates.forEach((candidate, index) => {
+    if (shown[index].dataset.signature !== JSON.stringify(candidate)) {
+      shown[index].replaceWith(candidateCard(run, candidate));
+    }
+  });
 }
 
 function candidateCard(run, candidate) {
   const card = element("article", "candidate state-" + candidate.state);
+  card.dataset.key = run.id + " " + candidate.place_id;
+  card.dataset.signature = JSON.stringify(candidate);
 
   const head = element("div", "candidate-head");
   const who = element("div");
@@ -350,6 +378,8 @@ function candidateCard(run, candidate) {
   card.append(head);
 
   card.append(element("p", "hint", CANDIDATE_TEXT[candidate.state] || ""));
+  const work = workLine(candidate);
+  if (work) card.append(element("p", "work-line", work));
 
   if (candidate.problems && candidate.problems.length) {
     const list = element("ul", "problems");
@@ -374,11 +404,52 @@ function candidateCard(run, candidate) {
   }
   if (links.children.length) card.append(links);
 
+  if (candidate.resume) {
+    card.append(element("p", "field-label", "Open this Claude Code session in a terminal"));
+    card.append(commandRow(candidate.resume));
+  }
+
+  if (candidate.contacts && candidate.contacts.length) {
+    card.append(contactBlock(candidate.contacts));
+  }
+
   if (candidate.messages && candidate.messages.length) {
     candidate.messages.forEach((message) => card.append(messageBlock(message)));
     card.append(sentRow(run, candidate));
   }
   return card;
+}
+
+function workLine(candidate) {
+  const live = candidate.activity;
+  if (candidate.state === "building" && live) {
+    const steps = live.steps === 1 ? "1 step" : live.steps + " steps";
+    const model = live.model ? " · " + live.model : "";
+    return (live.now ? "Now: " + live.now + " · " : "Starting · ") + steps + " so far" + model;
+  }
+  if (candidate.models && candidate.models.length) {
+    const minutes = candidate.minutes ? " in " + candidate.minutes + " min of work" : "";
+    const steps = candidate.steps ? ", " + candidate.steps + " steps" : "";
+    return "Built by " + candidate.models.join(", ") + minutes + steps + ".";
+  }
+  return "";
+}
+
+function contactBlock(contacts) {
+  const block = element("div", "contacts");
+  block.append(element("p", "field-label", "Reach them"));
+  const list = element("div", "contact-links");
+  contacts.forEach((contact) => {
+    const link = element("a", "contact contact-" + contact.kind, contact.label);
+    link.href = contact.href;
+    if (!LINKS_IN_PLACE.includes(contact.kind) && !contact.href.startsWith("viber:")) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+    list.append(link);
+  });
+  block.append(list);
+  return block;
 }
 
 function commandRow(command) {
@@ -460,6 +531,7 @@ function settingsPayload() {
       command: parts.command.value,
       model: parts.model.value,
       timeout_minutes: parts.timeout.value,
+      parallel: parts.parallel.value,
     },
   };
 }
@@ -507,13 +579,14 @@ async function checkBuilder() {
 
 async function stopRun() {
   parts.runStop.disabled = true;
+  parts.runStop.textContent = "Stopping";
   try {
     await requestJson("/api/autopilot/stop", { method: "POST" });
-    await showRun(autopilot.runId);
+    setTimeout(() => showRun(autopilot.runId), 800);
   } catch (error) {
     say(parts.status, error.message, true);
-  } finally {
     parts.runStop.disabled = false;
+    parts.runStop.textContent = "Stop";
   }
 }
 

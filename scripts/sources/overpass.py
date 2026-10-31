@@ -174,6 +174,9 @@ def _lead_from_element(element, place):
     website = tags.get("website") or tags.get("contact:website") or tags.get("url") or ""
     phone = tags.get("phone") or tags.get("contact:phone") or tags.get("contact:mobile") or ""
     hours = tags.get("opening_hours") or ""
+    email = tags.get("email") or tags.get("contact:email") or ""
+    instagram = tags.get("contact:instagram") or tags.get("instagram") or ""
+    facebook = tags.get("contact:facebook") or tags.get("facebook") or ""
 
     return {
         "place_id": "osm:{}/{}".format(element["type"], element["id"]),
@@ -184,6 +187,9 @@ def _lead_from_element(element, place):
         "website": website.strip(),
         "phone": phone.strip(),
         "opening_hours": hours.strip(),
+        "email": email.split(";")[0].strip(),
+        "instagram": instagram.split(";")[0].strip(),
+        "facebook": facebook.split(";")[0].strip(),
         "google_maps_link": maps_link,
         "map_pin": map_pin,
         "category": _category_from_tags(tags),
