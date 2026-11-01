@@ -29,7 +29,8 @@ messages and sends them.
 It finds the lead, downloads its stock photographs unless they are already
 there, and writes the answers from the settings into a file. It prints JSON
 naming that `answers_file`, the `stock_folder`, the `project_folder`, the city,
-the site language, the sender name and the portfolio links.
+the site language, the sender name and the portfolio links, and whether the
+site is to be published: `deploy` and the `deploy_name` to publish it under.
 
 ## 2. Check the photographs
 
@@ -95,12 +96,29 @@ desktop width, as step 3 of `commands/build-site.md` describes. Without one,
 the check is the last word, and the person looks at the site in the browser
 page afterwards.
 
-## 5. Draft the messages
+## 5. Publish
+
+Skip this step when step 1 printed `deploy` as false. Otherwise, once the check
+passes:
+
+```
+{venv python} scripts/deploy_site.py {project_folder} --name "{deploy_name}"
+```
+
+It publishes the site on Vercel and prints its public address. That address is
+the demo the messages point to. When the command fails, or warns that the
+address needs a Vercel login, leave the address out of the messages and say why
+in the report.
+
+## 6. Draft the messages
 
 Write the three versions exactly as step 3 of `commands/draft-outreach.md`
 describes, in the site language, signed with the sender name and carrying every
 portfolio link that step 1 printed. Where the sender name is empty, sign with
 `[your name]` rather than inventing one.
+
+When step 5 published the site, every version carries its address as the link
+to the demo, on its own line, before the portfolio links.
 
 Save them to `outreach.md` in the project folder under exactly these three
 headings, so the browser page can show each one with a copy button:
@@ -113,7 +131,8 @@ headings, so the browser page can show each one with a copy button:
 
 The email starts with its `Subject:` line.
 
-## 6. Report
+## 7. Report
 
-One short paragraph: the folder, whether the check passed, the placeholders the
-owner has to fill in, and that the messages are in `outreach.md`.
+One short paragraph: the folder, whether the check passed, the address the site
+was published at or why it was not, the placeholders the owner has to fill in,
+and that the messages are in `outreach.md`.

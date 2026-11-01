@@ -62,6 +62,9 @@ const parts = {
   style: document.getElementById("set-style"),
   command: document.getElementById("set-command"),
   model: document.getElementById("set-model"),
+  effort: document.getElementById("set-effort"),
+  deploy: document.getElementById("set-deploy"),
+  deployState: document.getElementById("deploy-state"),
   timeout: document.getElementById("set-timeout"),
   parallel: document.getElementById("set-parallel"),
   builderState: document.getElementById("builder-state"),
@@ -162,7 +165,7 @@ function senderNote(data) {
 
 function renderSettings(data) {
   const settings = data.settings;
-  fillOptions(parts.citiesFrom, Object.entries(data.regions), settings.cities_from);
+  fillOptions(parts.citiesFrom, data.regions, settings.cities_from);
   parts.sites.value = settings.sites_per_run;
   parts.searchLimit.value = settings.search_limit;
   parts.noWebsite.checked = settings.only_without_website;
@@ -174,10 +177,15 @@ function renderSettings(data) {
   parts.animations.checked = settings.site.animations;
   parts.ai.checked = settings.site.ai_media;
   fillOptions(parts.language, languageChoices(data), settings.site.language.toLowerCase() === "city" ? "city" : settings.site.language);
-  fillOptions(parts.stack, Object.entries(data.stacks), settings.site.stack);
+  fillOptions(parts.stack, data.stacks, settings.site.stack);
   parts.style.value = settings.site.style;
   parts.command.value = settings.builder.command;
   parts.model.value = settings.builder.model;
+  fillOptions(parts.effort, data.efforts, settings.builder.effort || "");
+  parts.deploy.checked = settings.deploy;
+  parts.deployState.textContent = data.has_vercel_token
+    ? "VERCEL_TOKEN is set in .env."
+    : "VERCEL_TOKEN is not set in .env, so nothing is published yet. Section 5 of SETUP.md shows how to get one.";
   parts.timeout.value = settings.builder.timeout_minutes;
   parts.parallel.value = settings.builder.parallel;
   parts.builderState.textContent = data.builder ? "Found at " + data.builder + "." : "Not found on this computer.";
@@ -392,6 +400,16 @@ function candidateCard(run, candidate) {
   }
 
   const links = element("div", "candidate-links");
+  if (candidate.live_url) {
+    const live = element("a", "live-link", "Live at " + candidate.live_url.replace(/^https:\/\//, ""));
+    live.href = candidate.live_url;
+    live.target = "_blank";
+    live.rel = "noopener";
+    links.append(live);
+    if (!candidate.live_public) {
+      links.append(element("span", "problems", "This address asks for a Vercel login, so it is not in the messages."));
+    }
+  }
   if (candidate.site_url) {
     const open = element("a", "", "Open the site");
     open.href = candidate.site_url;
@@ -428,9 +446,11 @@ function workLine(candidate) {
     return (live.now ? "Now: " + live.now + " · " : "Starting · ") + steps + " so far" + model;
   }
   if (candidate.models && candidate.models.length) {
+    const names = Object.fromEntries(autopilot.data.efforts);
+    const effort = candidate.effort ? " at " + (names[candidate.effort] || candidate.effort).toLowerCase() + " effort" : "";
     const minutes = candidate.minutes ? " in " + candidate.minutes + " min of work" : "";
     const steps = candidate.steps ? ", " + candidate.steps + " steps" : "";
-    return "Built by " + candidate.models.join(", ") + minutes + steps + ".";
+    return "Built by " + candidate.models.join(", ") + effort + minutes + steps + ".";
   }
   return "";
 }
@@ -516,6 +536,7 @@ function settingsPayload() {
     search_limit: parts.searchLimit.value,
     only_without_website: parts.noWebsite.checked,
     require_phone: parts.phone.checked,
+    deploy: parts.deploy.checked,
     trades: [...parts.trades.querySelectorAll("input:checked")].map((box) => box.value),
     site: {
       faq: parts.faq.checked,
@@ -530,6 +551,7 @@ function settingsPayload() {
     builder: {
       command: parts.command.value,
       model: parts.model.value,
+      effort: parts.effort.value,
       timeout_minutes: parts.timeout.value,
       parallel: parts.parallel.value,
     },

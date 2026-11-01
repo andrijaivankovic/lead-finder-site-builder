@@ -418,7 +418,8 @@ does not know gets its site language decided while the brief is written.
 **The Settings tab** holds the answers `/build-brief` would otherwise ask for:
 the FAQ and careers sections, the rating, the animations, AI images, the site
 language and the stack, plus how many sites a run makes, how many of them are
-built at the same time, and what counts as a fit. They are saved to
+built at the same time, which model Claude Code uses and at what effort, from
+low to max, and what counts as a fit. They are saved to
 `data/autopilot_settings.json` on your computer and laid over the defaults in
 `config.yaml`. The page shows your sender name and how many portfolio links the
 messages carry, which still come from `config.local.yaml`.
@@ -446,14 +447,28 @@ when the animations are on. Each site it builds goes through
 one `<h1>`, the structured data, every image path and alt text, and that no
 lorem ipsum is left.
 
+**Publishing.** With a Vercel token in `.env`, each finished site is published
+at its own address, such as `golden-crust-san-diego.vercel.app`, and that
+address goes into the three messages, so you only have to send them. The card
+shows it as **Live at**. Without a token, or with **Publishing** switched off on
+the Settings page, sites stay on your computer as before. A site built by hand
+goes online the same way:
+
+```bash
+./run scripts/deploy_site.py "$HOME/Developer/sites/Golden Crust"
+```
+
+[SETUP.md](SETUP.md#5-vercel-for-publishing-the-sites) covers the token, and
+the catch in Vercel's free plan.
+
 **Watching it work.** While a site is being built, its card shows what Claude
-Code is doing at that moment, the step count and the model. Once it is done,
-the card says which model built it, how many minutes of work it took, and gives
-the command that opens that Claude Code session in a terminal, so you can keep
-working on the site there, for example to change the colours. These sessions do
-not show in the Claude desktop app's sidebar, which only lists sessions the app
-started itself. The run also shows how much of your Claude plan's five-hour and
-weekly limits is used.
+Code is doing at that moment, the step count and the model. Once it is done, the
+card says which model built it at what effort, how many minutes of work it took,
+and gives the command that opens that Claude Code session in a terminal, so you
+can keep working on the site there, for example to change the colours. These
+sessions do not show in the Claude desktop app's sidebar, which only lists
+sessions the app started itself. The run also shows how much of your Claude
+plan's five-hour and weekly limits is used.
 
 **Reaching the business.** Under the messages, each business lists every way
 to contact it that is known: a phone call, WhatsApp with the short message

@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_brief
 import check_site
+import deploy_site
 import find_stock_photos
 import lead_search
 import lead_store
@@ -47,8 +48,16 @@ STACKS = {
 }
 
 SITE_FLAGS = ["faq", "careers", "show_reviews", "animations", "ai_media"]
-SEARCH_FLAGS = ["only_without_website", "require_phone"]
-BUILDER_FIELDS = ["command", "model", "timeout_minutes", "parallel"]
+RUN_FLAGS = ["only_without_website", "require_phone", "deploy"]
+BUILDER_FIELDS = ["command", "model", "timeout_minutes", "parallel", "effort"]
+EFFORTS = {
+    "": "Claude Code's own default",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "xhigh": "Extra high",
+    "max": "Max",
+}
 ACTIVE_STATES = {"searching", "building"}
 
 UNATTENDED = """You are running unattended. The autopilot in the lead-finder browser page
@@ -143,7 +152,7 @@ def clean(payload, current):
         result["sites_per_run"] = _whole(payload["sites_per_run"], 1, 10, "Sites per run")
     if "search_limit" in payload:
         result["search_limit"] = _whole(payload["search_limit"], 10, 500, "Businesses to look through")
-    for key in SEARCH_FLAGS:
+    for key in RUN_FLAGS:
         if key in payload:
             result[key] = _flag(payload[key], key)
     if "cities_from" in payload:
@@ -175,6 +184,10 @@ def clean(payload, current):
         result["builder"]["timeout_minutes"] = _whole(builder["timeout_minutes"], 5, 240, "The time limit")
     if "parallel" in builder:
         result["builder"]["parallel"] = _whole(builder["parallel"], 1, 5, "Sites built at the same time")
+    if "effort" in builder:
+        if builder["effort"] not in EFFORTS:
+            raise AutopilotError("The effort is one of: {}.".format(", ".join(name for name in EFFORTS if name)))
+        result["builder"]["effort"] = builder["effort"]
 
     return result
 
@@ -189,7 +202,7 @@ def save(payload, settings=None, root=None):
         "site": cleaned["site"],
         "builder": {key: cleaned["builder"][key] for key in BUILDER_FIELDS},
     }
-    stored.update({key: cleaned[key] for key in SEARCH_FLAGS})
+    stored.update({key: cleaned[key] for key in RUN_FLAGS})
     _write_json(settings_file(root), stored)
     return cleaned
 
@@ -342,6 +355,8 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         "stock_photos": _photo_count(folder),
         "project_folder": str(project_folder(lead["name"], settings)),
         "stack_needs_a_build": stack["needs_a_build"],
+        "deploy": bool(opts["deploy"]) and deploy_site.has_token(),
+        "deploy_name": " ".join(part for part in (lead["name"], city.get("name", "")) if part),
         "sender_name": settings["outreach"]["sender_name"],
         "portfolio_links": settings["outreach"]["portfolio_links"],
     }
@@ -441,10 +456,18 @@ def builder_command(executable, prompt, opts, settings, needs_a_build=False, roo
         allowed += ["Bash(npm *)", "Bash(npx *)"]
     command = [executable, "-p", prompt, "--permission-mode", "dontAsk", "--allowedTools"] + allowed
     command += ["--add-dir", str(Path(output).resolve()), "--output-format", "stream-json", "--verbose"]
+    return command + _model_and_effort(opts)
+
+
+def _model_and_effort(opts):
+    extra = []
     model = (opts["builder"]["model"] or "").strip()
     if model:
-        command += ["--model", model]
-    return command
+        extra += ["--model", model]
+    effort = (opts["builder"].get("effort") or "").strip()
+    if effort:
+        extra += ["--effort", effort]
+    return extra
 
 
 def _parse_reply(text):
@@ -606,9 +629,7 @@ def check_builder(opts, settings=None):
             "message": "No Claude Code was found on this computer.",
         }
     command = [executable, "-p", CHECK_PROMPT, "--permission-mode", "dontAsk", "--output-format", "json"]
-    command += ["--no-session-persistence"]
-    if (opts["builder"]["model"] or "").strip():
-        command += ["--model", opts["builder"]["model"].strip()]
+    command += ["--no-session-persistence"] + _model_and_effort(opts)
     seconds = opts["builder"]["check_timeout_seconds"]
     try:
         finished = subprocess.run(
@@ -769,6 +790,7 @@ def _build_one(candidate, run, settings, opts, stop_event, build):
         "minutes": outcome.get("minutes") or 0,
         "steps": found["steps"],
         "limits": found["limits"],
+        "effort": opts["builder"].get("effort") or "",
         "finished": _now(),
     }
     if outcome["not_logged_in"]:
@@ -1183,6 +1205,9 @@ def view(run, settings=None):
         page = check_site.entry_page(folder) if folder else None
         candidate["messages"] = found
         candidate["site_url"] = _site_url(page, settings) if page else ""
+        published = deploy_site.read_record(folder) if folder else {}
+        candidate["live_url"] = published.get("url", "")
+        candidate["live_public"] = bool(published.get("public"))
         if candidate["state"] in ("paste", "stopped") and found and page:
             candidate["problems"] = verify_project(folder)
             candidate["state"] = "attention" if candidate["problems"] else "done"

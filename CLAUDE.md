@@ -112,7 +112,8 @@ business it picks, as Claude Code in print mode with an allow-list of reading
 files, writing in the output folder and `data/autopilot`, and running
 `scripts/*.py`. Keep `commands/autopilot.md` working inside that list: no other
 shell command, no web access, `scripts/autopilot.py drop-photo` instead of
-deleting files by hand, and `scripts/add_gsap.py` instead of fetching GSAP.
+deleting files by hand, `scripts/add_gsap.py` instead of fetching GSAP, and
+`scripts/deploy_site.py` to publish on Vercel.
 `scripts/check_site.py` is the check it runs when no browser is there to look
 with. Several businesses build at once, `autopilot.builder.parallel` of them,
 so anything a run writes outside its own business folder goes through
@@ -138,6 +139,8 @@ in English. Do not add co-author trailers.
 - The tool never sends a message anywhere and holds no credentials for any
   messaging account. It only drafts. The autopilot included: a message is
   logged as sent only when the person presses the button that says so.
+- Publishing goes to the user's own Vercel account through `VERCEL_TOKEN`, and
+  only the public production address is ever put in a message.
 - Site images come from Pexels, chosen by trade
   from `stock_photos.plans` in `config.yaml`, or from the client.
 - The monthly Google call limit in `config.yaml` stays below the free tier.
