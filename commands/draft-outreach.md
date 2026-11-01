@@ -38,6 +38,11 @@ the site is actually built. Never claim a site is ready when `site/` is empty.
 The brief marks each photograph as stock or the business's own. That decides
 what the message may say about them, so read it before writing point 4 below.
 
+When the folder holds `deploy.json`, its `url` is where the site is published.
+Every version carries that address as the link to the demo, on its own line,
+before the portfolio links. Leave it out when `public` is false, because that
+address asks visitors for a Vercel login.
+
 Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`,
 which a `config.local.yaml` may override. Those two are personal, so that is
 where they usually are, and `config.yaml` ships them empty. Read both files

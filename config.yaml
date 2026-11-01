@@ -231,6 +231,7 @@ asset_sorting:
 autopilot:
   sites_per_run: 3
   keep_awake: true
+  deploy: true
   search_limit: 150
   only_without_website: true
   require_phone: true
@@ -258,6 +259,7 @@ autopilot:
     model: ""
     timeout_minutes: 45
     parallel: 3
+    effort: ""
     check_timeout_seconds: 120
   cities:
     - {name: New York, country: United States, code: us, language: English, region: north_america}
@@ -382,6 +384,12 @@ contact_links:
     ae: "971"
     za: "27"
     ke: "254"
+
+deploy:
+  api: "https://api.vercel.com"
+  ready_timeout_seconds: 180
+  poll_seconds: 2
+  upload_timeout_seconds: 120
 
 gsap:
   version: "3.15.0"

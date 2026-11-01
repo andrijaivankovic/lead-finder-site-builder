@@ -188,7 +188,16 @@
       </label>
       <label class="control">
         <span>Model, empty for its default</span>
-        <input type="text" id="set-model" spellcheck="false">
+        <input type="text" id="set-model" list="model-choices" spellcheck="false">
+      </label>
+      <datalist id="model-choices">
+        <option value="opus"></option>
+        <option value="sonnet"></option>
+        <option value="haiku"></option>
+      </datalist>
+      <label class="control">
+        <span>Effort</span>
+        <select id="set-effort"></select>
       </label>
       <label class="control">
         <span>Minutes per site, at most</span>
@@ -200,6 +209,15 @@
       </label>
       <button type="button" id="builder-check" class="secondary">Check Claude Code</button>
     </div>
+  </section>
+
+  <section class="panel">
+    <h2>Publishing</h2>
+    <label class="control checkbox">
+      <input type="checkbox" id="set-deploy">
+      <span>Publish every finished site on Vercel and put its address in the messages</span>
+    </label>
+    <p class="hint" id="deploy-state"></p>
   </section>
 
   <section class="panel">

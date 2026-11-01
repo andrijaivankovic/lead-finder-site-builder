@@ -91,6 +91,17 @@ Fix what you find, re-check, then screenshot both widths and show them.
 
 Leave the server running so they can click around, and tell them the address.
 
+To put it online for the owner to see, publish it on Vercel. This needs
+`VERCEL_TOKEN` in `.env`, as section 5 of `SETUP.md` explains:
+
+```
+{venv python} scripts/deploy_site.py "{brief folder}"
+```
+
+It prints the public address and writes it to `deploy.json`, where
+`/draft-outreach` picks it up. Running it again after a change updates the same
+address.
+
 ## 4. Report
 
 Say which files you wrote, list the placeholders the owner has to fill in, and

@@ -6,8 +6,9 @@ written for someone opening the Google Cloud Console for the first time.
 Keys go into a `.env` file and nowhere else. That file never reaches GitHub.
 
 There are two accounts to make, Pexels and Google Cloud, then one file holding
-your own details, and one optional login for the autopilot. Start with Pexels,
-which takes two minutes and carries no risk at all.
+your own details, one optional login for the autopilot, and one optional token
+for publishing the sites. Start with Pexels, which takes two minutes and
+carries no risk at all.
 
 ---
 
@@ -325,4 +326,53 @@ Nothing extra to sign up for. Every site the autopilot builds is a full Claude
 Code session counted against your Claude plan, the same as typing the commands
 yourself, so **Sites per run** on the Settings page is the number to keep an
 eye on.
+
+---
+
+## 5. Vercel for publishing the sites
+
+Optional. Skip it and every site stays on your computer, and the messages carry
+no link to it.
+
+### What it does
+
+Each finished site goes online at an address such as
+`golden-crust-san-diego.vercel.app`, and that address goes into the messages,
+so the owner opens the demo with one tap. Every business gets its own Vercel
+project, and publishing again after a change keeps the same address.
+
+### Cost, and the catch
+
+The Hobby plan costs nothing, but Vercel's own terms limit it to
+**non-commercial, personal use**. Demo sites sent to businesses you hope to win
+as clients are commercial work, so by those terms they belong on the Pro plan,
+which was 20 USD per month per seat when this was written. That decision is
+yours.
+
+### Steps
+
+1. Sign up at **https://vercel.com/signup**.
+2. Open **https://vercel.com/account/tokens**.
+3. **Token name:** `lead-finder`. **Scope:** *Full Account*, or the team the
+   projects should go under. **Expiration:** your choice; a token that expires
+   simply has to be replaced.
+4. Click **Create** and copy the token straight away. Vercel shows it once.
+5. Paste it into `.env` after `VERCEL_TOKEN=`.
+6. Only when the token's scope is *Full Account* and the projects should still
+   go under a team: copy the **Team ID** from that team's **Settings**, under
+   **General**, into `VERCEL_TEAM_ID=`. Leave it empty otherwise.
+
+The **Publishing** panel on the Settings page then says the token is set.
+
+### Who can open the sites
+
+New Vercel projects use Standard Protection: the project's own address,
+`name.vercel.app`, is public, and every other address of a deployment asks for
+a Vercel login. The script hands out only the public one, and opens it after
+publishing to make sure.
+
+If your account's default is to protect all deployments, that check fails and
+the site is left out of the messages. Open the project on vercel.com, go to
+**Settings**, then **Deployment Protection**, choose **Standard Protection**,
+and publish again.
 
