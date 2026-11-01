@@ -6,6 +6,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
 from dotenv import load_dotenv
@@ -167,39 +168,65 @@ def _create(name, entries, key, options):
     return response.json()
 
 
+def _fetch_deployment(deployment_id, key, options):
+    try:
+        response = requests.get(
+            "{}/v13/deployments/{}".format(options["api"], deployment_id),
+            params=_scope(),
+            headers=_headers(key),
+            timeout=30,
+        )
+    except requests.RequestException as error:
+        raise DeployError("Asking Vercel about the deployment failed: {}".format(error))
+    _check(response, "checking the deployment")
+    return response.json()
+
+
 def _wait_until_ready(deployment, key, options):
     deadline = time.monotonic() + options["ready_timeout_seconds"]
     while deployment.get("readyState") not in FINISHED_STATES:
         if time.monotonic() > deadline:
             raise DeployError("The deployment was not ready after {} seconds.".format(options["ready_timeout_seconds"]))
         time.sleep(options["poll_seconds"])
-        try:
-            response = requests.get(
-                "{}/v13/deployments/{}".format(options["api"], deployment["id"]),
-                params=_scope(),
-                headers=_headers(key),
-                timeout=30,
-            )
-        except requests.RequestException as error:
-            raise DeployError("Asking Vercel about the deployment failed: {}".format(error))
-        _check(response, "checking the deployment")
-        deployment = response.json()
+        deployment = _fetch_deployment(deployment["id"], key, options)
     if deployment.get("readyState") != "READY":
         raise DeployError(
             "The deployment ended as {}: {}".format(deployment.get("readyState"), deployment.get("errorMessage") or "no reason given")
         )
+    deadline = time.monotonic() + options["ready_timeout_seconds"]
+    while not deployment.get("aliasAssigned") and time.monotonic() < deadline:
+        time.sleep(options["poll_seconds"])
+        deployment = _fetch_deployment(deployment["id"], key, options)
     return deployment
 
 
-def production_address(deployment, name):
-    aliases = [alias for alias in deployment.get("alias") or [] if alias.endswith(".vercel.app")]
-    preferred = "{}.vercel.app".format(name)
-    if preferred in aliases:
-        return preferred
-    candidates = sorted((alias for alias in aliases if alias.startswith(name)), key=len)
-    if candidates:
-        return candidates[0]
-    return deployment.get("url") or ""
+def project_domains(name, key, options):
+    try:
+        response = requests.get(
+            "{}/v9/projects/{}/domains".format(options["api"], name),
+            params=_scope(),
+            headers=_headers(key),
+            timeout=30,
+        )
+    except requests.RequestException:
+        return []
+    if response.status_code >= 400:
+        return []
+    return [
+        domain["name"]
+        for domain in response.json().get("domains") or []
+        if domain.get("verified") and not domain.get("redirect") and not domain.get("gitBranch")
+    ]
+
+
+def candidate_addresses(deployment, name, domains, earlier):
+    aliases = list(deployment.get("alias") or [])
+    known = set(aliases) | set(domains) | ({earlier} if earlier else set())
+    ordered = []
+    for address in ["{}.vercel.app".format(name)] + domains + [earlier] + sorted(aliases, key=len):
+        if address and address in known and address not in ordered:
+            ordered.append(address)
+    return ordered
 
 
 def is_public(address):
@@ -218,12 +245,15 @@ def deploy(folder, settings, wanted_name=""):
     files = bundle(folder)
     entries = upload(files, key, options)
     deployment = _wait_until_ready(_create(name, entries, key, options), key, options)
-    address = production_address(deployment, name)
+    earlier = urlparse(read_record(folder).get("url") or "").netloc
+    choices = candidate_addresses(deployment, name, project_domains(name, key, options), earlier)
+    public = next((address for address in choices if is_public(address)), "")
+    address = public or (choices[0] if choices else deployment.get("url") or "")
     record = {
         "project": name,
         "url": "https://{}".format(address) if address else "",
         "deployment_url": "https://{}".format(deployment["url"]) if deployment.get("url") else "",
-        "public": bool(address) and is_public(address),
+        "public": bool(public),
         "files": len(entries),
         "deployed_at": datetime.now().isoformat(timespec="seconds"),
     }
