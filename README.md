@@ -98,6 +98,13 @@ four days.
 
 It does not send anything. See "Things it will not do" below.
 
+There are two ways through those six steps, and both stay available. By hand,
+you pick each business from the table and answer a few questions about it
+before its site is built. With the
+[autopilot](#autopilot-one-city-start-to-finish), you type a city or let it
+pick one, and it runs every step on its own with answers you set once, until
+all that is left is reading the message and sending it.
+
 ## Requirements
 
 Python 3.9 or newer. Nothing else. There is no database to install, no server
@@ -286,17 +293,22 @@ On macOS, port 5000 is also where AirPlay Receiver listens. If the page refuses
 to load, or starting it fails with `Address already in use`, turn AirPlay
 Receiver off in System Settings, under General, AirDrop & Handoff.
 
-The page shows your results as a table you can sort by clicking any column. You
-can filter to businesses without a website, set a minimum rating or review
-count, and set a status on each row, which is saved the moment you choose it.
+The page has three tabs. **Leads** is the table described here, and
+**Autopilot** and **Settings** are covered
+[further down](#autopilot-one-city-start-to-finish).
+
+The Leads tab shows your results as a table you can sort by clicking any
+column. You can filter to businesses without a website, set a minimum rating or
+review count, and set a status on each row, which is saved the moment you
+choose it.
 Each row links to the business on the map, to its website if it has one, and to
 a search for its owner: the CompanyWall register for a business in Serbia, a
 plain web search anywhere else. `contact_search` in `config.yaml` holds both.
 
 ### Preparing a website
 
-The three commands below are Claude Code commands. You type them in a Claude
-Code session opened inside this folder.
+The commands below are Claude Code commands. You type them in a Claude Code
+session opened inside this folder.
 
 They live in `commands/`, which Claude Code does not read on its own, so link
 them into `.claude/commands/` once after cloning. From the project folder on
@@ -312,7 +324,7 @@ update that changes a command changes it here too. Open a new session
 afterwards so the commands are picked up.
 
 On Windows a link needs Developer Mode or an administrator prompt. Without
-either, copy the three files instead, and copy them again after each update:
+either, copy the files instead, and copy them again after each update:
 
 ```
 mkdir .claude\commands
@@ -362,6 +374,118 @@ message for the business you named.
 The button labelled "Create brief" next to each row in the browser copies the
 first command for you, already filled in with the right business.
 
+```
+/autopilot <place_id or business name>
+```
+
+Does all three for one business without asking anything, using the answers
+saved on the Settings page. The autopilot below runs it for you; you only type
+it yourself when the autopilot asks you to paste it.
+
+### Autopilot: one city, start to finish
+
+The **Autopilot** tab does the whole job for a city:
+
+1. You type a city, or press **Random city**, and optionally a trade. Leave the
+   trade empty and it picks one from the trades ticked in the settings.
+2. It searches that city, and takes the best few businesses that fit the
+   settings: not contacted before, not built before, by default without a
+   website and with a phone number to send the message to.
+3. For each one it downloads stock photographs, then has Claude Code write the
+   brief, build the site, check it, and draft the three messages, all with the
+   answers from the **Settings** tab instead of questions. Several businesses
+   are built at the same time, three by default.
+4. Each business then shows a link that opens its site, the folder it is in,
+   the three messages with a copy button each, and the ways to reach it.
+5. You read the message, send it from your own account, and press **I sent it**
+   with the channel you used. That logs it exactly as `outreach.py --sent` does,
+   so the follow up reminder works the same.
+
+**Stop** ends a run at any point, the search included. A search already sent
+to the map server still finishes on its own, and its businesses appear on the
+Leads tab.
+
+The manual way stays exactly as it was. The Leads tab, the questions
+`/build-brief` asks and the other commands are untouched by any of this.
+
+**Random cities** come from `autopilot.cities` in `config.yaml`: cities whose
+urban area holds about a million people or more, each with its country and the
+language its sites are written in. The Settings tab says whether the random
+choice comes from the United States, from English-speaking countries, from
+Europe or from the whole list. You can also type any city by hand; one the list
+does not know gets its site language decided while the brief is written.
+
+**The Settings tab** holds the answers `/build-brief` would otherwise ask for:
+the FAQ and careers sections, the rating, the animations, AI images, the site
+language and the stack, plus how many sites a run makes, how many of them are
+built at the same time, and what counts as a fit. They are saved to
+`data/autopilot_settings.json` on your computer and laid over the defaults in
+`config.yaml`. The page shows your sender name and how many portfolio links the
+messages carry, which still come from `config.local.yaml`.
+
+**Claude Code has to be logged in for the building.** The searching and the
+photographs are plain Python, but the brief, the site and the messages need
+judgement, so the page starts Claude Code for each business in the background.
+It looks for it on its own, including the copy inside the Claude desktop app.
+Log it in once: open Terminal, run `claude`, or the path the Settings page
+shows, type `/login`, and follow the browser. **Check Claude Code** on the
+Settings page then tells you whether it answers.
+[SETUP.md](SETUP.md#4-claude-code-for-the-autopilot) walks through it.
+
+Until it does, a run stops after the photographs and shows one command per
+business, `/autopilot` followed by its `place_id`. Paste it into a Claude Code
+session in this folder and it does the rest without asking, and the page picks
+up the site and the messages when it is done.
+
+What Claude Code may do while it runs on its own is fixed in advance: read
+files, write inside the folder the sites go into and inside `data/autopilot`,
+and run this project's Python scripts. Everything else is refused, and it has
+no web access. That is why `scripts/add_gsap.py` brings in a local copy of GSAP
+when the animations are on. Each site it builds goes through
+`scripts/check_site.py`, which checks the title, the description, the viewport,
+one `<h1>`, the structured data, every image path and alt text, and that no
+lorem ipsum is left.
+
+**Watching it work.** While a site is being built, its card shows what Claude
+Code is doing at that moment, the step count and the model. Once it is done,
+the card says which model built it, how many minutes of work it took, and gives
+the command that opens that Claude Code session in a terminal, so you can keep
+working on the site there, for example to change the colours. These sessions do
+not show in the Claude desktop app's sidebar, which only lists sessions the app
+started itself. The run also shows how much of your Claude plan's five-hour and
+weekly limits is used.
+
+**Reaching the business.** Under the messages, each business lists every way
+to contact it that is known: a phone call, WhatsApp with the short message
+already typed in, Viber, an email link with the subject and text filled in, and
+its Instagram, Facebook, website and Google Maps listing. The email, Instagram
+and Facebook come from OpenStreetMap, which has them for some businesses. Where
+one is missing, a link searches the web for it. Every link only opens the app;
+nothing is sent until you press send there yourself.
+
+While a run is going on a Mac, the computer is kept awake, so a locked screen
+does not stall it. Closing the lid still puts it to sleep.
+
+**What a run costs.** Each site is one full Claude Code session, which comes
+out of your Claude plan's usage the same way typing the commands yourself
+would, and takes several minutes. Building several at once uses no more in
+total, it only uses it sooner, so a plan near its five-hour limit can run out
+in the middle of a run. **Sites per run** and **Sites built at the same time**
+on the Settings page keep that in hand. Pexels costs four to eight calls per
+business, as always.
+
+The same runs from a terminal:
+
+```bash
+./run scripts/autopilot.py run --random
+./run scripts/autopilot.py run --city Chicago --trade bakery
+./run scripts/autopilot.py run --random --no-build
+```
+
+`--no-build` stops after the photographs and prints the `/autopilot` command
+for each business, which is what happens anyway when Claude Code is not
+logged in.
+
 ### Keeping track of who you contacted
 
 Nothing is recorded when a message is drafted, because drafting is not sending.
@@ -398,6 +522,10 @@ Every search writes a file into the `data` folder, named after what you
 searched for, for example `data/leads_bakery-novi-sad.csv`. Cyrillic is spelled
 out in Latin for the name, so `пекара Нови Сад` and `pekara Novi Sad` are the
 same search and share one file.
+
+The last three columns, `email`, `instagram` and `facebook`, are filled from
+OpenStreetMap where the map has them. Files from before those columns existed
+still open, and gain them the next time they are saved.
 
 That file is the database. There is no database.
 
@@ -483,7 +611,8 @@ For scale, one search that pulls its full results costs 3 calls and returns up t
 **It never sends a message.** It writes drafts, and you send them yourself from
 your own account. The project holds no password, token or login for email,
 Viber, WhatsApp or Instagram, and it should never be given one. You log a
-message as sent after you have actually sent it.
+message as sent after you have actually sent it. The autopilot is no exception:
+it stops at the drafted message, and only your **I sent it** logs anything.
 
 **Google's photographs never end up on a website you build.** Those pictures
 belong to the owners and the customers who took them. The tool never downloads
@@ -509,10 +638,11 @@ them from a plain terminal with no assistant at all.
 
 What remains are the places where judgement is needed: describing what a place
 looks like, saying what is in a photograph the owner took, writing the website,
-and writing the message. Those are the Claude Code commands.
+and writing the message. Those are the Claude Code commands. The autopilot runs
+everything else on its own, and with `--no-build` it needs no assistant at all.
 
 If you use a different assistant, `CLAUDE.md` in this folder holds the project
-rules, and the files under `commands` hold the three procedures. Both are plain
+rules, and the files under `commands` hold the procedures. Both are plain
 English. Hand them to your assistant and it can follow them.
 
 ## Licence

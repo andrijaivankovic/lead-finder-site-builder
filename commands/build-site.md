@@ -11,6 +11,13 @@ folder with that name in `brief.output_dir` from `config.yaml`, which a
 `config.local.yaml` may override. Look on the Desktop when that setting is
 empty.
 
+`{venv python}` below is the Python inside `venv`: `venv/bin/python` on macOS and
+Linux, `venv/Scripts/python.exe` on Windows. Check which of the two exists in the
+project folder and use that one. Never a bare `python`.
+
+Substitute every `{...}` before running a command. Never paste one into a shell
+as it stands.
+
 ## 1. Read the brief
 
 Read `$1/brief.md` in full before writing anything. The section named
@@ -46,11 +53,30 @@ Hard rules, repeated because they are the ones most often broken:
   placeholder in an HTML comment at the bottom of `index.html`.
 - `<title>`, `<meta name="description">` and `<meta name="viewport">` are
   mandatory.
+- When the brief asks for GSAP, get local copies of `gsap.min.js` and
+  `ScrollTrigger.min.js` into `site/vendor/` and load them from there, never
+  from a CDN:
+
+  ```
+  {venv python} scripts/add_gsap.py "{brief folder}"
+  ```
 
 ## 3. Serve it and look at it
 
 This step is not optional. Never say a site is finished without having opened
 it.
+
+First let the script catch what a script can, given the full path of the
+folder that holds `brief.md`:
+
+```
+{venv python} scripts/check_site.py "{brief folder}"
+```
+
+It checks the title, the description, the viewport, a single `<h1>`, the
+JSON-LD, every image path and alt text, and that no lorem ipsum is left. Fix
+what it lists, then open the site, because no script can tell whether it looks
+right.
 
 Serve it through whatever local preview your tools offer. In Claude Code that
 is an entry in `.claude/launch.json` started with the preview tool. For a plain

@@ -14,35 +14,34 @@ OVERPASS_SERVERS = [
 USER_AGENT = "lead-finder-site-builder/0.1 (https://github.com/andrijaivankovic/lead-finder-site-builder)"
 ELEMENT_TYPES = ("node", "way", "relation")
 BUSINESS_KEYS = ("amenity", "shop", "office", "craft", "tourism", "leisure", "healthcare")
+AREA_CLASSES = ("boundary", "place")
+AREA_OFFSETS = {"relation": 3600000000, "way": 2400000000}
+GEOCODE_CANDIDATES = 5
 
 
 class SourceError(Exception):
     pass
 
 
-def _geocode(place):
+def _geocode(place, country_code=""):
+    params = {"q": place, "format": "json", "limit": GEOCODE_CANDIDATES, "addressdetails": 1}
+    if country_code:
+        params["countrycodes"] = country_code
     try:
-        response = requests.get(
-            NOMINATIM_URL,
-            params={"q": place, "format": "json", "limit": 1, "addressdetails": 1},
-            headers={"User-Agent": USER_AGENT},
-            timeout=30,
-        )
+        response = requests.get(NOMINATIM_URL, params=params, headers={"User-Agent": USER_AGENT}, timeout=30)
         response.raise_for_status()
         results = response.json()
     except requests.RequestException as error:
         raise SourceError("Could not reach the OpenStreetMap place lookup: {}".format(error))
 
-    if not results:
-        return None
-
-    first = results[0]
-    osm_id = int(first["osm_id"])
-    country = (first.get("address") or {}).get("country_code", "")
-    if first["osm_type"] == "relation":
-        return {"area_id": 3600000000 + osm_id, "name": first["display_name"], "country": country}
-    if first["osm_type"] == "way":
-        return {"area_id": 2400000000 + osm_id, "name": first["display_name"], "country": country}
+    for result in results:
+        if result.get("class") not in AREA_CLASSES or result.get("osm_type") not in AREA_OFFSETS:
+            continue
+        return {
+            "area_id": AREA_OFFSETS[result["osm_type"]] + int(result["osm_id"]),
+            "name": result["display_name"],
+            "country": (result.get("address") or {}).get("country_code", ""),
+        }
     return None
 
 
@@ -98,6 +97,7 @@ def _send_query(query_text, on_event=None):
     last_error = None
 
     for server in OVERPASS_SERVERS:
+        host = server.split("/")[2]
         try:
             response = requests.post(
                 server,
@@ -106,15 +106,24 @@ def _send_query(query_text, on_event=None):
                 timeout=120,
             )
             response.raise_for_status()
-            return response.json()
+            data = response.json()
         except (requests.RequestException, ValueError) as error:
             last_error = error
             if on_event:
-                on_event("{} did not respond, trying the next server".format(server.split("/")[2]))
+                on_event("{} did not respond, trying the next server".format(host))
             time.sleep(2)
+            continue
+
+        remark = str(data.get("remark") or "")
+        if "runtime error" not in remark.lower():
+            return data
+        last_error = remark
+        if on_event:
+            on_event("{} gave up before finishing the search, trying the next server".format(host))
+        time.sleep(2)
 
     raise SourceError(
-        "No OpenStreetMap server responded. Last error: {}. These servers are free and "
+        "No OpenStreetMap server finished the search. Last error: {}. These servers are free and "
         "frequently overloaded, so try again in a few minutes.".format(last_error)
     )
 
@@ -165,6 +174,9 @@ def _lead_from_element(element, place):
     website = tags.get("website") or tags.get("contact:website") or tags.get("url") or ""
     phone = tags.get("phone") or tags.get("contact:phone") or tags.get("contact:mobile") or ""
     hours = tags.get("opening_hours") or ""
+    email = tags.get("email") or tags.get("contact:email") or ""
+    instagram = tags.get("contact:instagram") or tags.get("instagram") or ""
+    facebook = tags.get("contact:facebook") or tags.get("facebook") or ""
 
     return {
         "place_id": "osm:{}/{}".format(element["type"], element["id"]),
@@ -175,14 +187,24 @@ def _lead_from_element(element, place):
         "website": website.strip(),
         "phone": phone.strip(),
         "opening_hours": hours.strip(),
+        "email": email.split(";")[0].strip(),
+        "instagram": instagram.split(";")[0].strip(),
+        "facebook": facebook.split(";")[0].strip(),
         "google_maps_link": maps_link,
         "map_pin": map_pin,
         "category": _category_from_tags(tags),
     }
 
 
-def search(query, limit, settings, on_event=None):
-    term, place, area = split_term_and_place(query)
+def search(query, limit, settings, on_event=None, place=None):
+    if place:
+        term, area = place["term"], _geocode(place.get("lookup") or place["name"], place.get("country_code", ""))
+        place = place["name"]
+        time.sleep(1)
+        if not area:
+            raise SourceError("Could not find {} as an area on OpenStreetMap.".format(place))
+    else:
+        term, place, area = split_term_and_place(query)
     if not area:
         raise SourceError(
             "Could not recognise a place in '{}'. Write the search as a category followed by "

@@ -1,15 +1,18 @@
 import sys
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, abort, jsonify, render_template, request, send_file
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import autopilot
+import build_brief
 import lead_search
 import lead_store
 
 app = Flask(__name__)
+RUNNER = autopilot.Runner()
 
 
 def _safe_file(name):
@@ -131,6 +134,110 @@ def export():
     if not path:
         return jsonify({"error": "Unknown file."}), 404
     return send_file(path, as_attachment=True, download_name=path.name)
+
+
+def _trade_words(categories):
+    chosen = {}
+    for name in categories:
+        key = lead_store.to_slug(name, "")
+        if key not in chosen or chosen[key].isascii():
+            chosen[key] = name
+    return sorted(chosen.values())
+
+
+def _autopilot_page_data():
+    settings = lead_search.load_settings()
+    opts = autopilot.options(settings)
+    return {
+        "settings": {key: value for key, value in opts.items() if key != "cities"},
+        "cities": opts["cities"],
+        "regions": autopilot.REGIONS,
+        "stacks": {key: stack["name"] for key, stack in autopilot.STACKS.items()},
+        "trades": _trade_words(settings["osm_categories"]),
+        "builder": autopilot.find_builder(opts) or "",
+        "sender_name": settings["outreach"]["sender_name"],
+        "portfolio_links": len(settings["outreach"]["portfolio_links"] or []),
+        "channels": settings["outreach"]["channels"],
+        "default_language": settings["brief"]["default_language"],
+        "running": RUNNER.run_id if RUNNER.busy() else "",
+    }
+
+
+@app.get("/api/autopilot")
+def autopilot_page():
+    return jsonify(_autopilot_page_data())
+
+
+@app.post("/api/autopilot/settings")
+def autopilot_settings():
+    try:
+        autopilot.save(request.get_json(silent=True) or {})
+    except autopilot.AutopilotError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify(_autopilot_page_data())
+
+
+@app.post("/api/autopilot/check")
+def autopilot_check():
+    opts = autopilot.options()
+    return jsonify(autopilot.check_builder(opts))
+
+
+@app.post("/api/autopilot/start")
+def autopilot_start():
+    payload = request.get_json(silent=True) or {}
+    try:
+        state = RUNNER.start(
+            city_text=payload.get("city") or "",
+            random_pick=bool(payload.get("random")),
+            trade_text=payload.get("trade") or "",
+        )
+    except autopilot.AutopilotError as error:
+        return jsonify({"error": str(error)}), 409 if RUNNER.busy() else 400
+    return jsonify({"id": state["id"]})
+
+
+@app.post("/api/autopilot/stop")
+def autopilot_stop():
+    return jsonify({"stopping": RUNNER.stop()})
+
+
+@app.get("/api/autopilot/runs")
+def autopilot_runs():
+    return jsonify({"runs": autopilot.list_runs(RUNNER), "running": RUNNER.run_id if RUNNER.busy() else ""})
+
+
+@app.get("/api/autopilot/runs/<run_id>")
+def autopilot_run(run_id):
+    run = autopilot.load_run(run_id, RUNNER)
+    if not run:
+        return jsonify({"error": "Unknown run."}), 404
+    return jsonify(autopilot.view(run))
+
+
+@app.post("/api/autopilot/runs/<run_id>/sent")
+def autopilot_sent(run_id):
+    run = autopilot.load_run(run_id, RUNNER)
+    if not run:
+        return jsonify({"error": "Unknown run."}), 404
+    payload = request.get_json(silent=True) or {}
+    try:
+        row = autopilot.mark_sent(run, payload.get("place_id") or "", payload.get("channel") or "")
+    except autopilot.AutopilotError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
+
+
+@app.get("/sites/<path:relative>")
+def built_site(relative):
+    base = build_brief.output_dir(lead_search.load_settings()).resolve()
+    target = (base / relative).resolve()
+    if base not in target.parents or not target.is_file():
+        abort(404)
+    project = base / target.relative_to(base).parts[0]
+    if not (project / "brief.md").is_file():
+        abort(404)
+    return send_file(target)
 
 
 if __name__ == "__main__":

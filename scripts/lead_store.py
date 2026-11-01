@@ -21,7 +21,12 @@ COLUMNS = [
     "contact_search",
     "place_id",
     "status",
+    "email",
+    "instagram",
+    "facebook",
 ]
+
+CONTACT_FIELDS = ["email", "instagram", "facebook"]
 
 STATUSES = ["", "contacted", "declined", "accepted"]
 
@@ -129,6 +134,8 @@ def merge(new_leads, existing_rows):
                 "status": previous_status,
             }
         )
+        for column in CONTACT_FIELDS:
+            row[column] = (lead.get(column) or "").strip() or row.get(column, "")
 
         if not (lead.get("website") or "").strip():
             row["website_score"] = ""
