@@ -1041,6 +1041,11 @@ a.event-row:hover {
   color: var(--muted);
 }
 
+.control input,
+.control select {
+  font-weight: 400;
+}
+
 .control input[type="number"] {
   width: 104px;
   font-variant-numeric: tabular-nums;
@@ -1551,6 +1556,43 @@ td button {
   width: 100%;
 }
 
+.portfolio {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.portfolio:empty {
+  display: none;
+}
+
+.portfolio-row {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) auto;
+  gap: 8px;
+}
+
+.portfolio-row input {
+  width: 100%;
+}
+
+.control.wide {
+  margin-top: 18px;
+}
+
+.control textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
 .trade-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -2021,6 +2063,14 @@ td button {
 
   .site-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portfolio-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .portfolio-row .portfolio-url {
+    grid-column: 1 / -1;
   }
 
   .settings-actions {

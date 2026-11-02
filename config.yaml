@@ -41,6 +41,7 @@ outreach:
   follow_up_days: 4
   sender_name: ""
   portfolio_links: []
+  message_rules: []
   channels:
     - email
     - viber

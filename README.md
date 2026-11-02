@@ -245,9 +245,9 @@ and it doubles as the label next to each link.
 
 Those two are yours rather than the project's, so there is a second place for
 them: create `config.local.yaml` next to `config.yaml` and put them there
-instead. It is laid over the public settings when the tool starts and is
-ignored by Git, so a `git pull` never collides with your name and a push never
-carries it.
+instead, or fill them in on the Settings page, which writes that file for you.
+It is laid over the public settings when the tool starts and is ignored by Git,
+so a `git pull` never collides with your name and a push never carries it.
 
 If you will never update this project or share the folder, `config.yaml` is
 fine and this file is not needed. [SETUP.md](SETUP.md#3-your-own-details)
@@ -439,8 +439,15 @@ language and the stack, plus how many sites a run makes, how many of them are
 built at the same time, which model Claude Code uses and at what effort, from
 low to max, and what counts as a fit. They are saved to
 `data/autopilot_settings.json` on your computer and laid over the defaults in
-`config.yaml`. The page shows your sender name and how many portfolio links the
-messages carry, which still come from `config.local.yaml`.
+`config.yaml`. Under **You and your messages** the same page edits
+`config.local.yaml` for you: your name, the portfolio links, your own rules for
+every message, the follow up delay, the default site language and the folder
+the sites go into.
+
+**The demo link is always in the message.** Once a site is published, all three
+messages carry its address on its own line, and never ask whether the owner
+wants the link. When publishing is off or the address did not open, the line
+reads `[link to the demo]` so you can paste it in.
 
 **Claude Code has to be logged in for the building.** The searching and the
 photographs are plain Python, but the brief, the site and the messages need

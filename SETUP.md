@@ -253,6 +253,11 @@ and the links to work you have built. It ships with both empty.
 `config.yaml`. Anything in it is laid over the public settings when the tool
 starts. It is in `.gitignore`, so it never leaves your computer.
 
+The browser page can write it for you: **Settings**, then **You and your
+messages**. That covers the name, the portfolio links, your own rules for every
+message, the follow up delay, the default site language and the folder for the
+sites, and leaves anything else in the file as it was.
+
 ### What goes in it
 
 Only what you are changing. Everything else keeps the public value.

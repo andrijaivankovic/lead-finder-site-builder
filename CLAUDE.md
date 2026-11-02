@@ -68,7 +68,9 @@ categories are filled in.
 - Anything personal to one user, such as their name and their portfolio links,
   belongs in `config.local.yaml`. That file is gitignored and merged over
   `config.yaml` when settings load, so `config.yaml` can stay public and ship
-  with those fields empty.
+  with those fields empty. The Settings page edits it through
+  `scripts/local_settings.py`, which writes only what differs from
+  `config.yaml` and keeps every other key in the file.
 - The autopilot settings the browser saves go to `data/autopilot_settings.json`
   and are laid over `autopilot` in `config.yaml` and `config.local.yaml`. Read
   them through `scripts/autopilot.py settings`, never by opening one file.
