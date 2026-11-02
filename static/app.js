@@ -47,13 +47,32 @@ async function requestJson(url, options) {
   return data;
 }
 
+function systemRow(label, value, fine) {
+  const line = document.createElement("div");
+  line.className = "system-row";
+  const dot = document.createElement("span");
+  dot.className = "dot " + (fine ? "dot-on" : "dot-off");
+  const name = document.createElement("span");
+  name.className = "system-label";
+  name.textContent = label;
+  const shown = document.createElement("strong");
+  shown.textContent = value;
+  line.append(dot, name, shown);
+  return line;
+}
+
 async function loadUsage() {
   try {
     const data = await requestJson("/api/usage");
-    const source = data.has_google_key ? "Google Places" : "OpenStreetMap (no key)";
-    elements.usage.innerHTML =
-      "Source: <strong>" + source + "</strong><br>" +
-      "Google calls this month: <strong>" + data.used + "</strong> of " + data.limit;
+    const rows = [systemRow("Search source", data.has_google_key ? "Google Places" : "OpenStreetMap", true)];
+    if (data.has_google_key) {
+      rows.push(systemRow("Google calls this month", data.used + " of " + data.limit, data.used < data.limit));
+    }
+    rows.push(
+      systemRow("Claude Code", data.has_builder ? "Ready" : "Not found", data.has_builder),
+      systemRow("Cloudflare Pages", data.has_deploy_token ? "Connected" : "No token yet", data.has_deploy_token)
+    );
+    elements.usage.replaceChildren(...rows);
   } catch (error) {
     elements.usage.textContent = "";
   }

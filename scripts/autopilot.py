@@ -1065,13 +1065,13 @@ def list_runs(runner=None, root=None, limit=20):
         run = load_run(path.stem, runner, root)
         if run:
             found.append(
-                {key: run.state.get(key) for key in ("id", "started", "query", "state", "found")}
+                {key: run.state.get(key) for key in ("id", "started", "finished", "query", "state", "message", "found")}
                 | {"sites": len(run.state.get("candidates", []))}
             )
     return found
 
 
-def _site_url(page, settings):
+def site_url(page, settings):
     base = build_brief.output_dir(settings).resolve()
     relative = Path(page).resolve().relative_to(base).as_posix()
     return "/sites/" + quote(relative)
@@ -1201,12 +1201,13 @@ def view(run, settings=None):
     opts = options(settings)
     state = run.snapshot()
     latest = (None, "")
+    sent_log = outreach_log.load(ROOT)
     for candidate in state.get("candidates", []):
         folder = Path(candidate["folder"]) if candidate["folder"] else None
         found = messages(folder) if folder else []
         page = check_site.entry_page(folder) if folder else None
         candidate["messages"] = found
-        candidate["site_url"] = _site_url(page, settings) if page else ""
+        candidate["site_url"] = site_url(page, settings) if page else ""
         published = deploy_site.read_record(folder) if folder else {}
         candidate["live_url"] = published.get("url", "")
         candidate["live_public"] = bool(published.get("public"))
@@ -1222,6 +1223,12 @@ def view(run, settings=None):
         _refresh_contacts(candidate)
         candidate["contacts"] = contact_links(candidate, found, settings)
         candidate["resume"] = _resume_command(candidate.get("session_id"), opts)
+        logged = [
+            {"channel": item["channel"], "on": item["sent_at"]}
+            for item in sent_log
+            if item["place_id"] == candidate["place_id"] and item.get("sent_at")
+        ]
+        candidate["sent"] = logged or candidate.get("sent", [])
     state["plan_usage"] = plan_usage(latest[0])
     return state
 

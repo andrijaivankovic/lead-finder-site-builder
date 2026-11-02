@@ -107,9 +107,9 @@ When asked to build the site, read that folder's `brief.md` and follow the
 
 `/autopilot <place_id or business name>` does both, then drafts the messages
 into `outreach.md` in the same folder, without asking anything: the answers come
-from the autopilot settings. The Autopilot tab in the browser starts it for each
-business it picks, as Claude Code in print mode with an allow-list of reading
-files, writing in the output folder and `data/autopilot`, and running
+from the autopilot settings. The Autopilot page in the browser starts it for
+each business it picks, as Claude Code in print mode with an allow-list of
+reading files, writing in the output folder and `data/autopilot`, and running
 `scripts/*.py`. Keep `commands/autopilot.md` working inside that list: no other
 shell command, no web access, `scripts/autopilot.py drop-photo` instead of
 deleting files by hand, `scripts/add_gsap.py` instead of fetching GSAP, and

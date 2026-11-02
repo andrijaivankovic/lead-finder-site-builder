@@ -8,8 +8,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import autopilot
 import build_brief
+import dashboard
 import lead_search
 import lead_store
+import outreach_log
 
 app = Flask(__name__)
 RUNNER = autopilot.Runner()
@@ -35,9 +37,41 @@ def index():
 
 @app.get("/api/usage")
 def usage():
-    summary = lead_search.usage_summary()
+    settings = lead_search.load_settings()
+    summary = lead_search.usage_summary(settings)
     summary["has_google_key"] = bool(lead_search.google_key())
+    summary["has_builder"] = bool(autopilot.find_builder(autopilot.options(settings)))
+    summary["has_deploy_token"] = autopilot.deploy_site.has_token()
     return jsonify(summary)
+
+
+@app.get("/api/overview")
+def overview():
+    return jsonify(dashboard.overview(dashboard.gather(runner=RUNNER), RUNNER))
+
+
+@app.get("/api/history")
+def history():
+    return jsonify({"events": dashboard.history(dashboard.gather(runner=RUNNER))})
+
+
+@app.get("/api/sites")
+def sites():
+    settings = lead_search.load_settings()
+    return jsonify({
+        "sites": dashboard.gather(settings, RUNNER)["sites"],
+        "channels": settings["outreach"]["channels"],
+    })
+
+
+@app.post("/api/sites/sent")
+def site_sent():
+    payload = request.get_json(silent=True) or {}
+    try:
+        row = dashboard.record_send(payload.get("place_id") or "", payload.get("channel") or "")
+    except outreach_log.OutreachError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
 
 
 @app.get("/api/settings")

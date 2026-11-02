@@ -293,11 +293,29 @@ On macOS, port 5000 is also where AirPlay Receiver listens. If the page refuses
 to load, or starting it fails with `Address already in use`, turn AirPlay
 Receiver off in System Settings, under General, AirDrop & Handoff.
 
-The page has three tabs. **Leads** is the table described here, and
-**Autopilot** and **Settings** are covered
-[further down](#autopilot-one-city-start-to-finish).
+The page is a small command center with a menu down the left side:
 
-The Leads tab shows your results as a table you can sort by clicking any
+- **Overview** counts what you have found, built and sent, shows the way from a
+  search to a yes as a pipeline, and lists what is waiting on you: messages
+  ready to send, follow ups that are due, a brief whose site was never built,
+  an address that did not open. Below that are the latest things you did and
+  the latest autopilot run.
+- **Leads** is the table described here.
+- **Autopilot** and **Settings** are covered
+  [further down](#autopilot-one-city-start-to-finish).
+- **Sites** shows every business folder in `brief.output_dir`, whether you
+  built it by hand or the autopilot did, with one of its photographs and how
+  far it got: brief, site, live, messages, sent. Each one opens its preview and
+  its public address, and holds its three messages, the ways to reach the
+  business and **I sent it**. A site that is still missing a step has a button
+  that copies the Claude Code command for that step.
+- **History** lists everything you have done, newest first and grouped by day:
+  searches, status changes, autopilot runs, briefs, built and published sites,
+  drafted and sent messages, and replies. It is read from the files the tool
+  already keeps, so it reaches back to your very first search. A search opens
+  on the Leads page and a run on the Autopilot page when you click it.
+
+The Leads page shows your results as a table you can sort by clicking any
 column. You can filter to businesses without a website, set a minimum rating or
 review count, and set a status on each row, which is saved the moment you
 choose it.
@@ -384,7 +402,7 @@ it yourself when the autopilot asks you to paste it.
 
 ### Autopilot: one city, start to finish
 
-The **Autopilot** tab does the whole job for a city:
+The **Autopilot** page does the whole job for a city:
 
 1. You type a city, or press **Random city**, and optionally a trade. Leave the
    trade empty and it picks one from the trades ticked in the settings.
@@ -393,29 +411,29 @@ The **Autopilot** tab does the whole job for a city:
    website and with a phone number to send the message to.
 3. For each one it downloads stock photographs, then has Claude Code write the
    brief, build the site, check it, and draft the three messages, all with the
-   answers from the **Settings** tab instead of questions. Several businesses
+   answers from the **Settings** page instead of questions. Several businesses
    are built at the same time, three by default.
 4. Each business then shows a link that opens its site, the folder it is in,
    the three messages with a copy button each, and the ways to reach it.
 5. You read the message, send it from your own account, and press **I sent it**
-   with the channel you used. That logs it exactly as `outreach.py --sent` does,
-   so the follow up reminder works the same.
+   with the channel you used, here or on the Sites page. That logs it exactly
+   as `outreach.py --sent` does, so the follow up reminder works the same.
 
 **Stop** ends a run at any point, the search included. A search already sent
 to the map server still finishes on its own, and its businesses appear on the
-Leads tab.
+Leads page.
 
-The manual way stays exactly as it was. The Leads tab, the questions
+The manual way stays exactly as it was. The Leads page, the questions
 `/build-brief` asks and the other commands are untouched by any of this.
 
 **Random cities** come from `autopilot.cities` in `config.yaml`: cities whose
 urban area holds about a million people or more, each with its country and the
-language its sites are written in. The Settings tab says whether the random
+language its sites are written in. The Settings page says whether the random
 choice comes from the United States, from English-speaking countries, from
 Europe or from the whole list. You can also type any city by hand; one the list
 does not know gets its site language decided while the brief is written.
 
-**The Settings tab** holds the answers `/build-brief` would otherwise ask for:
+**The Settings page** holds the answers `/build-brief` would otherwise ask for:
 the FAQ and careers sections, the rating, the animations, AI images, the site
 language and the stack, plus how many sites a run makes, how many of them are
 built at the same time, which model Claude Code uses and at what effort, from
@@ -539,9 +557,11 @@ searched for, for example `data/leads_bakery-novi-sad.csv`. Cyrillic is spelled
 out in Latin for the name, so `пекара Нови Сад` and `pekara Novi Sad` are the
 same search and share one file.
 
-The last three columns, `email`, `instagram` and `facebook`, are filled from
-OpenStreetMap where the map has them. Files from before those columns existed
-still open, and gain them the next time they are saved.
+The columns `email`, `instagram` and `facebook` are filled from OpenStreetMap
+where the map has them. The last one, `status_changed_at`, is when you last
+changed the status of that row, which is how the History page knows. Files from
+before those columns existed still open, and gain them the next time they are
+saved.
 
 That file is the database. There is no database.
 
