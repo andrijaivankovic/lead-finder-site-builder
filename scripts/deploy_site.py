@@ -143,6 +143,12 @@ def account_id(key, options):
     accounts = _api("GET", "/accounts", key, options, "listing your accounts") or []
     if len(accounts) == 1:
         return accounts[0]["id"]
+    if not accounts:
+        raise DeployError(
+            "The token is valid but cannot see which Cloudflare account it belongs to, as a token made for Pages "
+            "alone cannot. Copy the Account ID from the right side of Workers & Pages in the dashboard into "
+            "CLOUDFLARE_ACCOUNT_ID in .env."
+        )
     raise DeployError(
         "The token sees {} Cloudflare accounts, so it is not clear which to publish under. Put that account's ID "
         "into CLOUDFLARE_ACCOUNT_ID in .env.".format(len(accounts))

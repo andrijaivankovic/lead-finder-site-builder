@@ -361,9 +361,10 @@ Pages**.
 6. **Continue to summary**, then **Create Token**, and copy it straight away.
    Cloudflare shows it once.
 7. Paste it into `.env` after `CLOUDFLARE_API_TOKEN=`.
-8. Leave `CLOUDFLARE_ACCOUNT_ID=` empty: the script finds the account on its own
-   when the token sees only one. If it says it sees several, copy the **Account
-   ID** shown on the right of **Workers & Pages** into that line.
+8. Copy your **Account ID** into `.env` after `CLOUDFLARE_ACCOUNT_ID=`. It is
+   shown on the right of **Workers & Pages** in the dashboard, and it is also
+   the long run of letters and numbers right after `dash.cloudflare.com/` in
+   the address bar. A token made for Pages alone cannot look it up by itself.
 
 The **Publishing** panel on the Settings page then says the token is set.
 
