@@ -183,9 +183,9 @@ function renderSettings(data) {
   parts.model.value = settings.builder.model;
   fillOptions(parts.effort, data.efforts, settings.builder.effort || "");
   parts.deploy.checked = settings.deploy;
-  parts.deployState.textContent = data.has_vercel_token
-    ? "VERCEL_TOKEN is set in .env."
-    : "VERCEL_TOKEN is not set in .env, so nothing is published yet. Section 5 of SETUP.md shows how to get one.";
+  parts.deployState.textContent = data.has_deploy_token
+    ? "CLOUDFLARE_API_TOKEN is set in .env."
+    : "CLOUDFLARE_API_TOKEN is not set in .env, so nothing is published yet. Section 5 of SETUP.md shows how to get one.";
   parts.timeout.value = settings.builder.timeout_minutes;
   parts.parallel.value = settings.builder.parallel;
   parts.builderState.textContent = data.builder ? "Found at " + data.builder + "." : "Not found on this computer.";
@@ -407,7 +407,7 @@ function candidateCard(run, candidate) {
     live.rel = "noopener";
     links.append(live);
     if (!candidate.live_public) {
-      links.append(element("span", "problems", "This address asks for a Vercel login, so it is not in the messages."));
+      links.append(element("span", "problems", "This address did not open yet, so it is not in the messages. Publish it again in a few minutes."));
     }
   }
   if (candidate.site_url) {

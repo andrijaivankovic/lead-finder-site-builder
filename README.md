@@ -447,9 +447,10 @@ when the animations are on. Each site it builds goes through
 one `<h1>`, the structured data, every image path and alt text, and that no
 lorem ipsum is left.
 
-**Publishing.** With a Vercel token in `.env`, each finished site is published
-at its own address, such as `golden-crust-san-diego.vercel.app`, and that
-address goes into the three messages, so you only have to send them. The card
+**Publishing.** With a Cloudflare API token in `.env`, each finished site is
+published on Cloudflare Pages at its own address, such as
+`golden-crust-chicago.pages.dev`, and that address goes into the three
+messages, so you only have to send them. The card
 shows it as **Live at**. Without a token, or with **Publishing** switched off on
 the Settings page, sites stay on your computer as before. A site built by hand
 goes online the same way:
@@ -458,8 +459,8 @@ goes online the same way:
 ./run scripts/deploy_site.py "$HOME/Developer/sites/Golden Crust"
 ```
 
-[SETUP.md](SETUP.md#5-vercel-for-publishing-the-sites) covers the token, and
-the catch in Vercel's free plan.
+[SETUP.md](SETUP.md#5-cloudflare-pages-for-publishing-the-sites) covers the
+token. The free plan allows commercial use.
 
 **Watching it work.** While a site is being built, its card shows what Claude
 Code is doing at that moment, the step count and the model. Once it is done, the

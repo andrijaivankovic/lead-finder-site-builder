@@ -41,7 +41,7 @@ what the message may say about them, so read it before writing point 4 below.
 When the folder holds `deploy.json`, its `url` is where the site is published.
 Every version carries that address as the link to the demo, on its own line,
 before the portfolio links. Leave it out when `public` is false, because that
-address asks visitors for a Vercel login.
+address did not open when it was checked.
 
 Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`,
 which a `config.local.yaml` may override. Those two are personal, so that is

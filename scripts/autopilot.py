@@ -109,7 +109,9 @@ def _whole(value, low, high, label):
         number = int(str(value).strip())
     except ValueError:
         raise AutopilotError("{} has to be a whole number, not {}.".format(label, value))
-    if not low <= number <= high:
+    if number < low:
+        raise AutopilotError("{} has to be at least {}, not {}.".format(label, low, number))
+    if high is not None and number > high:
         raise AutopilotError("{} has to be between {} and {}, not {}.".format(label, low, high, number))
     return number
 
@@ -149,9 +151,9 @@ def clean(payload, current):
     result = json.loads(json.dumps(current))
 
     if "sites_per_run" in payload:
-        result["sites_per_run"] = _whole(payload["sites_per_run"], 1, 10, "Sites per run")
+        result["sites_per_run"] = _whole(payload["sites_per_run"], 1, None, "Sites per run")
     if "search_limit" in payload:
-        result["search_limit"] = _whole(payload["search_limit"], 10, 500, "Businesses to look through")
+        result["search_limit"] = _whole(payload["search_limit"], 10, None, "Businesses to look through")
     for key in RUN_FLAGS:
         if key in payload:
             result[key] = _flag(payload[key], key)
@@ -183,7 +185,7 @@ def clean(payload, current):
     if "timeout_minutes" in builder:
         result["builder"]["timeout_minutes"] = _whole(builder["timeout_minutes"], 5, 240, "The time limit")
     if "parallel" in builder:
-        result["builder"]["parallel"] = _whole(builder["parallel"], 1, 5, "Sites built at the same time")
+        result["builder"]["parallel"] = _whole(builder["parallel"], 1, None, "Sites built at the same time")
     if "effort" in builder:
         if builder["effort"] not in EFFORTS:
             raise AutopilotError("The effort is one of: {}.".format(", ".join(name for name in EFFORTS if name)))

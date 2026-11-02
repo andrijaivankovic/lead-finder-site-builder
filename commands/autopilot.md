@@ -105,10 +105,10 @@ passes:
 {venv python} scripts/deploy_site.py {project_folder} --name "{deploy_name}"
 ```
 
-It publishes the site on Vercel and prints its public address. That address is
-the demo the messages point to. When the command fails, or warns that the
-address needs a Vercel login, leave the address out of the messages and say why
-in the report.
+It publishes the site on Cloudflare Pages and prints its public address. That
+address is the demo the messages point to. When the command fails, or warns
+that the address did not open, leave the address out of the messages and say
+why in the report.
 
 ## 6. Draft the messages
 

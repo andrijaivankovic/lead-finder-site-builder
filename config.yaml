@@ -386,10 +386,13 @@ contact_links:
     ke: "254"
 
 deploy:
-  api: "https://api.vercel.com"
+  api: "https://api.cloudflare.com/client/v4"
+  production_branch: main
   ready_timeout_seconds: 180
-  poll_seconds: 2
+  public_wait_seconds: 120
+  poll_seconds: 3
   upload_timeout_seconds: 120
+  upload_batch_bytes: 40000000
 
 gsap:
   version: "3.15.0"

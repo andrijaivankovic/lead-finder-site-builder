@@ -329,7 +329,7 @@ eye on.
 
 ---
 
-## 5. Vercel for publishing the sites
+## 5. Cloudflare Pages for publishing the sites
 
 Optional. Skip it and every site stays on your computer, and the messages carry
 no link to it.
@@ -337,42 +337,39 @@ no link to it.
 ### What it does
 
 Each finished site goes online at an address such as
-`golden-crust-san-diego.vercel.app`, and that address goes into the messages,
-so the owner opens the demo with one tap. Every business gets its own Vercel
+`golden-crust-chicago.pages.dev`, and that address goes into the messages, so
+the owner opens the demo with one tap. Every business gets its own Pages
 project, and publishing again after a change keeps the same address.
 
-### Cost, and the catch
+### Cost
 
-The Hobby plan costs nothing, but Vercel's own terms limit it to
-**non-commercial, personal use**. Demo sites sent to businesses you hope to win
-as clients are commercial work, so by those terms they belong on the Pro plan,
-which was 20 USD per month per seat when this was written. That decision is
-yours.
+Free, and Cloudflare's free plan carries no non-commercial clause, so demo
+sites for businesses you hope to win as clients are fine on it. The limits that
+matter here: 100 projects per account, 20,000 files per site and 25 MiB per
+file. One business is one project, so after a hundred of them, delete the
+projects of businesses that said no, in the dashboard under **Workers &
+Pages**.
 
 ### Steps
 
-1. Sign up at **https://vercel.com/signup**.
-2. Open **https://vercel.com/account/tokens**.
-3. **Token name:** `lead-finder`. **Scope:** *Full Account*, or the team the
-   projects should go under. **Expiration:** your choice; a token that expires
-   simply has to be replaced.
-4. Click **Create** and copy the token straight away. Vercel shows it once.
-5. Paste it into `.env` after `VERCEL_TOKEN=`.
-6. Only when the token's scope is *Full Account* and the projects should still
-   go under a team: copy the **Team ID** from that team's **Settings**, under
-   **General**, into `VERCEL_TEAM_ID=`. Leave it empty otherwise.
+1. Sign up at **https://dash.cloudflare.com/sign-up**.
+2. Open **https://dash.cloudflare.com/profile/api-tokens** and click **Create
+   Token**, then **Create Custom Token**.
+3. **Token name:** `lead-finder`.
+4. **Permissions:** *Account*, *Cloudflare Pages*, *Edit*.
+5. **Account Resources:** *Include*, then your account.
+6. **Continue to summary**, then **Create Token**, and copy it straight away.
+   Cloudflare shows it once.
+7. Paste it into `.env` after `CLOUDFLARE_API_TOKEN=`.
+8. Leave `CLOUDFLARE_ACCOUNT_ID=` empty: the script finds the account on its own
+   when the token sees only one. If it says it sees several, copy the **Account
+   ID** shown on the right of **Workers & Pages** into that line.
 
 The **Publishing** panel on the Settings page then says the token is set.
 
 ### Who can open the sites
 
-New Vercel projects use Standard Protection: the project's own address,
-`name.vercel.app`, is public, and every other address of a deployment asks for
-a Vercel login. The script hands out only the public one, and opens it after
-publishing to make sure.
-
-If your account's default is to protect all deployments, that check fails and
-the site is left out of the messages. Open the project on vercel.com, go to
-**Settings**, then **Deployment Protection**, choose **Standard Protection**,
-and publish again.
-
+Everyone. Pages publishes with no login in front of the site. A brand new
+project's address can take a minute or two to start answering, so the script
+waits for it, and when it still does not open in time, publishing the same
+folder again a few minutes later picks it up.

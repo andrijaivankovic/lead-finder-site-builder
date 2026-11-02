@@ -1,6 +1,8 @@
 import argparse
+import base64
 import hashlib
 import json
+import mimetypes
 import os
 import sys
 import time
@@ -18,23 +20,29 @@ import lead_search
 import lead_store
 
 ROOT = lead_search.ROOT
+HOST = "Cloudflare Pages"
 RECORD_FILE = "deploy.json"
 ASSETS_FOLDER = "assets"
+PROJECT_NAME_LENGTH = 58
 REWRITTEN_SUFFIXES = {".html", ".htm", ".css", ".js", ".mjs", ".json", ".svg", ".xml", ".txt", ".webmanifest"}
 LEFT_OUT_FILES = {".DS_Store", "Thumbs.db", "assets.json", "sources.json"}
-LEFT_OUT_FOLDERS = {"node_modules", ".astro", ".git", ".vercel"}
-FINISHED_STATES = {"READY", "ERROR", "CANCELED"}
+LEFT_OUT_FOLDERS = {"node_modules", ".astro", ".git", ".wrangler"}
+FAILED_STATUSES = {"failure", "canceled"}
 
 
 class DeployError(Exception):
     pass
 
 
-def token():
+def _environment(name):
     load_dotenv(ROOT / ".env")
-    key = (os.getenv("VERCEL_TOKEN") or "").strip()
+    return (os.getenv(name) or "").strip()
+
+
+def token():
+    key = _environment("CLOUDFLARE_API_TOKEN")
     if not key:
-        raise DeployError("VERCEL_TOKEN is empty in .env. SETUP.md, section 5, shows where to get one.")
+        raise DeployError("CLOUDFLARE_API_TOKEN is empty in .env. SETUP.md, section 5, shows where to get one.")
     return key
 
 
@@ -44,12 +52,6 @@ def has_token():
     except DeployError:
         return False
     return True
-
-
-def _scope():
-    load_dotenv(ROOT / ".env")
-    team = (os.getenv("VERCEL_TEAM_ID") or "").strip()
-    return {"teamId": team} if team else {}
 
 
 def read_record(folder):
@@ -63,10 +65,10 @@ def read_record(folder):
 
 
 def project_name(folder, wanted=""):
-    earlier = read_record(folder).get("project")
-    if earlier:
-        return earlier
-    name = lead_store.to_slug(wanted or Path(folder).expanduser().name, "site")[:90].strip("-")
+    earlier = read_record(folder)
+    if earlier.get("project") and earlier.get("host") == HOST:
+        return earlier["project"]
+    name = lead_store.to_slug(wanted or Path(folder).expanduser().name, "site")[:PROJECT_NAME_LENGTH].strip("-")
     return name or "site"
 
 
@@ -99,134 +101,148 @@ def bundle(folder):
     return files
 
 
-def _headers(key, extra=None):
-    headers = {"Authorization": "Bearer {}".format(key)}
-    headers.update(extra or {})
-    return headers
+def asset_hash(name, data):
+    extension = Path(name).suffix.lstrip(".").encode()
+    return hashlib.sha256(base64.b64encode(data) + extension).hexdigest()[:32]
 
 
-def _check(response, doing):
+def _send(method, url, doing, **arguments):
+    try:
+        return requests.request(method, url, **arguments)
+    except requests.RequestException as error:
+        raise DeployError("{} failed: {}".format(doing[0].upper() + doing[1:], error))
+
+
+def _result(response, doing):
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
     if response.status_code in (401, 403):
-        raise DeployError("Vercel refused the token while {}. Check VERCEL_TOKEN, and VERCEL_TEAM_ID if the projects belong to a team.".format(doing))
-    if response.status_code == 429:
-        raise DeployError("Vercel's rate limit was reached while {}. Wait a few minutes and run it again.".format(doing))
-    if response.status_code >= 400:
-        try:
-            message = (response.json().get("error") or {}).get("message") or response.text
-        except ValueError:
-            message = response.text
-        raise DeployError("Vercel answered {} while {}: {}".format(response.status_code, doing, str(message)[:300]))
-
-
-def upload(files, key, options):
-    entries = []
-    for name, data in sorted(files.items()):
-        digest = hashlib.sha1(data).hexdigest()
-        try:
-            response = requests.post(
-                options["api"] + "/v2/files",
-                params=_scope(),
-                headers=_headers(key, {
-                    "Content-Type": "application/octet-stream",
-                    "x-vercel-digest": digest,
-                    "Content-Length": str(len(data)),
-                }),
-                data=data,
-                timeout=options["upload_timeout_seconds"],
-            )
-        except requests.RequestException as error:
-            raise DeployError("Uploading {} to Vercel failed: {}".format(name, error))
-        _check(response, "uploading {}".format(name))
-        entries.append({"file": name, "sha": digest, "size": len(data)})
-    return entries
-
-
-def _create(name, entries, key, options):
-    body = {
-        "name": name,
-        "files": entries,
-        "target": "production",
-        "projectSettings": {
-            "framework": None,
-            "buildCommand": None,
-            "installCommand": None,
-            "devCommand": None,
-            "outputDirectory": None,
-        },
-    }
-    try:
-        response = requests.post(
-            options["api"] + "/v13/deployments",
-            params=dict(_scope(), skipAutoDetectionConfirmation="1"),
-            headers=_headers(key),
-            json=body,
-            timeout=60,
-        )
-    except requests.RequestException as error:
-        raise DeployError("Creating the Vercel deployment failed: {}".format(error))
-    _check(response, "creating the deployment")
-    return response.json()
-
-
-def _fetch_deployment(deployment_id, key, options):
-    try:
-        response = requests.get(
-            "{}/v13/deployments/{}".format(options["api"], deployment_id),
-            params=_scope(),
-            headers=_headers(key),
-            timeout=30,
-        )
-    except requests.RequestException as error:
-        raise DeployError("Asking Vercel about the deployment failed: {}".format(error))
-    _check(response, "checking the deployment")
-    return response.json()
-
-
-def _wait_until_ready(deployment, key, options):
-    deadline = time.monotonic() + options["ready_timeout_seconds"]
-    while deployment.get("readyState") not in FINISHED_STATES:
-        if time.monotonic() > deadline:
-            raise DeployError("The deployment was not ready after {} seconds.".format(options["ready_timeout_seconds"]))
-        time.sleep(options["poll_seconds"])
-        deployment = _fetch_deployment(deployment["id"], key, options)
-    if deployment.get("readyState") != "READY":
         raise DeployError(
-            "The deployment ended as {}: {}".format(deployment.get("readyState"), deployment.get("errorMessage") or "no reason given")
+            "Cloudflare refused the token while {}. It needs the permission Account, Cloudflare Pages, Edit.".format(doing)
         )
+    if response.status_code == 429:
+        raise DeployError("Cloudflare's rate limit was reached while {}. Wait a few minutes and run it again.".format(doing))
+    if response.status_code >= 400 or payload.get("success") is False:
+        reasons = "; ".join(str(error.get("message", "")) for error in payload.get("errors") or []) or response.text
+        raise DeployError("Cloudflare answered {} while {}: {}".format(response.status_code, doing, reasons[:300]))
+    return payload.get("result")
+
+
+def _api(method, path, key, options, doing, **arguments):
+    arguments.setdefault("timeout", 60)
+    arguments["headers"] = dict(arguments.get("headers") or {}, Authorization="Bearer {}".format(key))
+    return _result(_send(method, options["api"] + path, doing, **arguments), doing)
+
+
+def account_id(key, options):
+    configured = _environment("CLOUDFLARE_ACCOUNT_ID")
+    if configured:
+        return configured
+    accounts = _api("GET", "/accounts", key, options, "listing your accounts") or []
+    if len(accounts) == 1:
+        return accounts[0]["id"]
+    raise DeployError(
+        "The token sees {} Cloudflare accounts, so it is not clear which to publish under. Put that account's ID "
+        "into CLOUDFLARE_ACCOUNT_ID in .env.".format(len(accounts))
+    )
+
+
+def ensure_project(account, name, key, options):
+    path = "/accounts/{}/pages/projects/{}".format(account, name)
+    response = _send(
+        "GET", options["api"] + path, "looking up the project", headers={"Authorization": "Bearer {}".format(key)}, timeout=30
+    )
+    if response.status_code == 404:
+        return _api(
+            "POST",
+            "/accounts/{}/pages/projects".format(account),
+            key,
+            options,
+            "creating the project",
+            json={"name": name, "production_branch": options["production_branch"]},
+        )
+    return _result(response, "looking up the project")
+
+
+def upload(files, account, name, key, options):
+    upload_token = _api(
+        "GET", "/accounts/{}/pages/projects/{}/upload-token".format(account, name), key, options, "asking for an upload token"
+    )["jwt"]
+    manifest = {"/" + path: asset_hash(path, data) for path, data in files.items()}
+    contents = {asset_hash(path, data): (path, data) for path, data in files.items()}
+    missing = _api(
+        "POST", "/pages/assets/check-missing", upload_token, options, "checking which files Cloudflare already has",
+        json={"hashes": sorted(contents)},
+    ) or []
+
+    batch, size = [], 0
+    for digest in missing:
+        path, data = contents[digest]
+        encoded = base64.b64encode(data).decode()
+        if batch and size + len(encoded) > options["upload_batch_bytes"]:
+            _upload_batch(batch, upload_token, options)
+            batch, size = [], 0
+        batch.append({
+            "key": digest,
+            "value": encoded,
+            "metadata": {"contentType": mimetypes.guess_type(path)[0] or "application/octet-stream"},
+            "base64": True,
+        })
+        size += len(encoded)
+    if batch:
+        _upload_batch(batch, upload_token, options)
+
+    _api(
+        "POST", "/pages/assets/upsert-hashes", upload_token, options, "confirming the upload",
+        json={"hashes": sorted(contents)},
+    )
+    return manifest, len(missing)
+
+
+def _upload_batch(batch, upload_token, options):
+    _api(
+        "POST", "/pages/assets/upload", upload_token, options, "uploading {} files".format(len(batch)),
+        json=batch, timeout=options["upload_timeout_seconds"],
+    )
+
+
+def _wait_until_live(account, name, deployment, key, options):
     deadline = time.monotonic() + options["ready_timeout_seconds"]
-    while not deployment.get("aliasAssigned") and time.monotonic() < deadline:
+    while True:
+        stage = deployment.get("latest_stage") or {}
+        if stage.get("status") in FAILED_STATUSES:
+            raise DeployError("The deployment stopped at {}: {}.".format(stage.get("name"), stage.get("status")))
+        if stage.get("name") == "deploy" and stage.get("status") == "success":
+            return deployment
+        if time.monotonic() > deadline:
+            raise DeployError("The deployment was not live after {} seconds.".format(options["ready_timeout_seconds"]))
         time.sleep(options["poll_seconds"])
-        deployment = _fetch_deployment(deployment["id"], key, options)
-    return deployment
-
-
-def project_domains(name, key, options):
-    try:
-        response = requests.get(
-            "{}/v9/projects/{}/domains".format(options["api"], name),
-            params=_scope(),
-            headers=_headers(key),
-            timeout=30,
+        deployment = _api(
+            "GET", "/accounts/{}/pages/projects/{}/deployments/{}".format(account, name, deployment["id"]),
+            key, options, "checking the deployment",
         )
-    except requests.RequestException:
-        return []
-    if response.status_code >= 400:
-        return []
-    return [
-        domain["name"]
-        for domain in response.json().get("domains") or []
-        if domain.get("verified") and not domain.get("redirect") and not domain.get("gitBranch")
-    ]
 
 
-def candidate_addresses(deployment, name, domains, earlier):
-    aliases = list(deployment.get("alias") or [])
-    known = set(aliases) | set(domains) | ({earlier} if earlier else set())
+def _host(address):
+    return urlparse(address if "//" in address else "https://" + address).netloc
+
+
+def _unique(addresses):
     ordered = []
-    for address in ["{}.vercel.app".format(name)] + domains + [earlier] + sorted(aliases, key=len):
-        if address and address in known and address not in ordered:
+    for address in addresses:
+        if address and address not in ordered:
             ordered.append(address)
     return ordered
+
+
+def stable_addresses(project):
+    return _unique([project.get("subdomain") or ""] + list(project.get("domains") or []))
+
+
+def deployment_addresses(deployment):
+    return _unique([_host(alias) for alias in deployment.get("aliases") or []] + [_host(deployment.get("url") or "")])
 
 
 def is_public(address):
@@ -237,24 +253,47 @@ def is_public(address):
     return response.status_code == 200
 
 
+def first_public(addresses, options):
+    deadline = time.monotonic() + options["public_wait_seconds"]
+    while addresses:
+        for address in addresses:
+            if is_public(address):
+                return address
+        if time.monotonic() > deadline:
+            return ""
+        time.sleep(options["poll_seconds"])
+    return ""
+
+
 def deploy(folder, settings, wanted_name=""):
     folder = Path(folder).expanduser()
     options = settings["deploy"]
     key = token()
     name = project_name(folder, wanted_name)
     files = bundle(folder)
-    entries = upload(files, key, options)
-    deployment = _wait_until_ready(_create(name, entries, key, options), key, options)
-    earlier = urlparse(read_record(folder).get("url") or "").netloc
-    choices = candidate_addresses(deployment, name, project_domains(name, key, options), earlier)
-    public = next((address for address in choices if is_public(address)), "")
-    address = public or (choices[0] if choices else deployment.get("url") or "")
+    account = account_id(key, options)
+    ensure_project(account, name, key, options)
+    manifest, sent = upload(files, account, name, key, options)
+    deployment = _api(
+        "POST", "/accounts/{}/pages/projects/{}/deployments".format(account, name), key, options, "creating the deployment",
+        files={"manifest": (None, json.dumps(manifest)), "branch": (None, options["production_branch"])},
+        timeout=options["upload_timeout_seconds"],
+    )
+    deployment = _wait_until_live(account, name, deployment, key, options)
+    stable = stable_addresses(ensure_project(account, name, key, options))
+    unique = [address for address in deployment_addresses(deployment) if address not in stable]
+    public = first_public(stable, options)
+    fallback = "" if public else next((address for address in unique if is_public(address)), "")
+    address = public or fallback or (stable + unique or [""])[0]
     record = {
+        "host": HOST,
         "project": name,
         "url": "https://{}".format(address) if address else "",
-        "deployment_url": "https://{}".format(deployment["url"]) if deployment.get("url") else "",
-        "public": bool(public),
-        "files": len(entries),
+        "deployment_url": deployment.get("url") or "",
+        "public": bool(public or fallback),
+        "stable": bool(public),
+        "files": len(files),
+        "uploaded": sent,
         "deployed_at": datetime.now().isoformat(timespec="seconds"),
     }
     (folder / RECORD_FILE).write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -265,24 +304,32 @@ def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    parser = argparse.ArgumentParser(description="Publishes a built site on Vercel and prints its public address.")
+    parser = argparse.ArgumentParser(description="Publishes a built site on Cloudflare Pages and prints its public address.")
     parser.add_argument("folder", help="The business folder that holds brief.md and site/")
-    parser.add_argument("--name", default="", help="Vercel project name, used on the first deploy only")
+    parser.add_argument("--name", default="", help="Cloudflare Pages project name, used on the first publish only")
     arguments = parser.parse_args()
 
+    settings = lead_search.load_settings()
     try:
-        record = deploy(arguments.folder, lead_search.load_settings(), arguments.name)
+        record = deploy(arguments.folder, settings, arguments.name)
     except DeployError as error:
         print("\nERROR: {}\n".format(error))
         raise SystemExit(1)
 
-    print("\nPublished {} files as Vercel project {}.".format(record["files"], record["project"]))
+    print("\nPublished {} files ({} new) as Cloudflare Pages project {}.".format(
+        record["files"], record["uploaded"], record["project"]
+    ))
     print("Address: {}".format(record["url"]))
+    if record["public"] and not record["stable"]:
+        print(
+            "\nNOTE: the project's own address was not answering yet, so this is the address of this one deployment. "
+            "It keeps working, but shows this version only. Publish again in a few minutes to get the address "
+            "that follows every update."
+        )
     if not record["public"]:
         print(
-            "\nWARNING: that address does not open without a Vercel login. In the project's settings on "
-            "vercel.com, under Deployment Protection, set Vercel Authentication to Standard Protection or "
-            "turn it off, then run this again."
+            "\nWARNING: that address did not open within {} seconds. A new project's address can take a few "
+            "minutes to appear, so run this again shortly.".format(settings["deploy"]["public_wait_seconds"])
         )
         raise SystemExit(2)
     print()

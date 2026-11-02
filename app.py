@@ -154,7 +154,7 @@ def _autopilot_page_data():
         "regions": list(autopilot.REGIONS.items()),
         "stacks": [[key, stack["name"]] for key, stack in autopilot.STACKS.items()],
         "efforts": list(autopilot.EFFORTS.items()),
-        "has_vercel_token": autopilot.deploy_site.has_token(),
+        "has_deploy_token": autopilot.deploy_site.has_token(),
         "trades": _trade_words(settings["osm_categories"]),
         "builder": autopilot.find_builder(opts) or "",
         "sender_name": settings["outreach"]["sender_name"],

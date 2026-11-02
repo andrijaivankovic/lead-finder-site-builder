@@ -131,11 +131,11 @@
       </label>
       <label class="control">
         <span>Sites per run</span>
-        <input type="number" id="set-sites" min="1" max="10">
+        <input type="number" id="set-sites" min="1">
       </label>
       <label class="control">
         <span>Businesses to look through</span>
-        <input type="number" id="set-search-limit" min="10" max="500">
+        <input type="number" id="set-search-limit" min="10">
       </label>
     </div>
     <div class="field-row">
@@ -205,7 +205,7 @@
       </label>
       <label class="control">
         <span>Sites built at the same time</span>
-        <input type="number" id="set-parallel" min="1" max="5">
+        <input type="number" id="set-parallel" min="1">
       </label>
       <button type="button" id="builder-check" class="secondary">Check Claude Code</button>
     </div>
@@ -215,7 +215,7 @@
     <h2>Publishing</h2>
     <label class="control checkbox">
       <input type="checkbox" id="set-deploy">
-      <span>Publish every finished site on Vercel and put its address in the messages</span>
+      <span>Publish every finished site on Cloudflare Pages and put its address in the messages</span>
     </label>
     <p class="hint" id="deploy-state"></p>
   </section>

@@ -91,8 +91,8 @@ Fix what you find, re-check, then screenshot both widths and show them.
 
 Leave the server running so they can click around, and tell them the address.
 
-To put it online for the owner to see, publish it on Vercel. This needs
-`VERCEL_TOKEN` in `.env`, as section 5 of `SETUP.md` explains:
+To put it online for the owner to see, publish it on Cloudflare Pages. This
+needs `CLOUDFLARE_API_TOKEN` in `.env`, as section 5 of `SETUP.md` explains:
 
 ```
 {venv python} scripts/deploy_site.py "{brief folder}"
