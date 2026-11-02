@@ -6,6 +6,9 @@ search:
 protection:
   monthly_call_limit: 900
 
+dashboard:
+  recent_events: 8
+
 scoring:
   no_website: 50
   poor_website: 30

@@ -1,4 +1,3 @@
-const VIEWS = ["leads", "autopilot", "settings"];
 const ACTIVE_RUN_STATES = ["searching", "building"];
 const POLL_ACTIVE_MS = 3000;
 const POLL_WAITING_MS = 10000;
@@ -25,10 +24,10 @@ const autopilot = {
   data: null,
   runId: "",
   pollTimer: null,
+  loading: null,
 };
 
 const parts = {
-  tabs: document.querySelectorAll(".tab"),
   form: document.getElementById("autopilot-form"),
   city: document.getElementById("autopilot-city"),
   random: document.getElementById("autopilot-random"),
@@ -100,20 +99,6 @@ async function copyText(text, button) {
     button.textContent = original;
     button.classList.remove("copied");
   }, 1600);
-}
-
-function showView(name) {
-  const chosen = VIEWS.includes(name) ? name : "leads";
-  VIEWS.forEach((view) => {
-    document.getElementById("view-" + view).hidden = view !== chosen;
-  });
-  parts.tabs.forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.view === chosen);
-    tab.setAttribute("aria-selected", String(tab.dataset.view === chosen));
-  });
-  if (chosen !== "leads" && !autopilot.data) {
-    loadAutopilot();
-  }
 }
 
 function fillOptions(select, entries, chosen) {
@@ -209,6 +194,16 @@ function renderAutopilotForm(data) {
   parts.builderNote.textContent = builderNote(data);
 }
 
+function ensureAutopilot() {
+  if (autopilot.data) return Promise.resolve();
+  if (!autopilot.loading) {
+    autopilot.loading = loadAutopilot().finally(() => {
+      autopilot.loading = null;
+    });
+  }
+  return autopilot.loading;
+}
+
 async function loadAutopilot() {
   try {
     autopilot.data = await requestJson("/api/autopilot");
@@ -257,7 +252,7 @@ function knownCity(text) {
 
 async function startRun(event) {
   event.preventDefault();
-  if (!autopilot.data) await loadAutopilot();
+  await ensureAutopilot();
   const city = parts.city.value.trim();
   if (!city) {
     say(parts.status, "Type a city, or press Random city.", true);
@@ -612,21 +607,12 @@ async function stopRun() {
   }
 }
 
-parts.tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    history.replaceState(null, "", "#" + tab.dataset.view);
-    showView(tab.dataset.view);
-  });
-});
 parts.form.addEventListener("submit", startRun);
 parts.random.addEventListener("click", async () => {
-  if (!autopilot.data) await loadAutopilot();
+  await ensureAutopilot();
   pickRandomCity();
 });
 parts.runSelect.addEventListener("change", () => showRun(parts.runSelect.value));
 parts.runStop.addEventListener("click", stopRun);
 parts.settingsForm.addEventListener("submit", saveSettings);
 parts.builderCheck.addEventListener("click", checkBuilder);
-window.addEventListener("hashchange", () => showView(location.hash.slice(1)));
-
-showView(location.hash.slice(1));

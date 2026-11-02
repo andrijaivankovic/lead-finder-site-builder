@@ -2,6 +2,7 @@ import csv
 import hashlib
 import re
 import unicodedata
+from datetime import datetime
 from pathlib import Path
 
 COLUMNS = [
@@ -24,6 +25,7 @@ COLUMNS = [
     "email",
     "instagram",
     "facebook",
+    "status_changed_at",
 ]
 
 CONTACT_FIELDS = ["email", "instagram", "facebook"]
@@ -189,6 +191,7 @@ def update_status(path, place_id, status):
     for row in rows:
         if row["place_id"] == place_id:
             row["status"] = status
+            row["status_changed_at"] = datetime.now().isoformat(timespec="seconds")
             changed = True
     if changed:
         save(path, rows)
