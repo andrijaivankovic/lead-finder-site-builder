@@ -17,6 +17,8 @@ ROOT = lead_search.ROOT
 BRIEF_FACT = re.compile(r"^\|\s*(Name|Address|place_id)\s*\|\s*(.*?)\s*\|\s*$")
 PLACEHOLDERS = {"", "not listed", "not available", "none"}
 CONTACTED = {"contacted", "declined", "accepted"}
+REPLIES = {"interested", "declined"}
+NICHE_GROUPS = ["trade", "city"]
 THUMBNAIL_FOLDERS = ["hero", "interior", "gallery", "background"]
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 RUN_WORDS = {
@@ -126,7 +128,19 @@ def _stage(status, sent, messages_at, built_at):
     return "brief"
 
 
-def site(folder, settings, known, log, country_codes):
+def run_niches(runs):
+    found = {}
+    for state in reversed(runs):
+        city = (state.get("city") or {}).get("name", "")
+        for candidate in state.get("candidates", []):
+            found[candidate["place_id"]] = {
+                "trade": candidate.get("trade") or state.get("trade") or "",
+                "city": candidate.get("city") or city,
+            }
+    return found
+
+
+def site(folder, settings, known, log, country_codes, niches=None):
     facts = brief_facts(folder)
     place_id = facts.get("place_id", "")
     lead = known.get(place_id, {})
@@ -144,6 +158,7 @@ def site(folder, settings, known, log, country_codes):
         "messages_at": _stamp(folder / autopilot.MESSAGES_FILE) if written else "",
     }
     candidate = dict(lead, name=name, city=_city(address), country_code=country_codes.get(place_id, ""))
+    niche = (niches or {}).get(place_id, {})
     picture = thumbnail(folder)
     return dict(
         times,
@@ -159,6 +174,9 @@ def site(folder, settings, known, log, country_codes):
         live_url=published.get("url", ""),
         live_public=bool(published.get("public")),
         demo_branch=published.get("branch") or "",
+        trade=niche.get("trade") or lead.get("category") or "",
+        city=niche.get("city") or _city(address),
+        response=next((item["response"] for item in sent if item["response"]), ""),
         messages=written,
         contacts=autopilot.contact_links(candidate, written, settings),
         sent=sent,
@@ -178,7 +196,8 @@ def gather(settings=None, runner=None, root=None):
         for state in reversed(runs)
         for candidate in state.get("candidates", [])
     }
-    sites = [site(folder, settings, known, log, country_codes) for folder in site_folders(settings)]
+    niches = run_niches(runs)
+    sites = [site(folder, settings, known, log, country_codes, niches) for folder in site_folders(settings)]
     sites.sort(key=lambda item: item["updated"], reverse=True)
     return {"settings": settings, "files": files, "businesses": known, "log": log, "runs": runs, "sites": sites}
 
@@ -316,6 +335,30 @@ def _attention(gathered, today):
     return items
 
 
+def _niche_order(row):
+    return (-row["interested"], -row["replied"], -row["sent"], -row["sites"], row["name"])
+
+
+def niche_stats(gathered):
+    groups = {key: {} for key in NICHE_GROUPS}
+    for item in gathered["sites"]:
+        if not item["built_at"]:
+            continue
+        responses = {entry["response"] for entry in item["sent"]}
+        outcome = {
+            "sent": bool(item["sent"]) or item["status"] in CONTACTED,
+            "replied": bool(responses & REPLIES) or item["status"] in ("declined", "accepted"),
+            "interested": "interested" in responses or item["status"] == "accepted",
+        }
+        for key in NICHE_GROUPS:
+            name = (item[key] or "").strip().lower() or "unknown"
+            row = groups[key].setdefault(name, {"name": name, "sites": 0, "sent": 0, "replied": 0, "interested": 0})
+            row["sites"] += 1
+            for field, happened in outcome.items():
+                row[field] += int(happened)
+    return {key: sorted(rows.values(), key=_niche_order) for key, rows in groups.items()}
+
+
 def overview(gathered, runner=None):
     known = gathered["businesses"]
     log = gathered["log"]
@@ -339,6 +382,7 @@ def overview(gathered, runner=None):
             "accepted": len(accepted),
         },
         "attention": _attention(gathered, date.today().isoformat()),
+        "niches": niche_stats(gathered),
         "recent": history(gathered)[:recent],
         "latest_run": latest and {
             "id": latest.get("id", ""),
@@ -361,6 +405,12 @@ def move_to_own_project(folder, settings=None):
     if not deploy_site.read_record(found).get("branch"):
         raise deploy_site.DeployError("{} is not a demo in the shared project.".format(found.name))
     return deploy_site.deploy(found, settings, own=True)
+
+
+def record_response(place_id, response, root=None):
+    if not response:
+        raise outreach_log.OutreachError("Pick what they answered.")
+    return outreach_log.record_response(root or ROOT, place_id, response)
 
 
 def record_send(place_id, channel, settings=None, root=None):

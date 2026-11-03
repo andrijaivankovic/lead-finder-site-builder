@@ -234,6 +234,9 @@ asset_sorting:
 
 autopilot:
   sites_per_run: 3
+  sites_per_search: 2
+  mixed_searches_per_site: 2
+  mixed_failures_in_a_row: 3
   keep_awake: true
   deploy: true
   search_limit: 150

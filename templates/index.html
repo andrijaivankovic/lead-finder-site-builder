@@ -122,6 +122,35 @@
   </section>
 </div>
 
+<section class="card niches">
+  <div class="card-head">
+    <div>
+      <h2>What works</h2>
+      <p class="card-note">Built sites, and what came of the messages, by trade or by city</p>
+    </div>
+    <div class="segmented" id="niche-filter" role="group" aria-label="Group by">
+      <button type="button" data-filter="trade">Trade <span></span></button>
+      <button type="button" data-filter="city">City <span></span></button>
+    </div>
+  </div>
+  <div class="niche-scroll">
+    <table class="niche-table">
+      <thead>
+        <tr>
+          <th id="niche-name">Trade</th>
+          <th class="numeric">Sites</th>
+          <th class="numeric">Sent</th>
+          <th class="numeric">Replied</th>
+          <th class="numeric">Interested</th>
+          <th>Interested of sent</th>
+        </tr>
+      </thead>
+      <tbody id="niche-rows"></tbody>
+    </table>
+  </div>
+  <p class="empty" id="niche-empty" hidden>Nothing built yet. Once sites are sent and you log what each business answered on the Sites page, this shows which trades and cities say yes.</p>
+</section>
+
 </div>
 
 <div class="view" id="view-leads" hidden>
@@ -195,14 +224,16 @@
 <section class="card">
   <div class="card-head">
     <h2>Start a run</h2>
-    <span class="card-note">Type a city or pick a random one</span>
+    <span class="card-note">One search, or a mixed run</span>
   </div>
   <form id="autopilot-form" class="autopilot-form">
     <input type="text" id="autopilot-city" list="autopilot-cities" placeholder="A city, such as Chicago" autocomplete="off" spellcheck="false">
     <button type="button" id="autopilot-random" class="secondary">Random city</button>
     <input type="text" id="autopilot-trade" list="autopilot-trades" placeholder="Trade, or empty for a random one" autocomplete="off" spellcheck="false">
     <button type="submit" id="autopilot-start">Start</button>
+    <button type="button" id="autopilot-mixed" class="secondary">Mixed run</button>
   </form>
+  <p class="hint">A mixed run searches one trade and city after another, from the trades picked in the settings and the cities they name, and takes a few businesses from each search until it has its sites. Type a city or a trade first to keep it to that one.</p>
   <datalist id="autopilot-cities"></datalist>
   <datalist id="autopilot-trades"></datalist>
   <div class="status-line" id="autopilot-status"></div>
@@ -288,6 +319,10 @@
         <span>Businesses to look through</span>
         <input type="number" id="set-search-limit" min="10">
       </label>
+      <label class="control">
+        <span>Sites from one search in a mixed run</span>
+        <input type="number" id="set-per-search" min="1">
+      </label>
     </div>
     <div class="field-row">
       <label class="control checkbox">
@@ -299,7 +334,7 @@
         <span>Only businesses with a phone number</span>
       </label>
     </div>
-    <p class="field-label">Trades a random run picks from</p>
+    <p class="field-label">Trades a random or mixed run picks from</p>
     <div class="trade-grid" id="set-trades"></div>
   </section>
 

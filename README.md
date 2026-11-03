@@ -431,6 +431,15 @@ The **Autopilot** page does the whole job for a city:
    with the channel you used, here or on the Sites page. That logs it exactly
    as `outreach.py --sent` does, so the follow up reminder works the same.
 
+**Mixed runs.** **Mixed run** searches one trade and city after another,
+taking the trades ticked in the settings and the cities they name, and takes
+a couple of businesses from each search, two by default, until the run has its
+sites. Leave it going overnight and forty sites come out spread over every
+trade and many cities, rather than forty pizzerias in one city. Type a city
+first to keep it to that city, or a trade to keep it to that trade. Building
+starts as soon as the first businesses are picked, while the searching goes
+on.
+
 **Stop** ends a run at any point, the search included. A search already sent
 to the map server still finishes on its own, and its businesses appear on the
 Leads page.
@@ -570,7 +579,13 @@ by default:
 ./run scripts/outreach.py --due
 ```
 
-The record lives in `data/outreach.csv`.
+The record lives in `data/outreach.csv`. On the Sites page, once a send is
+logged, **Their answer** records the reply the same way.
+
+**What works**, at the bottom of the Overview page, adds it up by trade and by
+city: how many sites were built, how many were sent, how many businesses
+replied and how many were interested. After a few hundred mixed sites, that
+table says which trades and which cities to put the next runs into.
 
 ## Where your results are kept
 

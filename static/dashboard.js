@@ -91,6 +91,8 @@ const board = {
   eventFilter: "all",
   open: new Set(),
   watchTimer: null,
+  niches: null,
+  nicheGroup: "trade",
 };
 
 const shell = {
@@ -104,6 +106,10 @@ const shell = {
   attentionCount: document.getElementById("attention-count"),
   recent: document.getElementById("overview-recent"),
   latestRun: document.getElementById("overview-run"),
+  nicheFilter: document.getElementById("niche-filter"),
+  nicheName: document.getElementById("niche-name"),
+  nicheRows: document.getElementById("niche-rows"),
+  nicheEmpty: document.getElementById("niche-empty"),
   navReady: document.getElementById("nav-ready"),
   navRunning: document.getElementById("nav-running"),
   sitesFilter: document.getElementById("sites-filter"),
@@ -236,6 +242,8 @@ async function loadOverview() {
     renderAttention(data.attention);
     renderEvents(shell.recent, data.recent, true);
     renderLatestRun(data.latest_run);
+    board.niches = data.niches;
+    renderNiches();
     updateNav(data);
   } catch (error) {
     shell.attention.replaceChildren(element("li", "attention-empty", error.message));
@@ -374,6 +382,36 @@ function renderLatestRun(run) {
   button.type = "button";
   button.addEventListener("click", () => openRun(run.id));
   shell.latestRun.replaceChildren(head, element("p", "latest-message", run.message || ""), meter, facts, button);
+}
+
+function percent(part, whole) {
+  return whole ? Math.round((part / whole) * 100) : 0;
+}
+
+function nicheRow(niche) {
+  const line = element("tr");
+  line.append(element("td", "niche-name", niche.name.charAt(0).toUpperCase() + niche.name.slice(1)));
+  [niche.sites, niche.sent, niche.replied, niche.interested].forEach((value) => line.append(element("td", "numeric", String(value))));
+  const share = percent(niche.interested, niche.sent);
+  const cell = element("td", "niche-share");
+  const meter = element("span", "meter");
+  const fill = element("span", "meter-fill");
+  fill.style.width = share + "%";
+  meter.append(fill);
+  cell.append(meter, element("span", "niche-percent", niche.sent ? share + "%" : "not sent"));
+  line.append(cell);
+  return line;
+}
+
+function renderNiches() {
+  if (!board.niches) return;
+  const chosen = board.nicheGroup;
+  markFilter(shell.nicheFilter, chosen, (name) => board.niches[name].length);
+  shell.nicheName.textContent = chosen === "trade" ? "Trade" : "City";
+  const rows = board.niches[chosen];
+  shell.nicheRows.replaceChildren(...rows.map(nicheRow));
+  shell.nicheEmpty.hidden = rows.length > 0;
+  shell.nicheRows.closest(".niche-scroll").hidden = rows.length === 0;
 }
 
 function markFilter(group, chosen, counter) {
@@ -571,6 +609,44 @@ function siteSentRow(site) {
   return line;
 }
 
+const REPLY_CHOICES = [
+  ["", "Waiting for an answer"],
+  ["interested", "Interested"],
+  ["declined", "Declined"],
+  ["no answer", "No answer after the follow-up"],
+];
+
+function siteReplyRow(site) {
+  const line = element("label", "sent-row reply-row");
+  const select = element("select");
+  REPLY_CHOICES.forEach(([value, label]) => {
+    const option = element("option", "", label);
+    option.value = value;
+    option.disabled = value === "" && Boolean(site.response);
+    select.append(option);
+  });
+  select.value = site.response || "";
+  const note = element("span", "hint");
+  select.addEventListener("change", async () => {
+    select.disabled = true;
+    try {
+      await requestJson("/api/sites/response", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ place_id: site.place_id, response: select.value }),
+      });
+      await loadSites();
+      refreshNav();
+    } catch (error) {
+      note.textContent = error.message;
+      select.value = site.response || "";
+      select.disabled = false;
+    }
+  });
+  line.append(element("span", "field-label", "Their answer"), select, note);
+  return line;
+}
+
 function siteDetail(site, card) {
   const toggle = element("button", "site-toggle");
   toggle.type = "button";
@@ -592,6 +668,7 @@ function siteDetail(site, card) {
   if (site.contacts.length) detail.append(contactBlock(site.contacts));
   site.messages.forEach((message) => detail.append(messageBlock(message)));
   if (site.messages.length) detail.append(siteSentRow(site));
+  if (site.sent.length) detail.append(siteReplyRow(site));
   card.append(toggle, detail);
 }
 
@@ -650,6 +727,12 @@ shell.historyFilter.addEventListener("click", (event) => {
   renderHistory();
 });
 shell.sitesSearch.addEventListener("input", renderSites);
+shell.nicheFilter.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-filter]");
+  if (!button) return;
+  board.nicheGroup = button.dataset.filter;
+  renderNiches();
+});
 window.addEventListener("hashchange", () => showView(location.hash.slice(1)));
 
 showView(location.hash.slice(1));

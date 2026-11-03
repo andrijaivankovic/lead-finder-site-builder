@@ -1,5 +1,6 @@
 import csv
 import hashlib
+import os
 import re
 import unicodedata
 from datetime import datetime
@@ -156,12 +157,16 @@ def merge(new_leads, existing_rows):
 def save(path, rows):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_name(path.name + ".partial")
     try:
-        with open(path, "w", newline="", encoding="utf-8-sig") as handle:
+        with open(partial, "w", newline="", encoding="utf-8-sig") as handle:
             writer = csv.DictWriter(handle, fieldnames=COLUMNS)
             writer.writeheader()
             writer.writerows(rows)
+        os.replace(partial, path)
     except PermissionError:
+        if partial.exists():
+            partial.unlink()
         raise FileLocked(
             "{} is open in another program, most likely Excel. Close it and try again.".format(path.name)
         )
