@@ -278,7 +278,19 @@ in that place. A word that is not on the list searches business names instead.
 ```
 
 You get a score out of 100 and a list of problems written as sentences you can
-quote to the owner.
+quote to the owner, plus the email address the site lists, when it lists one.
+
+**Emails from the business's own site.** Whenever a search checks websites, it
+also looks for an email address on the site: on the front page, and when that
+has none, on its contact page. An address on the business's own domain comes
+first, then one such as `info@`. Only that one business's website is read, a
+page or two, the way a person would read it. An address found this way goes
+into the `email` column, never over one that is already there.
+
+Every address, whether from the site or from OpenStreetMap, is also checked in
+DNS. One whose domain does not exist or takes no mail is left out, because a
+message that bounces counts against your mailbox with Gmail. The check says
+nothing about whether that one mailbox exists; only sending tells you that.
 
 ### The table in your browser
 
@@ -666,8 +678,10 @@ them at all: to see what a place looks like, it gives you a link to open, the
 same as everywhere else. Every image that goes on a site comes from Pexels or
 from the client.
 
-**Nothing is scraped.** Not Google Maps, not the company register. The tool
-builds links for a human to click.
+**Nothing is scraped.** Not Google Maps, not the company register, not
+Facebook or Instagram. The tool builds links for a human to click. The one
+thing it reads by itself is the business's own website, a page or two, while
+it checks that site.
 
 **Google's terms allow their data to be kept for 30 days at most**, with one
 exception: the `place_id`, the identifier of a business, may be kept forever.
