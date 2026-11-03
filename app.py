@@ -11,6 +11,7 @@ import build_brief
 import dashboard
 import lead_search
 import lead_store
+import local_settings
 import outreach_log
 
 app = Flask(__name__)
@@ -72,6 +73,16 @@ def site_sent():
     except outreach_log.OutreachError as error:
         return jsonify({"error": str(error)}), 400
     return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
+
+
+@app.post("/api/sites/own-project")
+def site_own_project():
+    payload = request.get_json(silent=True) or {}
+    try:
+        record = dashboard.move_to_own_project(payload.get("folder") or "")
+    except dashboard.deploy_site.DeployError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify({"project": record["project"], "url": record["url"], "public": record["public"]})
 
 
 @app.get("/api/settings")
@@ -195,6 +206,7 @@ def _autopilot_page_data():
         "portfolio_links": len(settings["outreach"]["portfolio_links"] or []),
         "channels": settings["outreach"]["channels"],
         "default_language": settings["brief"]["default_language"],
+        "personal": local_settings.view(settings),
         "running": RUNNER.run_id if RUNNER.busy() else "",
     }
 
@@ -206,9 +218,15 @@ def autopilot_page():
 
 @app.post("/api/autopilot/settings")
 def autopilot_settings():
+    payload = request.get_json(silent=True) or {}
     try:
-        autopilot.save(request.get_json(silent=True) or {})
-    except autopilot.AutopilotError as error:
+        personal = None
+        if "personal" in payload:
+            personal = local_settings.clean(payload["personal"], local_settings.view(lead_search.load_settings()))
+        autopilot.save({key: value for key, value in payload.items() if key != "personal"})
+        if personal is not None:
+            local_settings.write(personal)
+    except (autopilot.AutopilotError, local_settings.LocalSettingsError) as error:
         return jsonify({"error": str(error)}), 400
     return jsonify(_autopilot_page_data())
 

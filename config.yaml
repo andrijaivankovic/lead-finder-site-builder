@@ -41,6 +41,7 @@ outreach:
   follow_up_days: 4
   sender_name: ""
   portfolio_links: []
+  message_rules: []
   channels:
     - email
     - viber
@@ -390,6 +391,9 @@ contact_links:
 
 deploy:
   api: "https://api.cloudflare.com/client/v4"
+  shared_project: "demos"
+  branch_length: 28
+  name_attempts: 20
   production_branch: main
   ready_timeout_seconds: 180
   public_wait_seconds: 120

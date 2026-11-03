@@ -361,6 +361,7 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         "deploy_name": " ".join(part for part in (lead["name"], city.get("name", "")) if part),
         "sender_name": settings["outreach"]["sender_name"],
         "portfolio_links": settings["outreach"]["portfolio_links"],
+        "message_rules": settings["outreach"].get("message_rules") or [],
     }
 
 

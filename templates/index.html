@@ -375,13 +375,48 @@
       <span>Publish every finished site on Cloudflare Pages and put its address in the messages</span>
     </label>
     <p class="hint" id="deploy-state"></p>
+    <div class="field-row">
+      <label class="control grow">
+        <span>Cloudflare project every demo goes into, empty for one project per site</span>
+        <input type="text" id="set-shared-project" maxlength="58" spellcheck="false" placeholder="One project per site">
+      </label>
+    </div>
+    <p class="hint">Each business gets its own address inside it, such as urban-vegan-chicago.demos.pages.dev, which leaves the 100 projects Cloudflare allows for the businesses that say yes. The name shows in every address you send, Cloudflare adds a few characters when someone else already has it, and it is kept in config.local.yaml.</p>
   </section>
 
   <section class="card">
     <div class="card-head">
-      <h2>Your details</h2>
+      <h2>You and your messages</h2>
+      <span class="card-note">Kept in config.local.yaml, which never goes to GitHub</span>
     </div>
-    <p class="hint" id="sender-state"></p>
+    <div class="field-row">
+      <label class="control grow">
+        <span>Your name, every message is signed with it</span>
+        <input type="text" id="set-sender" maxlength="100" placeholder="Empty signs them [your name]">
+      </label>
+      <label class="control">
+        <span>Follow up after, in days</span>
+        <input type="number" id="set-follow-up" min="1" max="90">
+      </label>
+    </div>
+    <p class="field-label">Your earlier work, linked in every message</p>
+    <div class="portfolio" id="set-portfolio"></div>
+    <button type="button" id="portfolio-add" class="secondary">Add a link</button>
+    <label class="control wide">
+      <span>Your rules for every message, one per line</span>
+      <textarea id="set-rules" rows="4" placeholder="Use the informal ti in Serbian"></textarea>
+    </label>
+    <p class="hint">A published site's address always goes straight into all three messages. They never ask whether the owner wants the link. Your rules come on top of that.</p>
+    <div class="field-row">
+      <label class="control">
+        <span>Site language when nothing else decides it</span>
+        <input type="text" id="set-default-language" maxlength="40">
+      </label>
+      <label class="control grow">
+        <span>Folder the sites go into, empty for the Desktop</span>
+        <input type="text" id="set-output-dir" spellcheck="false">
+      </label>
+    </div>
   </section>
 
   <div class="settings-actions">

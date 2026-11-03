@@ -64,11 +64,18 @@ const parts = {
   effort: document.getElementById("set-effort"),
   deploy: document.getElementById("set-deploy"),
   deployState: document.getElementById("deploy-state"),
+  sharedProject: document.getElementById("set-shared-project"),
   timeout: document.getElementById("set-timeout"),
   parallel: document.getElementById("set-parallel"),
   builderState: document.getElementById("builder-state"),
   builderCheck: document.getElementById("builder-check"),
-  senderState: document.getElementById("sender-state"),
+  sender: document.getElementById("set-sender"),
+  followUp: document.getElementById("set-follow-up"),
+  portfolio: document.getElementById("set-portfolio"),
+  portfolioAdd: document.getElementById("portfolio-add"),
+  rules: document.getElementById("set-rules"),
+  defaultLanguage: document.getElementById("set-default-language"),
+  outputDir: document.getElementById("set-output-dir"),
   settingsStatus: document.getElementById("settings-status"),
 };
 
@@ -142,10 +149,41 @@ function builderNote(data) {
   return "No Claude Code was found, so each run stops after the photographs and gives you one command per business to paste into Claude Code.";
 }
 
-function senderNote(data) {
-  const name = data.sender_name ? "Messages are signed " + data.sender_name : "No sender name is set, so messages are signed [your name]";
-  const links = data.portfolio_links === 1 ? "1 portfolio link" : data.portfolio_links + " portfolio links";
-  return name + ", with " + links + ". Both live in config.local.yaml under outreach.";
+function portfolioRow(link) {
+  const line = element("div", "portfolio-row");
+  const url = element("input", "portfolio-url");
+  url.type = "text";
+  url.value = link.url || "";
+  url.placeholder = "https://a-site-you-built.example/";
+  url.spellcheck = false;
+  url.setAttribute("aria-label", "Address of a site you built");
+  const what = element("input", "portfolio-what");
+  what.type = "text";
+  what.value = link.what || "";
+  what.placeholder = "What it was built for, such as a grill";
+  what.setAttribute("aria-label", "What that site was built for");
+  const remove = element("button", "secondary", "Remove");
+  remove.type = "button";
+  remove.addEventListener("click", () => line.remove());
+  line.append(url, what, remove);
+  return line;
+}
+
+function portfolioPayload() {
+  return [...parts.portfolio.querySelectorAll(".portfolio-row")].map((line) => ({
+    url: line.querySelector(".portfolio-url").value,
+    what: line.querySelector(".portfolio-what").value,
+  }));
+}
+
+function renderPersonal(personal) {
+  parts.sender.value = personal.sender_name;
+  parts.followUp.value = personal.follow_up_days;
+  parts.portfolio.replaceChildren(...personal.portfolio_links.map(portfolioRow));
+  parts.rules.value = personal.message_rules.join("\n");
+  parts.defaultLanguage.value = personal.default_language;
+  parts.outputDir.value = personal.output_dir;
+  parts.sharedProject.value = personal.shared_project;
 }
 
 function renderSettings(data) {
@@ -174,7 +212,7 @@ function renderSettings(data) {
   parts.timeout.value = settings.builder.timeout_minutes;
   parts.parallel.value = settings.builder.parallel;
   parts.builderState.textContent = data.builder ? "Found at " + data.builder + "." : "Not found on this computer.";
-  parts.senderState.textContent = senderNote(data);
+  renderPersonal(data.personal);
 }
 
 function renderAutopilotForm(data) {
@@ -550,6 +588,15 @@ function settingsPayload() {
       timeout_minutes: parts.timeout.value,
       parallel: parts.parallel.value,
     },
+    personal: {
+      sender_name: parts.sender.value,
+      follow_up_days: parts.followUp.value,
+      portfolio_links: portfolioPayload(),
+      message_rules: parts.rules.value.split("\n"),
+      default_language: parts.defaultLanguage.value,
+      output_dir: parts.outputDir.value,
+      shared_project: parts.sharedProject.value,
+    },
   };
 }
 
@@ -616,3 +663,8 @@ parts.runSelect.addEventListener("change", () => showRun(parts.runSelect.value))
 parts.runStop.addEventListener("click", stopRun);
 parts.settingsForm.addEventListener("submit", saveSettings);
 parts.builderCheck.addEventListener("click", checkBuilder);
+parts.portfolioAdd.addEventListener("click", () => {
+  const line = portfolioRow({});
+  parts.portfolio.append(line);
+  line.querySelector("input").focus();
+});

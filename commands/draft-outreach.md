@@ -38,18 +38,26 @@ the site is actually built. Never claim a site is ready when `site/` is empty.
 The brief marks each photograph as stock or the business's own. That decides
 what the message may say about them, so read it before writing point 4 below.
 
-When the folder holds `deploy.json`, its `url` is where the site is published.
-Every version carries that address as the link to the demo, on its own line,
-before the portfolio links. Leave it out when `public` is false, because that
-address did not open when it was checked.
+When the folder holds `deploy.json` and its `public` is true, its `url` is
+where the site is published. Put that address itself into every version, on its
+own line, before the portfolio links. Never ask whether they want the link and
+never offer to send it later: the point is that they can open the demo the
+moment they read the message.
 
-Read `outreach.sender_name` and `outreach.portfolio_links` from `config.yaml`,
-which a `config.local.yaml` may override. Those two are personal, so that is
-where they usually are, and `config.yaml` ships them empty. Read both files
-before deciding either is missing.
+When there is no `deploy.json`, or `public` is false because the address did
+not open when it was checked, write `[link to the demo]` on that line instead,
+so the address can be pasted in once the site is published, and say so when you
+hand the messages over. Still never turn it into a question.
 
-If either really is empty, say so and ask, rather than inventing a link or
-signing with a made up name.
+Read `outreach.sender_name`, `outreach.portfolio_links` and
+`outreach.message_rules` from `config.yaml`, which a `config.local.yaml` may
+override. They are personal, so that is where they usually are, and
+`config.yaml` ships them empty. Read both files before deciding any is missing.
+The Settings page in the browser edits them.
+
+If the name or the links really are empty, say so and ask, rather than
+inventing a link or signing with a made up name. Having no message rules is
+normal.
 
 Send every link in the list, in all three versions. Do not drop one for being
 off trade and do not hold any back.
@@ -69,8 +77,9 @@ Every version must carry four things:
 1. **One concrete detail about that specific business.** The neighbourhood, what
    they are known for, something from their reviews, something visible in the
    photographs. Generic praise reads as a mail merge and gets deleted.
-2. **The site already exists and costs nothing to look at.** Not an offer to
-   build one. It is built.
+2. **The site already exists, costs nothing to look at, and here it is.** Not
+   an offer to build one and not an offer to send the link. It is built, and
+   the demo link from step 2 is right there in the message.
 3. **Links to previous work**, all of `outreach.portfolio_links`.
 4. **That the stock photographs are temporary** and get swapped for their own as
    soon as they say they are interested. Never let them think a stock room is
@@ -85,6 +94,10 @@ once, not generated.
 
 Never invent facts about the business: no fake compliments about food you have
 not eaten, no numbers, no claims about their revenue or their competitors.
+
+Then follow every rule in `outreach.message_rules`. They come from the person
+and win over the tone and length guidance here, but never over inventing
+nothing, sending nothing, and carrying the demo link.
 
 **Email** — subject line plus five to eight sentences. Enough room to explain
 why they got the message.

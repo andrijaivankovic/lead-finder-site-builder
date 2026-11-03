@@ -29,8 +29,9 @@ messages and sends them.
 It finds the lead, downloads its stock photographs unless they are already
 there, and writes the answers from the settings into a file. It prints JSON
 naming that `answers_file`, the `stock_folder`, the `project_folder`, the city,
-the site language, the sender name and the portfolio links, and whether the
-site is to be published: `deploy` and the `deploy_name` to publish it under.
+the site language, the sender name, the portfolio links and the
+`message_rules`, and whether the site is to be published: `deploy` and the
+`deploy_name` to publish it under.
 
 ## 2. Check the photographs
 
@@ -107,18 +108,21 @@ passes:
 
 It publishes the site on Cloudflare Pages and prints its public address. That
 address is the demo the messages point to. When the command fails, or warns
-that the address did not open, leave the address out of the messages and say
-why in the report.
+that the address did not open, put `[link to the demo]` where the address
+would go and say why in the report.
 
 ## 6. Draft the messages
 
 Write the three versions exactly as step 3 of `commands/draft-outreach.md`
-describes, in the site language, signed with the sender name and carrying every
-portfolio link that step 1 printed. Where the sender name is empty, sign with
-`[your name]` rather than inventing one.
+describes, in the site language, signed with the sender name, carrying every
+portfolio link and following every rule in `message_rules` that step 1 printed.
+Where the sender name is empty, sign with `[your name]` rather than inventing
+one.
 
-When step 5 published the site, every version carries its address as the link
-to the demo, on its own line, before the portfolio links.
+Every version carries the demo link itself: the address step 5 printed, on its
+own line before the portfolio links, or `[link to the demo]` when step 5 was
+skipped or gave no address that opened. Never ask whether they want the link
+and never offer to send it later.
 
 Save them to `outreach.md` in the project folder under exactly these three
 headings, so the browser page can show each one with a copy button:
