@@ -64,6 +64,7 @@ const parts = {
   effort: document.getElementById("set-effort"),
   deploy: document.getElementById("set-deploy"),
   deployState: document.getElementById("deploy-state"),
+  sharedProject: document.getElementById("set-shared-project"),
   timeout: document.getElementById("set-timeout"),
   parallel: document.getElementById("set-parallel"),
   builderState: document.getElementById("builder-state"),
@@ -182,6 +183,7 @@ function renderPersonal(personal) {
   parts.rules.value = personal.message_rules.join("\n");
   parts.defaultLanguage.value = personal.default_language;
   parts.outputDir.value = personal.output_dir;
+  parts.sharedProject.value = personal.shared_project;
 }
 
 function renderSettings(data) {
@@ -593,6 +595,7 @@ function settingsPayload() {
       message_rules: parts.rules.value.split("\n"),
       default_language: parts.defaultLanguage.value,
       output_dir: parts.outputDir.value,
+      shared_project: parts.sharedProject.value,
     },
   };
 }

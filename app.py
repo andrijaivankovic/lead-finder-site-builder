@@ -75,6 +75,16 @@ def site_sent():
     return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
 
 
+@app.post("/api/sites/own-project")
+def site_own_project():
+    payload = request.get_json(silent=True) or {}
+    try:
+        record = dashboard.move_to_own_project(payload.get("folder") or "")
+    except dashboard.deploy_site.DeployError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify({"project": record["project"], "url": record["url"], "public": record["public"]})
+
+
 @app.get("/api/settings")
 def page_settings():
     settings = lead_search.load_settings()

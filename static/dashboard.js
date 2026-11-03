@@ -493,6 +493,32 @@ function nextCommand(site) {
   return null;
 }
 
+function ownProjectButton(site) {
+  const label = "Move to its own project";
+  const button = element("button", "secondary", label);
+  button.type = "button";
+  button.title = "Publishes this site as a Cloudflare Pages project of its own, ready for the business's domain. The demo address keeps working.";
+  button.addEventListener("click", async () => {
+    const line = button.closest(".site-actions");
+    line.parentElement.querySelectorAll(".move-error").forEach((note) => note.remove());
+    button.disabled = true;
+    button.textContent = "Moving…";
+    try {
+      await requestJson("/api/sites/own-project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: site.folder }),
+      });
+      await loadSites();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = label;
+      line.after(element("p", "site-warning move-error", error.message));
+    }
+  });
+  return button;
+}
+
 function siteActions(site) {
   const line = element("div", "site-actions");
   if (site.live_url && site.live_public) line.append(linkButton(site.live_url, "Live site", "globe", "live"));
@@ -505,6 +531,7 @@ function siteActions(site) {
     button.addEventListener("click", () => copyText(next.command, button));
     line.append(button);
   }
+  if (site.stage === "accepted" && site.demo_branch) line.append(ownProjectButton(site));
   return line;
 }
 

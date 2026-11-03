@@ -1,3 +1,4 @@
+import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -13,7 +14,9 @@ FILE_NAME = "config.local.yaml"
 STORED = {
     "outreach": ["sender_name", "portfolio_links", "message_rules", "follow_up_days"],
     "brief": ["default_language", "output_dir"],
+    "deploy": ["shared_project"],
 }
+PROJECT_NAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,56}[a-z0-9])?$")
 
 
 class LocalSettingsError(Exception):
@@ -40,7 +43,7 @@ def _link(item):
 
 
 def view(settings):
-    outreach, brief = settings["outreach"], settings["brief"]
+    outreach, brief, deploy = settings["outreach"], settings["brief"], settings["deploy"]
     return {
         "sender_name": outreach.get("sender_name") or "",
         "portfolio_links": [_link(item) for item in outreach.get("portfolio_links") or []],
@@ -48,6 +51,7 @@ def view(settings):
         "follow_up_days": outreach["follow_up_days"],
         "default_language": brief.get("default_language") or "",
         "output_dir": brief.get("output_dir") or "",
+        "shared_project": deploy.get("shared_project") or "",
     }
 
 
@@ -112,6 +116,16 @@ def _folder(value, current):
     return folder
 
 
+def _project(value):
+    name = _text(value, 58, "The Cloudflare project for the demos").lower()
+    if name and not PROJECT_NAME.match(name):
+        raise LocalSettingsError(
+            "The Cloudflare project name can hold only letters, digits and hyphens, and cannot start or end with "
+            "a hyphen, not {}.".format(value.strip())
+        )
+    return name
+
+
 def clean(payload, current):
     if not isinstance(payload, dict):
         raise LocalSettingsError("Your details have to come as named fields.")
@@ -128,6 +142,8 @@ def clean(payload, current):
         result["default_language"] = _text(payload["default_language"], 40, "The default site language", required=True)
     if "output_dir" in payload:
         result["output_dir"] = _folder(payload["output_dir"], current.get("output_dir", ""))
+    if "shared_project" in payload:
+        result["shared_project"] = _project(payload["shared_project"])
     return result
 
 

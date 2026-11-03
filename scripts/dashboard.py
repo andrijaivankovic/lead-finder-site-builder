@@ -158,6 +158,7 @@ def site(folder, settings, known, log, country_codes):
         site_url=autopilot.site_url(page, settings) if page else "",
         live_url=published.get("url", ""),
         live_public=bool(published.get("public")),
+        demo_branch=published.get("branch") or "",
         messages=written,
         contacts=autopilot.contact_links(candidate, written, settings),
         sent=sent,
@@ -350,6 +351,16 @@ def overview(gathered, runner=None):
             "running": bool(runner is not None and runner.busy() and runner.run_id == latest.get("id")),
         },
     }
+
+
+def move_to_own_project(folder, settings=None):
+    settings = settings or lead_search.load_settings()
+    found = next((path for path in site_folders(settings) if folder and str(path) == folder), None)
+    if found is None:
+        raise deploy_site.DeployError("That folder is not one of your sites.")
+    if not deploy_site.read_record(found).get("branch"):
+        raise deploy_site.DeployError("{} is not a demo in the shared project.".format(found.name))
+    return deploy_site.deploy(found, settings, own=True)
 
 
 def record_send(place_id, channel, settings=None, root=None):

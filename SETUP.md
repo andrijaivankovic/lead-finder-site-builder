@@ -342,18 +342,24 @@ no link to it.
 ### What it does
 
 Each finished site goes online at an address such as
-`golden-crust-chicago.pages.dev`, and that address goes into the messages, so
-the owner opens the demo with one tap. Every business gets its own Pages
-project, and publishing again after a change keeps the same address.
+`golden-crust-chicago.demos.pages.dev`, and that address goes into the
+messages, so the owner opens the demo with one tap. Every demo lives in one
+Pages project, `demos` unless you name another under **Publishing** on the
+Settings page, and each business gets an address of its own inside it.
+Publishing again after a change keeps the same address. When someone else
+already has the project name, Cloudflare adds a few characters to it, such as
+`demos-4ab`. These addresses are marked for search engines to leave out, so a
+demo carrying a business's name does not show up on Google.
 
 ### Cost
 
 Free, and Cloudflare's free plan carries no non-commercial clause, so demo
 sites for businesses you hope to win as clients are fine on it. The limits that
 matter here: 100 projects per account, 20,000 files per site and 25 MiB per
-file. One business is one project, so after a hundred of them, delete the
-projects of businesses that said no, in the dashboard under **Workers &
-Pages**.
+file. All the demos together take one project, which leaves the other 99 for
+the businesses that say yes. Empty the project name on the Settings page and
+every demo gets a project of its own instead, which runs out after a hundred
+businesses.
 
 ### Steps
 
@@ -379,3 +385,20 @@ Everyone. Pages publishes with no login in front of the site. A brand new
 project's address can take a minute or two to start answering, so the script
 waits for it, and when it still does not open in time, publishing the same
 folder again a few minutes later picks it up.
+
+### When a business says yes
+
+Mark it **accepted** on the Leads page and put their own photos and details
+into the site. Then press **Move to its own project** on its card on the Sites
+page. That publishes it as a Pages project of its own, named after the demo,
+and the card's live link follows it. The demo address keeps working. From the
+terminal it is the same thing:
+
+```bash
+./run scripts/deploy_site.py "$HOME/Developer/sites/Golden Crust" --own
+```
+
+To put it on the business's domain, open that project under **Workers &
+Pages**, then **Custom domains**. A `www` address bought anywhere works with
+the CNAME record Cloudflare shows you there. A bare domain such as
+`goldencrust.com` needs its nameservers moved to Cloudflare first.

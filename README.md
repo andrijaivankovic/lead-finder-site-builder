@@ -474,11 +474,14 @@ lorem ipsum is left.
 
 **Publishing.** With a Cloudflare API token in `.env`, each finished site is
 published on Cloudflare Pages at its own address, such as
-`golden-crust-chicago.pages.dev`, and that address goes into the three
-messages, so you only have to send them. The card
-shows it as **Live at**. Without a token, or with **Publishing** switched off on
-the Settings page, sites stay on your computer as before. A site built by hand
-goes online the same way:
+`golden-crust-chicago.demos.pages.dev`, and that address goes into the three
+messages, so you only have to send them. The card shows it as **Live at**. All
+the demos share one Pages project, named under **Publishing** on the Settings
+page, so Cloudflare's limit of 100 projects is kept for the businesses that say
+yes. Once one does, **Move to its own project** on its card on the Sites page
+gives it a project of its own, ready for their domain. Without a token, or with
+**Publishing** switched off on the Settings page, sites stay on your computer
+as before. A site built by hand goes online the same way:
 
 ```bash
 ./run scripts/deploy_site.py "$HOME/Developer/sites/Golden Crust"
