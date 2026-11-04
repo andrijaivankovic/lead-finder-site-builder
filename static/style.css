@@ -1099,6 +1099,46 @@ a.event-row:hover {
   display: none;
 }
 
+.niches .card-head {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.niches .card-note {
+  display: block;
+  margin-top: 4px;
+}
+
+.niche-scroll {
+  overflow-x: auto;
+}
+
+.niche-table td.niche-name {
+  font-weight: 600;
+}
+
+.niche-share {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 170px;
+}
+
+.niche-share .meter {
+  flex: 1;
+  max-width: 140px;
+}
+
+.niche-percent {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.reply-row .field-label {
+  margin: 0;
+}
+
 .table-scroll {
   max-height: 70vh;
   overflow: auto;

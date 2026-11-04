@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import lead_store
 import scoring
 import site_audit
+import site_emails
 import usage
 from sources import google_places, overpass
 
@@ -92,6 +93,8 @@ def _audit_websites(leads, settings, on_event=None):
         lead["website_score"] = report["score"]
         lead["website_problems"] = report["problems"]
         lead["website_is_poor"] = report["score"] < options["poor_website_below"]
+        if report.get("email") and not (lead.get("email") or "").strip():
+            lead["email"] = report["email"]
 
     return len(urls)
 
@@ -152,6 +155,8 @@ def run_search(query, limit=None, source="auto", on_event=None, audit=None, plac
 
     run_audit = settings["audit"]["enabled"] if audit is None else audit
     audited = _audit_websites(leads, settings, on_event) if run_audit else 0
+    if settings["site_emails"]["check_domains"]:
+        site_emails.drop_undeliverable(leads, settings)
 
     leads = scoring.add_scores(leads, settings)
 

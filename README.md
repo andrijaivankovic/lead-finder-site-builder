@@ -278,7 +278,19 @@ in that place. A word that is not on the list searches business names instead.
 ```
 
 You get a score out of 100 and a list of problems written as sentences you can
-quote to the owner.
+quote to the owner, plus the email address the site lists, when it lists one.
+
+**Emails from the business's own site.** Whenever a search checks websites, it
+also looks for an email address on the site: on the front page, and when that
+has none, on its contact page. An address on the business's own domain comes
+first, then one such as `info@`. Only that one business's website is read, a
+page or two, the way a person would read it. An address found this way goes
+into the `email` column, never over one that is already there.
+
+Every address, whether from the site or from OpenStreetMap, is also checked in
+DNS. One whose domain does not exist or takes no mail is left out, because a
+message that bounces counts against your mailbox with Gmail. The check says
+nothing about whether that one mailbox exists; only sending tells you that.
 
 ### The table in your browser
 
@@ -419,6 +431,15 @@ The **Autopilot** page does the whole job for a city:
    with the channel you used, here or on the Sites page. That logs it exactly
    as `outreach.py --sent` does, so the follow up reminder works the same.
 
+**Mixed runs.** **Mixed run** searches one trade and city after another,
+taking the trades ticked in the settings and the cities they name, and takes
+a couple of businesses from each search, two by default, until the run has its
+sites. Leave it going overnight and forty sites come out spread over every
+trade and many cities, rather than forty pizzerias in one city. Type a city
+first to keep it to that city, or a trade to keep it to that trade. Building
+starts as soon as the first businesses are picked, while the searching goes
+on.
+
 **Stop** ends a run at any point, the search included. A search already sent
 to the map server still finishes on its own, and its businesses appear on the
 Leads page.
@@ -558,7 +579,13 @@ by default:
 ./run scripts/outreach.py --due
 ```
 
-The record lives in `data/outreach.csv`.
+The record lives in `data/outreach.csv`. On the Sites page, once a send is
+logged, **Their answer** records the reply the same way.
+
+**What works**, at the bottom of the Overview page, adds it up by trade and by
+city: how many sites were built, how many were sent, how many businesses
+replied and how many were interested. After a few hundred mixed sites, that
+table says which trades and which cities to put the next runs into.
 
 ## Where your results are kept
 
@@ -666,8 +693,10 @@ them at all: to see what a place looks like, it gives you a link to open, the
 same as everywhere else. Every image that goes on a site comes from Pexels or
 from the client.
 
-**Nothing is scraped.** Not Google Maps, not the company register. The tool
-builds links for a human to click.
+**Nothing is scraped.** Not Google Maps, not the company register, not
+Facebook or Instagram. The tool builds links for a human to click. The one
+thing it reads by itself is the business's own website, a page or two, while
+it checks that site.
 
 **Google's terms allow their data to be kept for 30 days at most**, with one
 exception: the `place_id`, the identifier of a business, may be kept forever.

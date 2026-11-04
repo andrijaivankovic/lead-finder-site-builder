@@ -26,6 +26,8 @@ def main():
         print("HTTP status: {}".format(result["status_code"]))
     if result["load_seconds"] is not None:
         print("Load time: {} s".format(result["load_seconds"]))
+    if result["email"]:
+        print("Email: {}".format(result["email"]))
 
     if not result["problems"]:
         print("\nNo problems found. This one is a hard sell.\n")

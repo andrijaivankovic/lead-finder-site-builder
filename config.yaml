@@ -234,6 +234,9 @@ asset_sorting:
 
 autopilot:
   sites_per_run: 3
+  sites_per_search: 2
+  mixed_searches_per_site: 2
+  mixed_failures_in_a_row: 3
   keep_awake: true
   deploy: true
   search_limit: 150
@@ -437,6 +440,17 @@ audit:
     no_description: "The page has no description, so Google invents its own text for your search result."
     dated_platform: "The site still runs on {platform}, which is years behind and a security risk as much as a look."
     template_platform: "The site is a {platform} template, so it looks like thousands of others and cannot be tailored much."
+
+site_emails:
+  enabled: true
+  check_domains: true
+  contact_pages: 2
+  contact_words: [contact, kontakt, contacto, contato, contatti, contactez, impressum, reach, touch, about, o-nama]
+  preferred_names: [info, contact, hello, office, booking, reservations, kontakt, mail]
+  ignored_names: [noreply, no-reply, donotreply, do-not-reply, privacy, abuse, postmaster, mailer-daemon]
+  ignored_domains: [example.com, example.org, example.net, domain.com, yourdomain.com, yoursite.com, sentry.io, wixpress.com]
+  dns_url: "https://cloudflare-dns.com/dns-query"
+  dns_timeout_seconds: 8
 
 osm_categories:
   picerija:

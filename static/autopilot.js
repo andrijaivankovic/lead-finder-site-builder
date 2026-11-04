@@ -33,6 +33,7 @@ const parts = {
   random: document.getElementById("autopilot-random"),
   trade: document.getElementById("autopilot-trade"),
   start: document.getElementById("autopilot-start"),
+  mixed: document.getElementById("autopilot-mixed"),
   cityList: document.getElementById("autopilot-cities"),
   tradeList: document.getElementById("autopilot-trades"),
   status: document.getElementById("autopilot-status"),
@@ -48,6 +49,7 @@ const parts = {
   citiesFrom: document.getElementById("set-cities-from"),
   sites: document.getElementById("set-sites"),
   searchLimit: document.getElementById("set-search-limit"),
+  perSearch: document.getElementById("set-per-search"),
   noWebsite: document.getElementById("set-no-website"),
   phone: document.getElementById("set-phone"),
   trades: document.getElementById("set-trades"),
@@ -191,6 +193,7 @@ function renderSettings(data) {
   fillOptions(parts.citiesFrom, data.regions, settings.cities_from);
   parts.sites.value = settings.sites_per_run;
   parts.searchLimit.value = settings.search_limit;
+  parts.perSearch.value = settings.sites_per_search;
   parts.noWebsite.checked = settings.only_without_website;
   parts.phone.checked = settings.require_phone;
   renderTrades(data);
@@ -320,6 +323,37 @@ async function startRun(event) {
   }
 }
 
+function mixedNote(city, trade) {
+  const settings = autopilot.data.settings;
+  if (city && trade) return "Only " + trade + " in " + city + ", so this is one search.";
+  if (city) return "Every trade you picked, one after another, in " + city + ".";
+  if (trade) return trade + " in one city after another.";
+  return settings.trades.length + " trades across the cities from the settings, " + settings.sites_per_search + " sites from a search.";
+}
+
+async function startMixed() {
+  await ensureAutopilot();
+  const city = parts.city.value.trim();
+  const trade = parts.trade.value.trim();
+  parts.start.disabled = true;
+  parts.mixed.disabled = true;
+  say(parts.status, "Starting a mixed run.");
+  try {
+    const data = await requestJson("/api/autopilot/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mixed: true, city, trade }),
+    });
+    say(parts.status, mixedNote(city, trade));
+    await loadRuns(data.id);
+  } catch (error) {
+    say(parts.status, error.message, true);
+  } finally {
+    parts.start.disabled = false;
+    parts.mixed.disabled = false;
+  }
+}
+
 async function loadRuns(preferred) {
   const data = await requestJson("/api/autopilot/runs");
   parts.runSelect.innerHTML = "";
@@ -367,6 +401,7 @@ async function showRun(runId, quietly) {
 }
 
 function runTitle(run) {
+  if (run.mixed) return run.query;
   const city = run.city.country ? run.city.name + ", " + run.city.country : run.city.name;
   return run.trade + " in " + city;
 }
@@ -413,7 +448,7 @@ function candidateCard(run, candidate) {
   const head = element("div", "candidate-head");
   const who = element("div");
   who.append(element("strong", "", candidate.name));
-  const facts = [candidate.address, candidate.phone].filter(Boolean).join(" · ");
+  const facts = [run.mixed ? candidate.trade : "", candidate.address, candidate.phone].filter(Boolean).join(" · ");
   if (facts) who.append(element("span", "candidate-facts", facts));
   head.append(who, element("span", "tag state-tag", STATE_TAGS[candidate.state] || candidate.state));
   card.append(head);
@@ -567,6 +602,7 @@ function settingsPayload() {
     cities_from: parts.citiesFrom.value,
     sites_per_run: parts.sites.value,
     search_limit: parts.searchLimit.value,
+    sites_per_search: parts.perSearch.value,
     only_without_website: parts.noWebsite.checked,
     require_phone: parts.phone.checked,
     deploy: parts.deploy.checked,
@@ -655,6 +691,7 @@ async function stopRun() {
 }
 
 parts.form.addEventListener("submit", startRun);
+parts.mixed.addEventListener("click", startMixed);
 parts.random.addEventListener("click", async () => {
   await ensureAutopilot();
   pickRandomCity();

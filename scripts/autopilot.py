@@ -154,6 +154,8 @@ def clean(payload, current):
         result["sites_per_run"] = _whole(payload["sites_per_run"], 1, None, "Sites per run")
     if "search_limit" in payload:
         result["search_limit"] = _whole(payload["search_limit"], 10, None, "Businesses to look through")
+    if "sites_per_search" in payload:
+        result["sites_per_search"] = _whole(payload["sites_per_search"], 1, None, "Sites from one search in a mixed run")
     for key in RUN_FLAGS:
         if key in payload:
             result[key] = _flag(payload[key], key)
@@ -199,6 +201,7 @@ def save(payload, settings=None, root=None):
     stored = {
         "sites_per_run": cleaned["sites_per_run"],
         "search_limit": cleaned["search_limit"],
+        "sites_per_search": cleaned["sites_per_search"],
         "cities_from": cleaned["cities_from"],
         "trades": cleaned["trades"],
         "site": cleaned["site"],
@@ -238,6 +241,31 @@ def resolve_city(text, opts):
     return {"name": text.strip(), "country": "", "language": "", "region": ""}
 
 
+def mixed_plan(city, trade, opts, rng=None):
+    rng = rng or random
+    trades = [trade] if trade else list(opts["trades"])
+    cities = [city] if city else cities_in(opts["cities_from"], opts)
+    if not trades:
+        raise AutopilotError("Pick at least one trade in the settings for a mixed run.")
+    if not cities:
+        raise AutopilotError("autopilot.cities in config.yaml has no city for {}.".format(opts["cities_from"]))
+    order = rng.sample(trades, len(trades))
+    rounds = {name: rng.sample(cities, len(cities)) for name in order}
+    return [{"city": rounds[name][number], "trade": name} for number in range(len(cities)) for name in order]
+
+
+def mixed_label(city, trade, plan):
+    cities = len({item["city"]["name"] for item in plan})
+    trades = len({item["trade"] for item in plan})
+    if city and trade:
+        return "{} in {}".format(trade, city["name"])
+    if city:
+        return "Mixed: {} trades in {}".format(trades, city["name"])
+    if trade:
+        return "Mixed: {} across {} cities".format(trade, cities)
+    return "Mixed: {} trades across {} cities".format(trades, cities)
+
+
 def pick_trade(text, opts, rng=None):
     text = (text or "").strip()
     if text:
@@ -269,13 +297,13 @@ def _known_facts(row):
     return sum(1 for column in ("address", "opening_hours") if (row.get(column) or "").strip())
 
 
-def choose_candidates(rows, opts, settings, root=None):
-    contacted = {row["place_id"] for row in outreach_log.load(root or ROOT)}
+def choose_candidates(rows, opts, settings, root=None, limit=None, skip=()):
+    contacted = {row["place_id"] for row in outreach_log.load(root or ROOT)} | set(skip)
     ordered = sorted(
         rows, key=lambda row: (-_number(row.get("score")), -_known_facts(row), (row.get("name") or "").lower())
     )
     chosen = []
-    folders = set()
+    folders = set(skip)
     for row in ordered:
         folder = build_brief.folder_name(row.get("name") or "")
         if (row.get("status") or "").strip() or row["place_id"] in contacted or folder in folders:
@@ -288,7 +316,7 @@ def choose_candidates(rows, opts, settings, root=None):
             continue
         chosen.append(row)
         folders.add(folder)
-        if len(chosen) >= opts["sites_per_run"]:
+        if len(chosen) >= (limit or opts["sites_per_run"]):
             break
     return chosen
 
@@ -717,12 +745,24 @@ class Run:
             candidate.update(fields)
             self.save()
 
+    def add(self, candidate, search):
+        with self.lock:
+            self.state["candidates"].append(candidate)
+            search["picked"] += 1
+            self.save()
+
+    def searched(self, search):
+        with self.lock:
+            self.state["searches"].append(search)
+            self.state["found"] += search["found"]
+            self.save()
+
     def snapshot(self):
         with self.lock:
             return json.loads(json.dumps(self.state))
 
 
-def new_run(city, trade, root=None):
+def new_run(city, trade, root=None, plan=None):
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = stamp
     number = 2
@@ -734,9 +774,12 @@ def new_run(city, trade, root=None):
             "id": run_id,
             "started": _now(),
             "finished": "",
-            "city": city,
+            "city": city or {},
             "trade": trade,
-            "query": "{} {}".format(trade, city["name"]),
+            "query": mixed_label(city, trade, plan) if plan else "{} {}".format(trade, city["name"]),
+            "mixed": bool(plan),
+            "plan": plan or [],
+            "searches": [],
             "state": "searching",
             "message": "",
             "builder": "",
@@ -754,7 +797,7 @@ def new_run(city, trade, root=None):
 CONTACT_COLUMNS = ["phone", "email", "instagram", "facebook", "website", "google_maps_link", "contact_search"]
 
 
-def _candidate(row, city=None):
+def _candidate(row, city=None, trade=""):
     city = city or {}
     return {
         "place_id": row["place_id"],
@@ -762,6 +805,8 @@ def _candidate(row, city=None):
         "address": row.get("address", ""),
         "city": city.get("name", ""),
         "country_code": city.get("code", ""),
+        "trade": trade,
+        "place": city,
         **{column: row.get(column, "") for column in CONTACT_COLUMNS},
         "score": row.get("score", ""),
         "state": "waiting",
@@ -824,7 +869,7 @@ def _work_on(candidate, run, settings, opts, stop_event, collect, build, buildin
     run.change(candidate, state="photos")
     say("{}: downloading photographs".format(candidate["name"]))
     try:
-        prepared = prepare(candidate["place_id"], run.state["city"], run.state["trade"], settings, collect)
+        prepared = prepare(candidate["place_id"], candidate["place"], candidate["trade"], settings, collect)
     except (AutopilotError, build_brief.BriefError) as error:
         run.change(candidate, state="failed", problems=[str(error)])
         say("{}: failed".format(candidate["name"]))
@@ -894,26 +939,32 @@ def execute(run, settings, stop_event, search=None, collect=None, build=None, bu
             awake.terminate()
 
 
-def _execute(run, settings, opts, stop_event, search, collect, build, building, say):
-    state = run.state
-    city = state["city"]
-    run.update(state="searching", message="Searching for {} in {}.".format(state["trade"], city["name"]))
-    say(state["message"])
-
+def _searcher(search, city, trade, opts):
     def call():
         return (search or lead_search.run_search)(
-            state["query"],
+            "{} {}".format(trade, city["name"]),
             limit=opts["search_limit"],
             audit=not opts["only_without_website"],
             place={
-                "term": state["trade"],
+                "term": trade,
                 "name": city["name"],
                 "lookup": city.get("area") or city["name"],
                 "country_code": city.get("code", ""),
             },
         )
 
-    found = _search_or_stop(call, stop_event)
+    return call
+
+
+def _execute(run, settings, opts, stop_event, search, collect, build, building, say):
+    if run.state.get("mixed"):
+        return _execute_mixed(run, settings, opts, stop_event, search, collect, build, building, say)
+    state = run.state
+    city = state["city"]
+    run.update(state="searching", message="Searching for {} in {}.".format(state["trade"], city["name"]))
+    say(state["message"])
+
+    found = _search_or_stop(_searcher(search, city, state["trade"], opts), stop_event)
     if found is None:
         message = (
             "Stopped during the search. A search already sent to the server still finishes on its own, "
@@ -933,7 +984,7 @@ def _execute(run, settings, opts, stop_event, search, collect, build, building, 
         leads_file=result["path"].name if result.get("path") else "",
         found=len(rows),
         builder=builder,
-        candidates=[_candidate(row, city) for row in chosen],
+        candidates=[_candidate(row, city, state["trade"]) for row in chosen],
     )
     if not chosen:
         message = (
@@ -973,6 +1024,87 @@ def _execute(run, settings, opts, stop_event, search, collect, build, building, 
     )
 
 
+def _taken_keys(row):
+    return {row["place_id"], build_brief.folder_name(row.get("name") or "")}
+
+
+def _execute_mixed(run, settings, opts, stop_event, search, collect, build, building, say):
+    state = run.state
+    plan = state["plan"]
+    wanted = opts["sites_per_run"]
+    per_search = max(opts["sites_per_search"], -(-wanted // len(plan)))
+    attempts = min(len(plan), wanted * opts["mixed_searches_per_site"])
+    workers = max(1, opts["builder"]["parallel"])
+    builder = (find_builder(opts) or "") if building else ""
+    run.update(state="searching", builder=builder)
+    taken, failures, stopped, jobs = set(), 0, False, []
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for number, item in enumerate(plan[:attempts], start=1):
+            have = len(state["candidates"])
+            if stop_event.is_set() or have >= wanted:
+                break
+            city, trade = item["city"], item["trade"]
+            run.update(message="Search {} of up to {}: {} in {}. Picked {} of {} so far.".format(
+                number, attempts, trade, city["name"], have, wanted
+            ))
+            say(state["message"])
+            found = _search_or_stop(_searcher(search, city, trade, opts), stop_event)
+            if found is None:
+                stopped = True
+                break
+            entry = {"city": city["name"], "country": city.get("country", ""), "trade": trade, "found": 0,
+                     "picked": 0, "leads_file": "", "error": found.get("error", "")}
+            if entry["error"]:
+                run.searched(entry)
+                failures += 1
+                if failures >= opts["mixed_failures_in_a_row"]:
+                    break
+                continue
+            failures = 0
+            result = found["result"]
+            rows = result.get("rows") or []
+            entry.update(found=len(rows), leads_file=result["path"].name if result.get("path") else "")
+            run.searched(entry)
+            for row in choose_candidates(rows, opts, settings, limit=min(per_search, wanted - have), skip=taken):
+                taken |= _taken_keys(row)
+                candidate = _candidate(row, city, trade)
+                run.add(candidate, entry)
+                jobs.append(pool.submit(_guarded_work, candidate, run, settings, opts, stop_event, collect, build, building, say))
+            if jobs:
+                run.update(state="building")
+        if jobs:
+            run.update(message="Searching is over. Picked {} of {}, building {} at a time.".format(
+                len(state["candidates"]), wanted, workers
+            ))
+            say(state["message"])
+        for job in jobs:
+            job.result()
+
+    for candidate in state["candidates"]:
+        if candidate["state"] in ("waiting", "photos", "building"):
+            run.change(candidate, state="stopped")
+    stopped = stopped or stop_event.is_set()
+    return run.update(state="stopped" if stopped else "done", message=_mixed_outcome(state, failures, opts), finished=_now())
+
+
+def _mixed_outcome(state, failures, opts):
+    searches = state["searches"]
+    candidates = state["candidates"]
+    if not candidates:
+        if failures >= opts["mixed_failures_in_a_row"]:
+            return "Stopped searching after {} failed searches in a row: {}".format(failures, searches[-1]["error"])
+        return "Searched {} times and found {} businesses, and none of them fits the settings.".format(
+            len(searches), state["found"]
+        )
+    counts = [
+        "{} {}".format(sum(1 for item in candidates if item["state"] == name), words)
+        for name, words in OUTCOME_WORDS
+        if any(item["state"] == name for item in candidates)
+    ]
+    return "Picked {} businesses from {} searches: {}.".format(len(candidates), len(searches), ", ".join(counts))
+
+
 OUTCOME_WORDS = [
     ("done", "built"),
     ("attention", "with problems to look at"),
@@ -1002,14 +1134,19 @@ class Runner:
     def busy(self):
         return self.thread is not None and self.thread.is_alive()
 
-    def start(self, city_text="", random_pick=False, trade_text="", settings=None, **hooks):
+    def start(self, city_text="", random_pick=False, trade_text="", settings=None, mixed=False, **hooks):
         with self.lock:
             if self.busy():
                 raise AutopilotError("A run is already going. Stop it, or wait for it to finish.")
             settings = settings or lead_search.load_settings()
             opts = options(settings)
-            city = random_city(opts) if random_pick else resolve_city(city_text, opts)
-            run = new_run(city, pick_trade(trade_text, opts))
+            if mixed:
+                city = resolve_city(city_text, opts) if city_text.strip() else None
+                trade = trade_text.strip()
+                run = new_run(city, trade, plan=mixed_plan(city, trade, opts))
+            else:
+                city = random_city(opts) if random_pick else resolve_city(city_text, opts)
+                run = new_run(city, pick_trade(trade_text, opts))
             self.stop_event = threading.Event()
             self.run_id = run.state["id"]
             self.run = run
@@ -1066,7 +1203,7 @@ def list_runs(runner=None, root=None, limit=20):
         run = load_run(path.stem, runner, root)
         if run:
             found.append(
-                {key: run.state.get(key) for key in ("id", "started", "finished", "query", "state", "message", "found")}
+                {key: run.state.get(key) for key in ("id", "started", "finished", "query", "state", "message", "found", "mixed")}
                 | {"sites": len(run.state.get("candidates", []))}
             )
     return found
@@ -1273,6 +1410,11 @@ def main():
     where = run_command.add_mutually_exclusive_group(required=True)
     where.add_argument("--city", help="The city to search")
     where.add_argument("--random", action="store_true", help="Pick a random city from autopilot.cities")
+    where.add_argument(
+        "--mixed", action="store_true",
+        help="Search one trade and city after another, from the settings, until the run has its sites",
+    )
+    run_command.add_argument("--in", dest="mixed_city", default="", help="With --mixed, keep to this one city")
     run_command.add_argument("--trade", default="", help="The trade, or a random one from the settings")
     run_command.add_argument(
         "--no-build", action="store_true", help="Stop after the photographs and print the command for each lead"
@@ -1294,9 +1436,14 @@ def main():
         elif arguments.action == "check-builder":
             _print_json(check_builder(opts, settings))
         else:
-            city = random_city(opts) if arguments.random else resolve_city(arguments.city, opts)
-            run = new_run(city, pick_trade(arguments.trade, opts))
-            print("\n{} ({})\n".format(run.state["query"], city.get("country") or "country not in the list"))
+            if arguments.mixed:
+                city = resolve_city(arguments.mixed_city, opts) if arguments.mixed_city else None
+                run = new_run(city, arguments.trade.strip(), plan=mixed_plan(city, arguments.trade.strip(), opts))
+                print("\n{}\n".format(run.state["query"]))
+            else:
+                city = random_city(opts) if arguments.random else resolve_city(arguments.city, opts)
+                run = new_run(city, pick_trade(arguments.trade, opts))
+                print("\n{} ({})\n".format(run.state["query"], city.get("country") or "country not in the list"))
             execute(run, settings, threading.Event(), building=not arguments.no_build, report=lambda text: print("  " + text))
             for candidate in run.state["candidates"]:
                 print("\n{}: {}".format(candidate["name"], candidate["state"]))

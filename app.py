@@ -75,6 +75,16 @@ def site_sent():
     return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
 
 
+@app.post("/api/sites/response")
+def site_response():
+    payload = request.get_json(silent=True) or {}
+    try:
+        dashboard.record_response(payload.get("place_id") or "", payload.get("response") or "")
+    except outreach_log.OutreachError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify({"response": payload["response"]})
+
+
 @app.post("/api/sites/own-project")
 def site_own_project():
     payload = request.get_json(silent=True) or {}
@@ -245,6 +255,7 @@ def autopilot_start():
             city_text=payload.get("city") or "",
             random_pick=bool(payload.get("random")),
             trade_text=payload.get("trade") or "",
+            mixed=bool(payload.get("mixed")),
         )
     except autopilot.AutopilotError as error:
         return jsonify({"error": str(error)}), 409 if RUNNER.busy() else 400

@@ -147,7 +147,10 @@ in English. Do not add co-author trailers.
 - Site images come from Pexels, chosen by trade
   from `stock_photos.plans` in `config.yaml`, or from the client.
 - The monthly Google call limit in `config.yaml` stays below the free tier.
-- Nothing scrapes Google Maps or CompanyWall. The tool generates links a human
-  clicks. During `/build-brief` the assistant may open the listing of the one
-  lead being built and read it the way a person would, never the listings of a
-  whole search.
+- Nothing scrapes Google Maps, CompanyWall, Facebook or Instagram. The tool
+  generates links a human clicks. The only pages it reads by itself are a
+  business's own website, the front page and at most
+  `site_emails.contact_pages` more, while the audit checks that site. During
+  `/build-brief` the assistant may open the listing of the one lead being
+  built and read it the way a person would, never the listings of a whole
+  search.

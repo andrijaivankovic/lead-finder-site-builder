@@ -6,6 +6,8 @@ from email.utils import parsedate_to_datetime
 import requests
 from bs4 import BeautifulSoup
 
+import site_emails
+
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/124.0 Safari/537.36 lead-finder-site-builder/0.1"
@@ -137,6 +139,7 @@ def audit(url, settings):
         "load_seconds": None,
         "status_code": None,
         "reachable": False,
+        "email": "",
     }
 
     if not target:
@@ -192,6 +195,7 @@ def audit(url, settings):
         result["problems"].append(_message(settings, problem_key, platform=platform))
 
     result["score"] = max(0, min(100, score))
+    result["email"] = site_emails.from_site(response, soup, settings, lambda page: _fetch(page, options))
     return result
 
 
