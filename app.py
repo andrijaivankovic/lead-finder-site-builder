@@ -12,6 +12,7 @@ import dashboard
 import lead_search
 import lead_store
 import local_settings
+import mail_account
 import outreach_log
 
 app = Flask(__name__)
@@ -43,6 +44,7 @@ def usage():
     summary["has_google_key"] = bool(lead_search.google_key())
     summary["has_builder"] = bool(autopilot.find_builder(autopilot.options(settings)))
     summary["has_deploy_token"] = autopilot.deploy_site.has_token()
+    summary["mailbox"] = mail_account.status(settings)
     return jsonify(summary)
 
 
@@ -217,6 +219,8 @@ def _autopilot_page_data():
         "channels": settings["outreach"]["channels"],
         "default_language": settings["brief"]["default_language"],
         "personal": local_settings.view(settings),
+        "mailbox_providers": mail_account.provider_names(settings),
+        "mailbox": mail_account.status(settings),
         "running": RUNNER.run_id if RUNNER.busy() else "",
     }
 
@@ -232,13 +236,71 @@ def autopilot_settings():
     try:
         personal = None
         if "personal" in payload:
-            personal = local_settings.clean(payload["personal"], local_settings.view(lead_search.load_settings()))
+            current = lead_search.load_settings()
+            personal = local_settings.clean(payload["personal"], local_settings.view(current), current["mailbox"]["providers"])
         autopilot.save({key: value for key, value in payload.items() if key != "personal"})
         if personal is not None:
             local_settings.write(personal)
     except (autopilot.AutopilotError, local_settings.LocalSettingsError) as error:
         return jsonify({"error": str(error)}), 400
     return jsonify(_autopilot_page_data())
+
+
+def _mailbox_failure(error):
+    return jsonify({"error": str(error)}), 400
+
+
+@app.get("/api/mailbox")
+def mailbox_status():
+    return jsonify(mail_account.status(lead_search.load_settings()))
+
+
+@app.post("/api/mailbox/check")
+def mailbox_check():
+    try:
+        return jsonify(mail_account.check(lead_search.load_settings()))
+    except mail_account.MailboxError as error:
+        return _mailbox_failure(error)
+
+
+@app.get("/api/mailbox/messages")
+def mailbox_messages():
+    folder = request.args.get("folder", "inbox")
+    if folder not in mail_account.FOLDERS:
+        return jsonify({"error": "The folder is inbox or sent."}), 400
+    try:
+        return jsonify(mail_account.list_messages(lead_search.load_settings(), folder))
+    except mail_account.MailboxError as error:
+        return _mailbox_failure(error)
+
+
+@app.get("/api/mailbox/messages/<folder>/<int:uid>")
+def mailbox_message(folder, uid):
+    if folder not in mail_account.FOLDERS:
+        return jsonify({"error": "The folder is inbox or sent."}), 400
+    try:
+        return jsonify(mail_account.read_message(lead_search.load_settings(), folder, uid))
+    except mail_account.MailboxError as error:
+        return _mailbox_failure(error)
+
+
+@app.post("/api/mailbox/send")
+def mailbox_send():
+    payload = request.get_json(silent=True) or {}
+    reply = payload.get("reply") if isinstance(payload.get("reply"), dict) else None
+    try:
+        sent = mail_account.send(
+            lead_search.load_settings(),
+            str(payload.get("to") or ""),
+            str(payload.get("subject") or ""),
+            str(payload.get("body") or ""),
+            place_id=str(payload.get("place_id") or ""),
+            name=str(payload.get("name") or ""),
+            reply=reply,
+        )
+    except (mail_account.MailboxError, outreach_log.OutreachError) as error:
+        return _mailbox_failure(error)
+    return jsonify(sent)
 
 
 @app.post("/api/autopilot/check")

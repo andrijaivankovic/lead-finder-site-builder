@@ -138,9 +138,12 @@ in English. Do not add co-author trailers.
 
 ## Boundaries that are deliberate, do not remove them
 
-- The tool never sends a message anywhere and holds no credentials for any
-  messaging account. It only drafts. The autopilot included: a message is
-  logged as sent only when the person presses the button that says so.
+- The tool never sends a message by itself. It drafts, and the Inbox page
+  sends one email at a time only when the person presses Send on it, through
+  the person's own mailbox, whose app password is `MAILBOX_PASSWORD` in `.env`.
+  No schedule, no batch and no autopilot step ever sends, and nothing connects
+  to Viber, WhatsApp or Instagram. A message is logged as sent only when the
+  person sends it from the Inbox page or presses the button that says so.
 - Publishing goes to the user's own Cloudflare account through
   `CLOUDFLARE_API_TOKEN`, and only an address that opened without a login is
   ever put in a message.

@@ -101,6 +101,19 @@ def record_response(root, place_id, response, notes=""):
     return touched
 
 
+def record_follow_up(root, place_id, channel, on=None):
+    rows = load(root)
+    touched = [row for row in rows if row["place_id"] == place_id and row["channel"] == channel]
+    if not touched:
+        raise OutreachError("No {} logged for place_id {}.".format(channel, place_id))
+    note = "follow-up sent {}".format((on or date.today()).isoformat())
+    for row in touched:
+        row["follow_up_due"] = ""
+        row["notes"] = "; ".join(part for part in (row["notes"], note) if part)
+    save(root, rows)
+    return touched
+
+
 def due_for_follow_up(root, on=None):
     today = on or date.today()
     due = []
