@@ -67,6 +67,11 @@ const parts = {
   deploy: document.getElementById("set-deploy"),
   deployState: document.getElementById("deploy-state"),
   sharedProject: document.getElementById("set-shared-project"),
+  mailAddress: document.getElementById("set-mail-address"),
+  mailProvider: document.getElementById("set-mail-provider"),
+  mailLimit: document.getElementById("set-mail-limit"),
+  mailCheck: document.getElementById("mail-check"),
+  mailState: document.getElementById("mail-state"),
   timeout: document.getElementById("set-timeout"),
   parallel: document.getElementById("set-parallel"),
   builderState: document.getElementById("builder-state"),
@@ -186,6 +191,14 @@ function renderPersonal(personal) {
   parts.defaultLanguage.value = personal.default_language;
   parts.outputDir.value = personal.output_dir;
   parts.sharedProject.value = personal.shared_project;
+  parts.mailAddress.value = personal.address;
+  parts.mailLimit.value = personal.daily_limit;
+}
+
+function mailboxNote(status) {
+  if (!status.has_password) return "MAILBOX_PASSWORD is empty in .env, so the Inbox cannot open the mailbox yet. Section 6 of SETUP.md shows where the password comes from.";
+  if (!status.address) return "MAILBOX_PASSWORD is set in .env. Type the address it belongs to.";
+  return "MAILBOX_PASSWORD is set in .env. Check mailbox logs in to read and to send, and sends nothing.";
 }
 
 function renderSettings(data) {
@@ -215,7 +228,22 @@ function renderSettings(data) {
   parts.timeout.value = settings.builder.timeout_minutes;
   parts.parallel.value = settings.builder.parallel;
   parts.builderState.textContent = data.builder ? "Found at " + data.builder + "." : "Not found on this computer.";
+  fillOptions(parts.mailProvider, Object.entries(data.mailbox_providers), data.personal.provider);
   renderPersonal(data.personal);
+  parts.mailState.textContent = mailboxNote(data.mailbox);
+}
+
+async function checkMailbox() {
+  parts.mailCheck.disabled = true;
+  say(parts.mailState, "Logging in to " + (parts.mailAddress.value.trim() || "the mailbox") + "… Save first if you changed the address or provider.");
+  try {
+    const data = await requestJson("/api/mailbox/check", { method: "POST" });
+    say(parts.mailState, "Both work: reading and sending for " + data.address + ". " + data.inbox + " messages in the inbox, sent mail in " + data.sent_folder + ".");
+  } catch (error) {
+    say(parts.mailState, error.message, true);
+  } finally {
+    parts.mailCheck.disabled = false;
+  }
 }
 
 function renderAutopilotForm(data) {
@@ -632,6 +660,9 @@ function settingsPayload() {
       default_language: parts.defaultLanguage.value,
       output_dir: parts.outputDir.value,
       shared_project: parts.sharedProject.value,
+      address: parts.mailAddress.value,
+      provider: parts.mailProvider.value,
+      daily_limit: parts.mailLimit.value,
     },
   };
 }
@@ -700,6 +731,7 @@ parts.runSelect.addEventListener("change", () => showRun(parts.runSelect.value))
 parts.runStop.addEventListener("click", stopRun);
 parts.settingsForm.addEventListener("submit", saveSettings);
 parts.builderCheck.addEventListener("click", checkBuilder);
+parts.mailCheck.addEventListener("click", checkMailbox);
 parts.portfolioAdd.addEventListener("click", () => {
   const line = portfolioRow({});
   parts.portfolio.append(line);

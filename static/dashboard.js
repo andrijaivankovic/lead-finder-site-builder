@@ -3,6 +3,7 @@ const VIEW_TITLES = {
   leads: ["Leads", "Search a trade and a city, then pick who needs a website."],
   autopilot: ["Autopilot", "A city in, finished sites and drafted messages out."],
   sites: ["Sites", "Every site you have prepared, built and published."],
+  inbox: ["Inbox", "Read and answer mail in your own mailbox, and send the demos."],
   history: ["History", "Everything you have done, newest first."],
   settings: ["Settings", "How the autopilot searches, builds and publishes."],
 };
@@ -191,6 +192,7 @@ function showView(name) {
   if (chosen === "overview") loadOverview();
   if (chosen === "sites") loadSites();
   if (chosen === "history") loadHistory();
+  if (chosen === "inbox") loadInbox();
   if (chosen === "autopilot" || chosen === "settings") ensureAutopilot();
 }
 
@@ -569,6 +571,14 @@ function siteActions(site) {
     button.addEventListener("click", () => copyText(next.command, button));
     line.append(button);
   }
+  if (site.email_to) {
+    const first = !site.sent.some((item) => item.channel === "email");
+    const button = element("button", first ? "" : "secondary", first ? "Send email" : "Write again");
+    button.type = "button";
+    button.title = "Opens the message to " + site.email_to + ", ready to send from your mailbox.";
+    button.addEventListener("click", () => composeForSite(site));
+    line.append(button);
+  }
   if (site.stage === "accepted" && site.demo_branch) line.append(ownProjectButton(site));
   return line;
 }
@@ -711,7 +721,8 @@ shell.tabs.forEach((tab) => {
 shell.jumps.forEach((button) => {
   button.addEventListener("click", () => {
     goTo(button.dataset.go);
-    (button.dataset.go === "leads" ? elements.query : parts.city).focus();
+    if (button.dataset.go === "leads") elements.query.focus();
+    if (button.dataset.go === "autopilot") parts.city.focus();
   });
 });
 shell.sitesFilter.addEventListener("click", (event) => {

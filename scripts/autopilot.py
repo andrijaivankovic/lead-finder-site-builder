@@ -1250,7 +1250,7 @@ def _profile(value, site):
     return "https://www.{}.com/{}/".format(site, quote(handle)), handle
 
 
-def _email_parts(text):
+def email_parts(text):
     lines = (text or "").splitlines()
     if lines and lines[0].lower().startswith("subject:"):
         return lines[0].split(":", 1)[1].strip(), "\n".join(lines[1:]).strip()
@@ -1286,7 +1286,7 @@ def contact_links(candidate, found, settings):
 
     email = re.split(r"[;,]", candidate.get("email") or "")[0].strip()
     if email:
-        subject, body = _email_parts(texts.get("email", ""))
+        subject, body = email_parts(texts.get("email", ""))
         query = "subject={}&body={}".format(quote(subject, safe=""), quote(body, safe="")) if subject or body else ""
         links.append(("email", "Email {}".format(email), "mailto:{}{}".format(email, "?" + query if query else "")))
 

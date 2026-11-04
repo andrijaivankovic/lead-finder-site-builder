@@ -70,7 +70,8 @@ async function loadUsage() {
     }
     rows.push(
       systemRow("Claude Code", data.has_builder ? "Ready" : "Not found", data.has_builder),
-      systemRow("Cloudflare Pages", data.has_deploy_token ? "Connected" : "No token yet", data.has_deploy_token)
+      systemRow("Cloudflare Pages", data.has_deploy_token ? "Connected" : "No token yet", data.has_deploy_token),
+      systemRow("Mailbox", data.mailbox.ready ? data.mailbox.address : "Not connected", data.mailbox.ready)
     );
     elements.usage.replaceChildren(...rows);
   } catch (error) {
