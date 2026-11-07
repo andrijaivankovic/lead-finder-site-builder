@@ -551,6 +551,28 @@ The same runs from a terminal:
 for each business, which is what happens anyway when Claude Code is not
 logged in.
 
+### The Inbox: sending and reading from the dashboard
+
+With a mailbox of your own connected, as section 6 of
+[SETUP.md](SETUP.md#6-a-mailbox-for-sending-and-reading-the-messages) explains,
+the **Inbox** page shows its inbox and its sent mail, opens each message and
+answers it. A message from a business you wrote to carries that business's
+name, and what they answered can be logged right there.
+
+On the Sites page, **Send email** opens the drafted email with the business's
+address, the subject and the text already filled in. You read it, change what
+you like, and press **Send**: it goes out from your mailbox and is logged as
+sent, the same as **I sent it**. Writing to the same business again counts as
+the follow up. **New messages a day, at most**, under **Mailbox** on the
+Settings page, keeps a new mailbox inside its warm up plan; replies are never
+held back by it.
+
+```bash
+./run scripts/mail_account.py check
+```
+
+logs in to read and to send, and sends nothing.
+
 ### Keeping track of who you contacted
 
 Nothing is recorded when a message is drafted, because drafting is not sending.
@@ -681,11 +703,12 @@ For scale, one search that pulls its full results costs 3 calls and returns up t
 
 ## Things it will not do, on purpose
 
-**It never sends a message.** It writes drafts, and you send them yourself from
-your own account. The project holds no password, token or login for email,
-Viber, WhatsApp or Instagram, and it should never be given one. You log a
-message as sent after you have actually sent it. The autopilot is no exception:
-it stops at the drafted message, and only your **I sent it** logs anything.
+**It never sends a message by itself.** It writes drafts. You send them from
+your own account, or from the Inbox page, where nothing leaves until you press
+**Send** on that one message. The only login it ever holds is the app password
+of your own mailbox, in `.env`, and only when you set the Inbox up. It has none
+for Viber, WhatsApp or Instagram, and it should never be given one. The
+autopilot is no exception: it stops at the drafted message.
 
 **Google's photographs never end up on a website you build.** Those pictures
 belong to the owners and the customers who took them. The tool never downloads

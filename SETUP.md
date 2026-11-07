@@ -6,9 +6,9 @@ written for someone opening the Google Cloud Console for the first time.
 Keys go into a `.env` file and nowhere else. That file never reaches GitHub.
 
 There are two accounts to make, Pexels and Google Cloud, then one file holding
-your own details, one optional login for the autopilot, and one optional token
-for publishing the sites. Start with Pexels, which takes two minutes and
-carries no risk at all.
+your own details, one optional login for the autopilot, one optional token
+for publishing the sites, and an optional mailbox for sending and reading
+mail. Start with Pexels, which takes two minutes and carries no risk at all.
 
 ---
 
@@ -23,6 +23,10 @@ carries no risk at all.
 - **Quota** — a ceiling on how many calls per day you are allowed. Once hit,
   Google rejects further calls instead of billing you.
 - **Billing account** — your card, linked to Google.
+- **Domain** — the name after the `@` in an email address, such as
+  `ivankovicsites.com`. It is bought once a year and needs no website on it.
+- **Mailbox** — the account the mail arrives in and is sent from, the way a
+  Gmail account is one. It lives on a domain: `andrija@ivankovicsites.com`.
 
 ---
 
@@ -402,3 +406,92 @@ To put it on the business's domain, open that project under **Workers &
 Pages**, then **Custom domains**. A `www` address bought anywhere works with
 the CNAME record Cloudflare shows you there. A bare domain such as
 `goldencrust.com` needs its nameservers moved to Cloudflare first.
+
+---
+
+## 6. A mailbox for sending and reading the messages
+
+Optional. Skip it and you send each message yourself from your mail program,
+then press **I sent it**, exactly as before.
+
+### What it does
+
+The **Inbox** page shows the mailbox, opens each message, and answers it. On
+the Sites page, **Send email** opens the drafted email for that business with
+its address filled in. One press of **Send** sends it from your mailbox and
+logs it, as **I sent it** would, so the follow up reminder starts. Sending to
+the same business again counts as the follow up. A reply from a business shows
+its name, and its answer can be logged from the message itself.
+
+Nothing is ever sent without you pressing **Send** on that one message. The
+autopilot never sends anything.
+
+### Use a separate domain, not your main Gmail
+
+Messages to businesses that do not know you get reported as spam more often
+than ordinary mail. If that happens on your main Google account, Google can
+limit or suspend the whole account, Drive and Photos included. A domain of
+its own, used only for these messages, keeps that risk away from everything
+else, and replaced costs about ten dollars.
+
+### Cost
+
+| What | Price |
+|---|---|
+| A `.com` domain on Cloudflare | about $10 to $15 a year |
+| Zoho Mail Lite, one mailbox | about $1 a month, paid for a year |
+| Google Workspace Business Starter instead | about $7 a month, paid for a year |
+
+Zoho's Forever Free plan works with your own domain, but it no longer allows
+IMAP or SMTP, the doors this page reads and sends through. It is fine for
+sending by hand from Zoho's own site; for the Inbox page take Mail Lite or
+higher. Prices change, so check them before paying.
+
+### Steps with Zoho
+
+1. **Domain.** In the Cloudflare dashboard open **Domain Registration**, then
+   **Register Domains**, and buy a short `.com` that is not your main one.
+   Turn on **Auto-renew**.
+2. **Mailbox.** On **https://www.zoho.com/mail** choose **Business Email**,
+   then **Mail Lite**, then sign up with the domain you already own. Zoho puts
+   an account made from Europe in its European data centre, which shows as
+   `mail.zoho.eu` in the address bar.
+3. **Prove the domain is yours.** Zoho shows a TXT record. Add it in
+   Cloudflare under **DNS**, then **Records**, then **Add record**, and press
+   **Verify** in Zoho.
+4. **Mail records.** Zoho's admin console lists the rest; copy each one into
+   Cloudflare exactly as shown:
+   - three **MX** records, so mail reaches you;
+   - one **TXT** record for SPF that starts with `v=spf1`. There may only be
+     one of these on the domain;
+   - one **TXT** record for DKIM, then press **Verify** next to it in Zoho;
+   - one **TXT** record named `_dmarc` with
+     `v=DMARC1; p=none; rua=mailto:` followed by your address.
+5. **IMAP.** In Zoho Mail open **Settings**, then **Mail Accounts**, and
+   switch on **IMAP Access**.
+6. **App password.** In Zoho Accounts open **Security**, then **App
+   Passwords**, and generate one named `lead-finder`. If Zoho does not offer
+   it, turn on two-factor sign in first. Paste the password into `.env` after
+   `MAILBOX_PASSWORD=`. It is shown once.
+7. **Settings page.** Under **Mailbox**, type the address, pick
+   **Zoho Mail, zoho.eu** for a European account or **zoho.com** otherwise,
+   save, and press **Check mailbox**. It logs in to read and to send, and sends
+   nothing.
+8. **Test.** Send one message to your own Gmail, open it, and choose **Show
+   original** from its menu: SPF, DKIM and DMARC should all say PASS. Then
+   send a real message to the address **https://www.mail-tester.com** gives
+   you and aim for 9 out of 10.
+
+Google Workspace works the same way with **Google Workspace or Gmail** as the
+provider and an app password from your Google account.
+
+### Warming the mailbox up
+
+A brand new mailbox that sends forty messages on its first day lands in spam.
+**New messages a day, at most** under **Mailbox** stops it: start at 10, then
+15 in the second week, 25 in the third, and no more than 40 after that. It
+never holds back a reply to someone who wrote to you.
+
+For messages to businesses in the United States the law asks for a postal
+address and a way to say no in every one. Add both once as rules under **Your
+rules for every message**, and every draft carries them.

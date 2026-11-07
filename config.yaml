@@ -441,6 +441,31 @@ audit:
     dated_platform: "The site still runs on {platform}, which is years behind and a security risk as much as a look."
     template_platform: "The site is a {platform} template, so it looks like thousands of others and cannot be tailored much."
 
+mailbox:
+  provider: zoho_eu
+  address: ""
+  daily_limit: 10
+  list_size: 40
+  timeout_seconds: 20
+  imap_port: 993
+  smtp_port: 465
+  providers:
+    zoho_eu:
+      name: "Zoho Mail, zoho.eu"
+      imap_host: imappro.zoho.eu
+      smtp_host: smtppro.zoho.eu
+      sent_folder: Sent
+    zoho:
+      name: "Zoho Mail, zoho.com"
+      imap_host: imappro.zoho.com
+      smtp_host: smtppro.zoho.com
+      sent_folder: Sent
+    google:
+      name: "Google Workspace or Gmail"
+      imap_host: imap.gmail.com
+      smtp_host: smtp.gmail.com
+      sent_folder: "[Gmail]/Sent Mail"
+
 site_emails:
   enabled: true
   check_domains: true

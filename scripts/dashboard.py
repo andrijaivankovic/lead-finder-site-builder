@@ -140,6 +140,14 @@ def run_niches(runs):
     return found
 
 
+def _email_draft(written):
+    found = next((item["text"] for item in written if item["title"].lower() == "email"), "")
+    if not found:
+        return None
+    subject, body = autopilot.email_parts(found)
+    return {"subject": subject, "body": body}
+
+
 def site(folder, settings, known, log, country_codes, niches=None):
     facts = brief_facts(folder)
     place_id = facts.get("place_id", "")
@@ -177,6 +185,8 @@ def site(folder, settings, known, log, country_codes, niches=None):
         trade=niche.get("trade") or lead.get("category") or "",
         city=niche.get("city") or _city(address),
         response=next((item["response"] for item in sent if item["response"]), ""),
+        email_to=re.split(r"[;,\s]+", (lead.get("email") or "").strip())[0],
+        email_draft=_email_draft(written),
         messages=written,
         contacts=autopilot.contact_links(candidate, written, settings),
         sent=sent,

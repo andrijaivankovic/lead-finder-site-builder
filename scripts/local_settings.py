@@ -15,8 +15,10 @@ STORED = {
     "outreach": ["sender_name", "portfolio_links", "message_rules", "follow_up_days"],
     "brief": ["default_language", "output_dir"],
     "deploy": ["shared_project"],
+    "mailbox": ["address", "provider", "daily_limit"],
 }
 PROJECT_NAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,56}[a-z0-9])?$")
+MAIL_ADDRESS = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class LocalSettingsError(Exception):
@@ -43,7 +45,7 @@ def _link(item):
 
 
 def view(settings):
-    outreach, brief, deploy = settings["outreach"], settings["brief"], settings["deploy"]
+    outreach, brief, deploy, mailbox = settings["outreach"], settings["brief"], settings["deploy"], settings["mailbox"]
     return {
         "sender_name": outreach.get("sender_name") or "",
         "portfolio_links": [_link(item) for item in outreach.get("portfolio_links") or []],
@@ -52,6 +54,9 @@ def view(settings):
         "default_language": brief.get("default_language") or "",
         "output_dir": brief.get("output_dir") or "",
         "shared_project": deploy.get("shared_project") or "",
+        "address": mailbox.get("address") or "",
+        "provider": mailbox["provider"],
+        "daily_limit": mailbox["daily_limit"],
     }
 
 
@@ -126,7 +131,20 @@ def _project(value):
     return name
 
 
-def clean(payload, current):
+def _mail_address(value):
+    address = _text(value, 200, "The mailbox address").lower()
+    if address and not MAIL_ADDRESS.match(address):
+        raise LocalSettingsError("The mailbox address has to look like you@yourdomain.com, not {}.".format(value.strip()))
+    return address
+
+
+def _provider(value, providers):
+    if value not in providers:
+        raise LocalSettingsError("The mailbox provider is one of: {}.".format(", ".join(providers)))
+    return value
+
+
+def clean(payload, current, providers=()):
     if not isinstance(payload, dict):
         raise LocalSettingsError("Your details have to come as named fields.")
     result = dict(current)
@@ -144,6 +162,12 @@ def clean(payload, current):
         result["output_dir"] = _folder(payload["output_dir"], current.get("output_dir", ""))
     if "shared_project" in payload:
         result["shared_project"] = _project(payload["shared_project"])
+    if "address" in payload:
+        result["address"] = _mail_address(payload["address"])
+    if "provider" in payload:
+        result["provider"] = _provider(payload["provider"], providers)
+    if "daily_limit" in payload:
+        result["daily_limit"] = _whole(payload["daily_limit"], 1, 500, "Messages a day")
     return result
 
 
@@ -166,6 +190,6 @@ def write(cleaned, root=None):
 
 def save(payload, settings=None, root=None):
     settings = settings or lead_search.load_settings()
-    cleaned = clean(payload, view(settings))
+    cleaned = clean(payload, view(settings), settings["mailbox"]["providers"])
     write(cleaned, root)
     return cleaned

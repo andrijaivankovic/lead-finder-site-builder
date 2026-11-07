@@ -47,6 +47,10 @@
       <span>Sites</span>
       <span class="nav-count" id="nav-ready" hidden></span>
     </button>
+    <button type="button" class="tab" data-view="inbox">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.2"/><path d="M4 7l8 6 8-6"/></svg>
+      <span>Inbox</span>
+    </button>
     <button type="button" class="tab" data-view="history">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
       <span>History</span>
@@ -282,6 +286,44 @@
 
 </div>
 
+<div class="view" id="view-inbox" hidden>
+
+<section class="card toolbar">
+  <div class="segmented" id="inbox-folder" role="group" aria-label="Folder">
+    <button type="button" data-filter="inbox">Inbox <span></span></button>
+    <button type="button" data-filter="sent">Sent <span></span></button>
+  </div>
+  <div class="inbox-tools">
+    <span class="hint" id="inbox-today"></span>
+    <button type="button" class="secondary" id="inbox-refresh">Refresh</button>
+    <button type="button" id="inbox-write">Write</button>
+  </div>
+</section>
+
+<section class="card inbox-setup" id="inbox-setup" hidden>
+  <h2>Connect your mailbox</h2>
+  <p>The Inbox reads and sends through your own mailbox, the one on your own domain. It needs three things:</p>
+  <ol>
+    <li>A mailbox that allows IMAP and SMTP. On Zoho that is Mail Lite or above; the free plan has neither.</li>
+    <li>Its address and provider under <strong>Mailbox</strong> on the Settings page.</li>
+    <li>An app password from the mailbox, put into <code>.env</code> after <code>MAILBOX_PASSWORD=</code>.</li>
+  </ol>
+  <p class="hint" id="inbox-setup-state"></p>
+  <button type="button" class="secondary" data-go="settings">Open Settings</button>
+</section>
+
+<div class="inbox" id="inbox-panes" hidden>
+  <section class="card inbox-list-card">
+    <ul class="inbox-list" id="inbox-list"></ul>
+    <p class="empty" id="inbox-empty" hidden></p>
+  </section>
+  <section class="card inbox-reader" id="inbox-reader">
+    <p class="empty">Pick a message to read it.</p>
+  </section>
+</div>
+
+</div>
+
 <div class="view" id="view-history" hidden>
 
 <section class="card toolbar">
@@ -454,6 +496,30 @@
     </div>
   </section>
 
+  <section class="card">
+    <div class="card-head">
+      <h2>Mailbox</h2>
+      <span class="card-note">Address and limit in config.local.yaml, the password in .env</span>
+    </div>
+    <div class="field-row">
+      <label class="control grow">
+        <span>Your sending address</span>
+        <input type="email" id="set-mail-address" maxlength="200" placeholder="andrija@yourdomain.com" spellcheck="false">
+      </label>
+      <label class="control">
+        <span>Provider</span>
+        <select id="set-mail-provider"></select>
+      </label>
+      <label class="control">
+        <span>New messages a day, at most</span>
+        <input type="number" id="set-mail-limit" min="1" max="500">
+      </label>
+      <button type="button" id="mail-check" class="secondary">Check mailbox</button>
+    </div>
+    <p class="hint" id="mail-state"></p>
+    <p class="hint">Raise the limit week by week while a new mailbox warms up: 10, then 15, then 25, and no more than 40. It only holds back new messages, never a reply to someone who wrote to you.</p>
+  </section>
+
   <div class="settings-actions">
     <button type="submit" id="settings-save">Save settings</button>
     <span class="status-line" id="settings-status"></span>
@@ -472,8 +538,35 @@
   </div>
 </div>
 
+<dialog class="composer" id="composer" aria-labelledby="composer-title">
+  <form id="composer-form">
+    <div class="composer-head">
+      <h2 id="composer-title">New message</h2>
+      <button type="button" class="secondary" id="composer-close">Close</button>
+    </div>
+    <label class="control">
+      <span>To</span>
+      <input type="email" id="composer-to" required maxlength="200" spellcheck="false">
+    </label>
+    <label class="control">
+      <span>Subject</span>
+      <input type="text" id="composer-subject" required maxlength="200">
+    </label>
+    <label class="control">
+      <span>Message</span>
+      <textarea id="composer-body" rows="14" required></textarea>
+    </label>
+    <p class="hint" id="composer-note"></p>
+    <div class="composer-actions">
+      <button type="submit" id="composer-send">Send</button>
+      <span class="status-line" id="composer-status"></span>
+    </div>
+  </form>
+</dialog>
+
 <script src="/static/app.js"></script>
 <script src="/static/autopilot.js"></script>
+<script src="/static/inbox.js"></script>
 <script src="/static/dashboard.js"></script>
 </body>
 </html>
